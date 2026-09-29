@@ -15,7 +15,10 @@
     "icons": "node scripts/icons.mjs",
     "e2e": "node e2e/smoke.mjs",
     "e2e:offline": "node e2e/offline.mjs",
-    "e2e:mobile": "node e2e/mobile.mjs"
+    "e2e:mobile": "node e2e/mobile.mjs",
+    "e2e:filters": "node e2e/filters.mjs",
+    "e2e:audio": "node e2e/audio.mjs",
+    "e2e:all": "node e2e/smoke.mjs && node e2e/filters.mjs && node e2e/audio.mjs && node e2e/mobile.mjs && node e2e/offline.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.7",

@@ -316,6 +316,17 @@ Everything below is implemented and verified working.
 - **Weak / Okay / Solid** rating on every card
 - Home tiles: AI Studio, Topics, SQL Lab, Learn, Offline, Install
 
+### 4.1a Sign-in — Continue with Google
+
+OAuth 2.0 with PKCE against OpenRouter, whose sign-in page offers Google. One tap,
+no key to copy, and the same account works in Cline and Claude Desktop. The app
+exchanges the returned code for a key and stores it locally; the `?code=` is scrubbed
+from the URL so a refresh does not re-exchange it.
+
+It **cannot** work from a `file://` page, and the app says so rather than failing
+silently. A ChatGPT or Claude *subscription* is not usable here — those companies do
+not offer it to third-party apps.
+
 ### 4.2 Question card
 - English answer, or the chosen language
 - **Key line** ("Say it in the interview") and **memory hook** boxes
@@ -525,6 +536,12 @@ These are the real bugs. Each was found by a test, not by reading carefully.
 | 7 | **v7's duplicated `puter` key** | The helpful "sign in once, free allowance" text was dead code | Static analysis of v7 | Declared once |
 | 8 | **`#aiText` re-export self-reference** | Would have failed on load | esbuild parse check | Bound to a local const |
 | 9 | **Touch targets 28 px and 23 px** | Header logo, per-card language switch and the 🧪 SQL badge were hard to tap on a phone | Mobile test at 390/393 px | All controls now ≥ 32 px, nav links 56 px |
+| 10 | **AI claimed to be "ready" with nothing connected** | `aiReady()` returned `true` for server mode unconditionally, so the header showed a green dot and every AI call then failed with "no server configured" | Dialled the app and tapped an AI button | Server mode is only ready when a server address is actually set |
+| 11 | **Queue button never played** | `player.load()` is async and was not awaited, so `play()` ran against an empty queue and silently returned | Audio test with fake voices (1 → 1 utterances) | `await load()` before `play()` |
+| 12 | **No Google sign-in at all** | The feature was never built | Reported by the user | OAuth 2.0 PKCE against OpenRouter, which offers Google; callback handled on app start |
+| 13 | **Only one technology could be selected** | `Filters.tech` was a single string, so tapping React *replaced* Laravel instead of combining with it | Compared against the v7 behaviour the user described | `techs: string[]` with an AND/OR switch; chips are multi-select |
+| 14 | **A card could match a filter without showing why** | Cards rendered only the first 3 tech tags, so a Laravel + React match could look like it had no React | Filter test asserting every visible card | Selected technologies are shown first, highlighted |
+| 15 | **No feedback when the device has no voices** | Listen did nothing at all on a device with speech but zero installed voices | Headless run showed a silent button | `voiceProblem()` explains it and Help lists per-OS fixes |
 
 **The lesson worth saying out loud in an interview:** bugs 1, 2 and 6 all passed
 typechecking and unit tests. They only appeared when a real browser ran the real build
@@ -818,8 +835,9 @@ npm run dev                 # dev server on :5173
 npm run typecheck           # TypeScript, must be 0 errors
 npm test                    # 37 unit tests
 npm run check               # fast esbuild syntax check of every file
-node e2e/smoke.mjs          # 39 browser checks (needs `npm run preview` running)
-node e2e/offline.mjs        # offline-first verification
+npm run e2e:all            # smoke + filters + audio + mobile + offline
+npm run e2e:filters        # technology/flag combination behaviour
+npm run e2e:audio          # playback with voices, and the no-voice message
 
 # ---- build ----
 npm run build               # typecheck + build + service worker
@@ -885,7 +903,12 @@ extraction   1,950 questions (1,457 book + 493 new) · 41 parts · 212 chapters
 typecheck    0 errors
 unit tests   37 / 37 passed
 build        ✓ built in 7.41s · 23 precache entries · 3.3 MB
+unit         39 / 39 passed (was 37 — two added for the AND filter)
 browser      39 / 39 checks passed · zero console errors
+filters      8 / 8 passed — laravel 815, laravel+react 102,
+             laravel+react+important 21, either 368
+audio        7 / 7 passed — speech prepared and spoken, JSON → Jason,
+             and a clear message when no voice is installed
 mobile       iPhone 13 + Pixel 5 emulation: 22 / 22 passed
              no overflow, touch targets >= 32px, player above nav,
              every PWA install criterion Chrome enforces

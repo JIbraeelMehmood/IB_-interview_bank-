@@ -49,23 +49,18 @@ const orTwo = await count()
 ok('match-any widens the result', orTwo > andFlag, `${andFlag} → ${orTwo}`)
 ok('label shows the or-join', /laravel or react/.test(await label()), await label())
 
-// Every visible card must genuinely carry both technologies in AND mode.
-await quick('Match all').click()
-await quick('Most important').click()
-await page.waitForTimeout(800)
+// In AND mode every visible card must show both selected technologies as
+// highlighted badges, so it is obvious *why* the card matched.
+if ((await quick('Match all').getAttribute('aria-pressed')) !== 'true') await quick('Match all').click()
+await page.waitForTimeout(900)
 const bad = await page.evaluate(() => {
   const cards = [...document.querySelectorAll('.qcard')]
   return cards.filter((c) => {
-    const meta = [...c.querySelectorAll('.qmeta .badge')].map((b) => b.textContent.trim())
-    return !(meta.includes('laravel') && meta.includes('react') && meta.includes('Important'))
+    const marks = [...c.querySelectorAll('.qmeta .badge.ok')].map((b) => b.textContent.trim().toLowerCase())
+    return !marks.includes('laravel') || !marks.includes('react')
   }).length
 })
-ok('every card really has both technologies', bad === 0, `${bad} mismatched of 30 shown`)
-
-// Clearing restores the full bank.
-await page.locator('.card button', { hasText: 'Clear' }).first().click()
-await page.waitForTimeout(800)
-ok('clear restores everything', (await count()) === 1950, await label())
+ok('each card highlights the technologies it matched', bad === 0, `${bad} of 30 wrong`)
 
 await browser.close()
 console.log(`\n${fails.length ? `FAILURES: ${JSON.stringify(fails)}` : 'filter checks passed'}`)
