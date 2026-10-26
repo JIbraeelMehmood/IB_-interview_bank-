@@ -1,0 +1,9 @@
+2026-10-22 18:30:26,372 INFO Loading Whisper model 'base' on device=auto …
+2026-10-22 18:30:28,678 INFO Whisper model 'base' loaded in 2.3s
+2026-10-22 18:30:28,678 INFO Whisper server v2.0 starting on http://127.0.0.1:5051
+ * Serving Flask app 'whisper_server'
+ * Debug mode: off
+2026-10-22 18:30:28,701 INFO [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5051
+2026-10-22 18:30:28,701 INFO [33mPress CTRL+C to quit[0m
+2026-10-22 18:31:41,026 INFO 127.0.0.1 - - [22/Oct/2026 18:31:41] "GET /health HTTP/1.1" 200 -
