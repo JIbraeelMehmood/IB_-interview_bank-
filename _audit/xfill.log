@@ -1,0 +1,5 @@
+records with class="fill" in answer: 32
+  of those x=1: 32
+  of those x=0: 0
+x=1 but no fill span: 0
+total x=1: 32

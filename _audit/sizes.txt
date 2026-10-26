@@ -1,0 +1,16 @@
+interview-box.html
+  total file bytes : 2132687
+  bank script bytes: 275608
+  head bytes       : 62269
+  tail bytes       : 1794759
+  bank records     : 531
+  bank keys        : {"id":531,"q":531,"a":531,"t":531,"lvl":531,"s":531,"src":531,"priority":531}
+
+v1-interview-box/interview-box.html
+  total file bytes : 3273914
+  bank script bytes: 1423186
+  head bytes       : 61898
+  tail bytes       : 1788779
+  bank records     : 1950
+  bank keys        : {"id":1950,"q":1950,"a":1950,"l":1950,"p":1950,"c":1950,"f":1950,"t":1950,"s":1950,"x":1839,"tr":20,"ex":17}
+

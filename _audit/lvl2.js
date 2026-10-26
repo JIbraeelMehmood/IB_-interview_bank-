@@ -1,0 +1,12 @@
+'use strict';
+const {parseFile,levelHint}=require('../build-pitb-bank.js');
+const L='Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior.md';
+const R='Interview Prep Roman Urdu Version (Poori Guide).md';
+const lvl=parseFile(L,{src:'lvl'}), ru=parseFile(R,{src:'ru'});
+const LQ=lvl.filter(function(x){return x.tag==='Q';});
+const hints={};LQ.forEach(function(x){const h=levelHint(x.q);hints[h]=(hints[h]||0)+1;});
+console.log('levelHint distribution:',JSON.stringify(hints));
+const RU={};ru.forEach(function(x){if(x.tag==='Q'&&!RU[x.num])RU[x.num]=x;});
+let n=0,m=0;LQ.forEach(function(x){if(RU[x.num]){n++;if(RU[x.num].q===x.q)m++;}});
+console.log('lvl Q with matching num in ru guide: '+n+'/'+LQ.length+' (identical text '+m+')');
+console.log('\nheadings in lvl file:');console.log(JSON.stringify([...new Set(lvl.map(function(x){return x.heading;}))],null,1));

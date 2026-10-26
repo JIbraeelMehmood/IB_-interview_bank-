@@ -33,7 +33,7 @@ import { glossList } from '../lib/text'
 import { Chip, Chips, Empty, Md, Sheet, toast } from '../components/ui'
 import { listVoices, pickVoice, ttsAvailable, chunkText } from '../lib/speech'
 import { LANGS, LANG_NAME, type Lang } from '../lib/types'
-import { planMyDay } from '../lib/features'
+import { planMyDay, COMPANY_PROFILES } from '../lib/features'
 import { RULES_VERSION } from '../lib/lang'
 import { canInstall, isStandalone, promptInstall } from '../lib/install'
 import { beginGoogleSignIn, signOut, signInMethod, googleSignedIn } from '../lib/auth'
@@ -103,6 +103,15 @@ export default function Progress() {
           <b>About &amp; help</b>
           <span className="tiny muted">Install, offline, voices</span>
         </button>
+        <button className="tile" onClick={() => setSheet('company')}>
+          <span className="ic">🏢</span>
+          <b>Company profile</b>
+          <span className="tiny muted">
+            {settings.companyProfile
+              ? COMPANY_PROFILES[settings.companyProfile]?.name || 'Set'
+              : 'Tailor AI to the company'}
+          </span>
+        </button>
       </div>
 
       {sheet === 'today' && <DueToday onClose={() => setSheet('')} />}
@@ -113,6 +122,7 @@ export default function Progress() {
       {sheet === 'ai' && <AiConnect onClose={() => setSheet('')} />}
       {sheet === 'backup' && <BackupSheet onClose={() => setSheet('')} />}
       {sheet === 'about' && <AboutSheet onClose={() => setSheet('')} />}
+      {sheet === 'company' && <CompanySheet onClose={() => setSheet('')} />}
     </div>
   )
 }
@@ -786,8 +796,7 @@ function BackupSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-function AboutSheet({ onClose }: { onClose: () => void }) {
-  const [gloss, setGloss] = useState<{ en: string; ur: string; hi: string }[] | null>(null)
+function AboutSheet({ onClose }: { onClose: () => void }) {  const [gloss, setGloss] = useState<{ en: string; ur: string; hi: string }[] | null>(null)
   const { settings, toggleTheme } = useSettings()
   return (
     <Sheet title="About & help" onClose={onClose}>
@@ -853,6 +862,65 @@ function AboutSheet({ onClose }: { onClose: () => void }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+    </Sheet>
+  )
+}
+
+/** Company profile selector — injects company style context into mock + coaching. */
+function CompanySheet({ onClose }: { onClose: () => void }) {
+  const { settings, set } = useSettings()
+  const current = settings.companyProfile || ''
+  const profile = current ? COMPANY_PROFILES[current] : null
+
+  return (
+    <Sheet title="🏢 Company profile" onClose={onClose}>
+      <div className="stack">
+        <p className="small muted">
+          Select the company you are interviewing at. The mock interviewer and coaching tips will adapt to
+          that company's interview style. Leave unset for a generic interview.
+        </p>
+
+        <div className="stack-sm">
+          <Chip
+            on={!current}
+            onClick={() => set({ companyProfile: undefined })}
+          >
+            None (generic)
+          </Chip>
+          {Object.entries(COMPANY_PROFILES).map(([id, p]) => (
+            <div
+              key={id}
+              className={`card ${current === id ? 'hl' : ''}`}
+              style={{ padding: '8px 12px', cursor: 'pointer' }}
+              onClick={() => {
+                set({ companyProfile: id })
+                toast(`${p.name} profile selected.`)
+              }}
+            >
+              <div className="spread">
+                <b className="small">{p.name}</b>
+                <span className="badge">{p.time}</span>
+              </div>
+              <div className="tiny muted">{p.focus}</div>
+              {current === id && (
+                <div className="tiny" style={{ color: 'var(--brand)', marginTop: 4 }}>
+                  ✅ Active
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {profile && (
+          <div className="card small" style={{ borderColor: 'var(--brand)' }}>
+            <b>{profile.name} — tips</b>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>{profile.tips}</p>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>
+              Style: {profile.style} · Focus: {profile.focus}
+            </p>
           </div>
         )}
       </div>

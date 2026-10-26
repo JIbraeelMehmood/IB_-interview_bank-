@@ -1,0 +1,32 @@
+=== Does app code read the new-schema fields? ===
+o.lvl: 13 occurrence(s) in app code
+o.priority: 0 occurrence(s) in app code
+o.src: 23 occurrence(s) in app code
+o.tr: 11 occurrence(s) in app code
+o.ex: 8 occurrence(s) in app code
+o.x: 8 occurrence(s) in app code
+o.f: 19 occurrence(s) in app code
+o.p: 23 occurrence(s) in app code
+
+=== mkQ projection on current bank ===
+l  -> {"m":531}
+p  -> {"":531}
+c  -> {"":531}
+f  -> {"":531}
+s  -> {"my":531}
+x  -> {"0":531}
+t0 empty count: 0
+
+=== q.raw presence (needed by src/imp filters) ===
+built-in bank items get q.raw? NO — q.raw only set for S.my / S.ai
+
+=== PARTS_BOOK / PARTS_NEW build ===
+PARTS_BOOK = ["undefined"]
+PARTS_NEW  = []
+
+=== level filter (LV) ===
+LV={j:Basic,m:Mid,s:Senior} -> all 531 render as "Mid"
+
+=== question text still carries source numbering ===
+sample q: "Q1. Why do you want to work on Pakistan Railways digital transformation?"
+q starting with Q<number>. : 523

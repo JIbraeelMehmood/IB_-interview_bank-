@@ -1,0 +1,102 @@
+[q.ans] L103: .ur ul,.ur ol,.ans .ur ul,.ans .ur ol,.lines li.ur{padding-right:1.3em;padding-left:0}
+[q.ans] L196: .qt mark,.ans mark{background:var(--hl-soft);color:inherit;border-radius:3px}
+[q.ans] L198: .ans{padding:0 14px 14px;border-top:1px dashed var(--line);font-size:.98rem}
+[q.ans] L199: .ans>p:first-child{margin-top:12px}
+[q.ans] L200: .ans ul,.ans ol{padding-left:1.2em}
+[q.ans] L201: .ans li{margin:3px 0}
+[q.ans] L202: .ans .follow{margin:14px 0 8px;padding:10px 14px 4px;background:var(--brand-soft);border-radius:10px;border-left:3px solid var(--brand)}
+[q.ans] L203: .ans .trap{margin:14px 0 8px;padding:10px 14px 4px;background:var(--warn-soft);border-radius:10px;border-left:3px solid var(--warn)}
+[q.ans] L204: .ans .fq{margin:0 0 4px;font-weight:700}
+[q.ans] L205: .ans .fq span{display:block;font-size:.76rem;color:var(--brand);margin-bottom:2px}
+[q.ans] L206: .ans .trap .fq span{color:var(--warn)}
+[q.ans] L207: .ans .fill{display:block;background:var(--warn-soft);border:1px dashed var(--warn);padding:8px 10px;border-radius:8px;margin:8px 0}
+[q.ans] L208: .ans .fill b{display:block;font-size:.76rem;color:var(--warn)}
+[q.ans] L209: .ans .tbl{overflow-x:auto}
+[q.ans] L210: .ans table{border-collapse:collapse;font-size:.9rem;min-width:100%}
+[q.ans] L211: .ans th,.ans td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+[a render] L786: q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();
+[q.ans] L803: S.my.forEach(function(o,i){var q=mkQ(Object.assign({},o,{s:'my',a:o.html||md(o.ans||'')}));q.raw=o;q.n=100000+i;QS.push(q)});
+[q.ans] L804: S.ai.forEach(function(o,i){var q=mkQ(Object.assign({},o,{s:'ai',a:md(o.ans||'')}));q.raw=o;q.n=200000+i;QS.push(q)});
+[ans el] L921: return '<article class="qc l-'+q.l+(S.done[q.id]?' done':'')+'" data-id="'+esc(q.id)+'"><button type="button" class="qh" aria-expanded="false"><div class="qmeta">'+tags+'</div><div class="qt">'+hlText(q.q,terms)+'</div></button><span class="qstate" aria-hidden="true">'+st+'</span><div class="ans hid
+[q.ans] L944: var a=card.querySelector('.ans'),btn=card.querySelector('.qh');
+[prose] L1032: function handoffPrompt(q){return 'I am preparing for a senior developer interview. Explain this question simply, then give me a strong 60-second answer and 3 likely follow-up questions.\n\nQuestion: '+q.q+'\n\nReference answer: '+prose(q.a).slice(0,1500)}
+[a render] L1032: function handoffPrompt(q){return 'I am preparing for a senior developer interview. Explain this question simply, then give me a strong 60-second answer and 3 likely follow-up questions.\n\nQuestion: '+q.q+'\n\nReference answer: '+prose(q.a).slice(0,1500)}
+[prose] L1044: if(b.hasAttribute('data-mcopy')){copyText(q.q+'\n\n'+prose(q.a));return}
+[a render] L1044: if(b.hasAttribute('data-mcopy')){copyText(q.q+'\n\n'+prose(q.a));return}
+[q.ans] L1086: '<label class="lab" for="fa">Your answer</label><textarea class="field" id="fa" style="min-height:140px" placeholder="Supports **bold**, `code`, - bullets and ``` code blocks">'+esc(o.ans||'')+'</textarea>'+
+[ans render] L1318: $('#mReveal').onclick=function(){stopTimer();$('#mFb').innerHTML='<div class="ans" style="padding:0;border:0">'+q.a+'</div><div class="rate" style="margin-top:12px"><span class="small muted">How did you do?</span><button type="button" data-sr="1">Missed it</button><button type="button" data-sr="2">P
+[ans el] L1318: $('#mReveal').onclick=function(){stopTimer();$('#mFb').innerHTML='<div class="ans" style="padding:0;border:0">'+q.a+'</div><div class="rate" style="margin-top:12px"><span class="small muted">How did you do?</span><button type="button" data-sr="1">Missed it</button><button type="button" data-sr="2">P
+[ans render] L1338: $('#mFb').innerHTML='<div style="margin-top:12px">'+spinner('Scoring your answer…')+'</div>';
+[ans el] L1350: '<details style="margin-top:8px"><summary class="small"><b>Model answer from the bank</b></summary><div class="ans" style="padding:0;border:0">'+q.a+'</div></details>'+
+[ans render] L1379: c.innerHTML=S.chat.length?S.chat.map(function(m){return '<div class="msg '+(m.role==='user'?'u':'a')+'"'+(m.role==='user'?urAttr(m.content)+'>'+esc(m.content):' data-sayhost data-saytitle="Coach"><div class="saytxt">'+mdL(m.content)+'</div>'+sayBtn())+'</div>'}).join(''):'<div class="msg a"><p>Hi! I
+[prose] L1542: function prose(h){return String(h||'').replace(/<pre[\s\S]*?<\/pre>/gi,'\n[code example]\n').replace(/<li[^>]*>/gi,'\n- ').replace(/<\/(p|h\d|div|ul|ol|tr|blockquote)>|<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#x27;|&#39;/g,
+[prose] L1601: b.map(function(q){return 'ID: '+q.id+'\nQUESTION: '+q.q+'\nANSWER:\n'+prose(q.a).slice(0,2200)}).join('\n\n---\n\n');
+[a render] L1601: b.map(function(q){return 'ID: '+q.id+'\nQUESTION: '+q.q+'\nANSWER:\n'+prose(q.a).slice(0,2200)}).join('\n\n---\n\n');
+[a render] L1655: if(lang==='en'){body.innerHTML=q.a;return}
+[a render] L1661: (codeBlocks(q.a)?'<p class="small muted" style="margin:12px 0 4px">Code (English)</p>'+codeBlocks(q.a):'')+
+[ans el] L2070: qs.map(function(it,qi){var l=/^[jms]$/.test(it.level)?it.level:'m';return '<div class="lnq">'+(saved?'':'<input type="checkbox" checked data-lnq="'+ci+'-'+qi+'" aria-label="Keep this question">')+'<details><summary><span class="tag lv-'+l+'">'+LV[l]+'</span> '+esc(it.q)+'</summary><div class="ans" s
+[q.ans] L2116: var g={},order=[];QS.filter(function(q){return q.raw&&q.raw.src===x.id}).forEach(function(q){var c=q.raw.cat||'Interview questions';if(!g[c]){g[c]=[];order.push(c)}g[c].push({q:q.q,a:q.raw.ans,level:q.l})});
+[prose] L2156: if(m==='en'||m==='both')segsOf('Answer. '+stripMd(prose(q.a)),'en',out);
+[a render] L2156: if(m==='en'||m==='both')segsOf('Answer. '+stripMd(prose(q.a)),'en',out);
+[ans render] L2342: out.innerHTML='<div class="labmsg '+(r.ok?'ok':'bad')+'">'+(r.ok?'✓ Correct! ':'✗ Not yet. ')+esc(r.ok?(ex.type==='state'?'The table ends up exactly right.':'Your result matches the expected answer.'):r.msg)+'</div>'+
+[prose] L2518: return {id:q.id,level:LV[q.l],category:q.p,q:q.q,en:incEn?prose(q.a):'',enHtml:incEn?q.a:'',tq:T?T.q:'',ta:T?T.a:'',key:T?T.key||'':'',hook:T?T.hook||'':'',say:T&&T.say&&T.ss==='ur'?T.say:'',sayq:T&&T.sayq&&T.ss==='ur'?T.sayq:'',lang:lang}});
+[a render] L2518: return {id:q.id,level:LV[q.l],category:q.p,q:q.q,en:incEn?prose(q.a):'',enHtml:incEn?q.a:'',tq:T?T.q:'',ta:T?T.a:'',key:T?T.key||'':'',hook:T?T.hook||'':'',say:T&&T.say&&T.ss==='ur'?T.say:'',sayq:T&&T.sayq&&T.ss==='ur'?T.sayq:'',lang:lang}});
+[q.ans] L2896: function spHist(){var a=spSt().ans.slice(-8).reverse();if(!a.length)return '<p class="small muted">Answer a question to start tracking your speed, fillers and fluency.</p>';
+[q.ans] L2907: var rec={at:Date.now(),q:SP.q,wpm:m.wpm,fill:m.fillN,fl:null};st.ans.push(rec);st.ans=st.ans.slice(-60);spMark('speak');save();
+[ans render] L2939: $('#spBody').innerHTML='<div class="panel"><h2>Structure every answer</h2><p class="small muted">A fixed shape stops rambling and calms nerves — you always know what comes next. Listen, then say each line.</p>'+SP_FRAME.map(function(f,fi){return '<details class="grp"'+(fi===0?' open':'')+'><summary>
+[ans render] L3118: b.innerHTML='<div class="panel"><p class="small" style="margin:0 0 10px"><b>A real conversation, not a quiz.</b> The AI interviewer speaks, listens to your answer, reacts, asks follow-ups on what <i>you</i> said and adapts the difficulty. You get a hiring-style scorecard at the end.</p>'+
+[ans render] L3302: b.innerHTML='<div class="panel"><p class="small" style="margin:0 0 8px"><b>Behavioural answers win offers.</b> Write what happened in your own words (any language, rough notes are fine). The AI turns it into a STAR story with 30-second and 90-second spoken versions and the follow-ups they will ask.<
+[ans render] L3459: if(v==='puter'){f.innerHTML='<div class="panel" style="margin:10px 0">'+(x.acct?'<label class="lab" for="pvModel">Chat model (empty = default)</label><div class="row" style="flex-wrap:nowrap"><input class="field" id="pvModel" list="pvList" placeholder="e.g. claude-sonnet-5, gpt-5-nano" value="'+esc(
+[prose] L3529: var plain=prose(q.a).replace(/\[code example\]/gi,'(code example on screen)').slice(0,3200);
+[a render] L3529: var plain=prose(q.a).replace(/\[code example\]/gi,'(code example on screen)').slice(0,3200);
+[prose] L3550: function bankExport(){var o={app:'interview-box',kind:'bank',v:1,at:new Date().toISOString(),items:QS.map(function(q){return {id:q.id,q:q.q,a:prose(q.a).slice(0,3200),p:q.p,f:q.f,l:q.l}})};saveFile('interview-box-bank.json',JSON.stringify(o),'application/json');toast('Question list exported ('+o.ite
+[a render] L3550: function bankExport(){var o={app:'interview-box',kind:'bank',v:1,at:new Date().toISOString(),items:QS.map(function(q){return {id:q.id,q:q.q,a:prose(q.a).slice(0,3200),p:q.p,f:q.f,l:q.l}})};saveFile('interview-box-bank.json',JSON.stringify(o),'application/json');toast('Question list exported ('+o.ite
+[a render] L3556: var st=exSt(),hasCode=/<pre/i.test(q.a);if(!hasCode&&st.focus==='code')st.focus='concept';
+[a render] L3569: function exPrompt(q){var st=exSt(),code=codeBlocks(q.a).replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").slice(0,3500);
+[prose] L3573: return 'You are a patient senior developer teaching an interview candidate.\n'+what+' '+how+'\nWrite in '+L+'. Keep technology names, code and commands in English letters.'+(st.lang!=='en'?' Keep the final "say it in the interview" lines in English.':'')+' Use short headings or bullets. Under 350 wo
+[a render] L3573: return 'You are a patient senior developer teaching an interview candidate.\n'+what+' '+how+'\nWrite in '+L+'. Keep technology names, code and commands in English letters.'+(st.lang!=='en'?' Keep the final "say it in the interview" lines in English.':'')+' Use short headings or bullets. Under 350 wo
+[prose] L3578: if(st.lang==='en'){showExplain(q,prose(q.a),true,'Offline: this is the reference answer. Connect AI (tap the AI status at the top) for a real step-by-step explanation.');return}
+[a render] L3578: if(st.lang==='en'){showExplain(q,prose(q.a),true,'Offline: this is the reference answer. Connect AI (tap the AI status at the top) for a real step-by-step explanation.');return}
+[ans render] L3580: out.innerHTML=spinner('Translating…');var T=trGet(q.id,st.lang);(T?Promise.resolve(T):mtTranslateQ(q,st.lang)).then(function(T){showExplain(q,(T.q?T.q+'\n\n':'')+T.a,true,'Machine translation of the answer. Connect AI for a teacher-style explanation of the concept and code.')},function(e){out.innerH
+[prose] L3660: return {id:q.id,q:enSay(q.q),a:enSay(stripMd(prose(q.a))).slice(0,900),key:U&&U.key||'',loc:loc,loc_lang:ll}});
+[a render] L3660: return {id:q.id,q:enSay(q.q),a:enSay(stripMd(prose(q.a))).slice(0,900),key:U&&U.key||'',loc:loc,loc_lang:ll}});
+
+===== lines 975-1010 (card answer render) =====
+975| /* card interactions (delegated, shared by Library + JD plan) */
+976| document.addEventListener('click',function(e){
+977|   var card=e.target.closest('.qc');if(!card)return;
+978|   var q=QMAP[card.dataset.id];if(!q)return;
+979|   if(e.target.closest('.qh')){openCard(card);return}
+980|   var lt=e.target.closest('[data-lt]');if(lt){renderABody(card,q,lt.dataset.lt);return}
+981|   if(e.target.closest('[data-simpler]')){var lg=card._lt,bd=card.querySelector('.abody');if(!SAMPLE){toast('Needs AI');return}bd.insertAdjacentHTML('afterbegin',spinner('…'));trCall([q],lg,false,'Make it EVEN SIMPLER for a beginner: very short sentences, one very easy everyday example, no jargon beyond the English tech terms.').then(function(){renderABody(card,q,lg)},function(e){toast(aiErr(e));renderABody(card,q,lg)});return}
+982|   if(e.target.closest('[data-retr]')){trDel(q.id+'|'+card._lt);renderABody(card,q,card._lt);return}
+983|   if(e.target.closest('[data-listen]')){listenFromCard(card,q);return}
+984|   if(e.target.closest('[data-explain]')){openExplain(q);return}
+985|   if(e.target.closest('[data-aimenu]')){openCardAi(card,q);return}
+986|   if(e.target.closest('[data-more]')){openCardMore(card,q);return}
+987|   var rb=e.target.closest('[data-rate]');
+988|   if(rb){var v=+rb.dataset.rate;S.rate[q.id]=S.rate[q.id]===v?0:v;if(v>=2)S.done[q.id]=true;srsRate(q.id,S.rate[q.id]);save();$$('[data-rate]',card).forEach(function(x){x.setAttribute('aria-pressed',String(+x.dataset.rate===S.rate[q.id]))});updateState(card,q);return}
+989|   var ab=e.target.closest('[data-act]');
+990|   if(ab){var act=ab.dataset.act;
+991|     if(act==='done'){S.done[q.id]=!S.done[q.id];save();ab.textContent=S.done[q.id]?'✓ Done':'Mark done';updateState(card,q)}
+992|     else if(act==='star'){S.star[q.id]=!S.star[q.id];save();ab.textContent=S.star[q.id]?'★ Saved':'☆ Save';updateState(card,q)}
+993|     else if(act==='lab'){openLab(labForQ(q)||'_free')}
+994|     else if(act==='mock1'){startMock([q],$('input[name=mmode]:checked').value)}
+995|     else if(act==='edit'){openQForm(q)}
+996|     else if(act==='del'){if(confirm('Delete this question?')){var arr=q.s==='my'?S.my:S.ai;var i=arr.findIndex(function(o){return o.id===q.id});if(i>=0)arr.splice(i,1);save();rebuild();toast('Question deleted')}}
+997|     return}
+998|   var ai=e.target.closest('[data-ai][data-x]');
+999|   if(ai&&ai.dataset.x==='ask'){closeSheet();AIS.tab='agent';go('ai');var ta=$('#agIn');if(ta){ta.value='Help me master ['+q.id+'] "'+q.q.slice(0,160)+'": explain the core idea, find related questions in my bank I should revise, and make me a short drill playlist.';ta.focus()}return}
+1000|   if(ai)askCard(q,ai.dataset.x,card.querySelector('.aibox'),ai);
+1001| });
+1002| function updateState(card,q){card.classList.toggle('done',!!S.done[q.id]);card.querySelector('.qstate').textContent=(S.star[q.id]?'★':'')+(S.done[q.id]?' ✓':'')}
+1003| var CARD_PROMPTS={
+1004|   simple:'Re-explain this interview answer in very simple English, like to a smart junior developer. Use a short analogy and one tiny example. Under 150 words.',
+1005|   cross:'List the 4 cross-questions an interviewer is most likely to ask next after this answer, each with a short, strong model answer (2-3 sentences). Format: numbered list, question in bold, then the answer.',
+1006|   short:'Turn this into a confident 30-second spoken interview answer (about 70-80 words), first person, no bullet points, then add one line starting "If they dig deeper:" with the next point to mention.',
+1007|   draw:'Draw this concept as a small ASCII diagram inside a code block (boxes and arrows, max 60 characters wide), then explain the flow in 4-6 numbered steps. End with one line: "Say it like this:" and a one-sentence spoken summary in English.',
+1008|   traps:'List the 4 most common WRONG or weak answers candidates give to this question and why each one loses points, then the one sentence that shows real senior-level understanding. Format: numbered list, the trap in bold.',
+1009|   mine:'Rewrite this answer in first person so it uses the candidate\'s real experience from their profile (projects, numbers, stack). If the profile lacks something, add a short [bracketed placeholder] for them to fill. Keep it under 180 words.'
+1010| };
+1011| function askCard(q,x,box,btn){
+1012|   if(!SAMPLE)return;ok

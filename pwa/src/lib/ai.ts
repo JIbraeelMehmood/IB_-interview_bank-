@@ -12,7 +12,7 @@
 
 import { callProvider, claudeJson } from './providers'
 
-export type ProviderId = 'server' | 'puter' | 'claude' | 'gemini' | 'groq' | 'openrouter' | 'openai' | 'anthropic' | 'custom'
+export type ProviderId = 'server' | 'puter' | 'claude' | 'gemini' | 'groq' | 'openrouter' | 'openai' | 'anthropic' | 'custom' | 'mistral' | 'xai' | 'fireworks'
 
 export interface Provider {
   id: ProviderId
@@ -112,7 +112,37 @@ export const PROVIDERS: Record<ProviderId, Provider> = {
     base: 'http://localhost:11434/v1',
     model: 'llama3',
     needsKey: false,
-    note: 'Runs a model on your own machine.',
+    note: 'Runs a model on your own machine. Also works with freellmpool (pip install freellmpool).',
+  },
+  mistral: {
+    id: 'mistral',
+    name: 'Mistral AI',
+    cost: 'Free tier',
+    keyUrl: 'https://console.mistral.ai/api-keys',
+    model: 'mistral-small-latest',
+    base: 'https://api.mistral.ai/v1',
+    needsKey: true,
+    note: 'Strong at code and multi-lingual tasks including Urdu.',
+  },
+  xai: {
+    id: 'xai',
+    name: 'xAI (Grok)',
+    cost: 'Free trial credits',
+    keyUrl: 'https://console.x.ai/',
+    model: 'grok-beta',
+    base: 'https://api.x.ai/v1',
+    needsKey: true,
+    note: 'xAI Grok — OpenAI-compatible, fast responses.',
+  },
+  fireworks: {
+    id: 'fireworks',
+    name: 'Fireworks AI',
+    cost: 'Free trial',
+    keyUrl: 'https://fireworks.ai/api-keys',
+    model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+    base: 'https://api.fireworks.ai/inference/v1',
+    needsKey: true,
+    note: 'Fast open-source models. Good fallback when Groq is rate-limited.',
   },
 }
 
@@ -367,6 +397,8 @@ export function resolveFamily(list: string[], family: string): string {
     mistral: ['mistral'],
     deepseek: ['deepseek'],
     free: [':free', 'free'],
+    grok: ['grok'],
+    fireworks: ['llama', 'fireworks'],
   }
   const keys = fams[family] || [family]
   const hit = list.filter((m) => keys.some((k) => m.toLowerCase().includes(k)))

@@ -1,0 +1,18 @@
+FILENAME: [Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers-2.md] len=81
+  ends with ")": false
+  ends with ".md": true
+
+import-banks-clean.js key exists on disk: true
+key + ")" exists on disk: false
+
+v1 app code ".x" occurrences: 8
+  @22747: max-width:720px;margin:0 auto}\n.sheet .card h2{font-size:1.2rem;margin-bottom:6px}\n.sheet .x{position:sticky;top:0;float:right;border:0;background:var(--card2);border-radius:50%;wi
+  @72195:  q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q
+  @89123: eleted')}}\n    return}\n  var ai=e.target.closest('[data-ai][data-x]');\n  if(ai&&ai.dataset.x==='ask'){closeSheet();AIS.tab='agent';go('ai');var ta=$('#agIn');if(ta){ta.value='Help 
+  @89416: vise, and make me a short drill playlist.';ta.focus()}return}\n  if(ai)askCard(q,ai.dataset.x,card.querySelector('.aibox'),ai);\n});\nfunction updateState(card,q){card.classList.toggl
+  @216074: tFor(audLang()),L=urLabels(k);\n  if(m==='ur'||m==='mix'||m==='both')segsOf((m==='ur'?L.a:L.x)+'. '+T.sa,k,out);\n  if(T.key){out.push({pause:500});segsOf(L.key+'.',k,out);segsOf(T.k
+  @413195: o').onclick=function(){runExplain(q,true)};\n  var k=exKey(q);if(TR[k]){showExplain(q,TR[k].x,false)}\n}\nfunction exKey(q){var st=exSt();return q.id+'|x|'+st.lang+'|'+st.focus+'|'+st
+  @415062: t(),out=$('#exOut');if(!out)return;var k=exKey(q);\n  if(!fresh&&TR[k]){showExplain(q,TR[k].x,true);return}\n  if(!SAMPLE){ // no AI: give the answer in the chosen language by free t
+  @593566: =E.p;var ma=E.q;var na=E.r;var oa=E.s;var pa=E.t;var qa=E.u;var ra=E.v;var sa=E.w;var ta=E.x;var ua=E.y;var va=E.z;var wa=E.A;var xa=E.B;var ya=E.C;var za=E.D;var Aa=E.E;var Ba=E.F
+
+current app code ".x" occurrences: 8

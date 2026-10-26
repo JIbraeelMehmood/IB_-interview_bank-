@@ -1,0 +1,57 @@
+version=1.1  total=531  generated=2026-10-19T12:41:28.204Z
+
+=== files meta (pre-dedup counts written by importer) ===
+  137  Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank).md
+  191  Interview Prep Roman Urdu Version (Poori Guide).md
+  81  Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways).md
+  115  Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior.md
+  193  Roman Urdu v2 (Modern Dev Style).md
+  20  Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers).md
+  20  Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers-2.md
+  5  Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel.md
+  2  Failure-First Backend Interview What Happens When Things Fail (PHP Laravel).md
+  1  Senior Laravel Production Scenarios
+  2  Failure-First Backend Interview
+
+=== ACTUAL src counts on questions (post-dedup) ===
+  137  Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank)
+  184  Interview Prep Roman Urdu Version (Poori Guide)
+  81  Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways)
+  73  Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior
+  28  Roman Urdu v2 (Modern Dev Style)
+  20  Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers)
+  1  Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel
+  2  Failure-First Backend Interview What Happens When Things Fail (PHP Laravel)
+  4  Senior Laravel Production Scenarios
+  1  Failure-First Backend Interview
+
+=== files-meta keys with NO matching question src ===
+  Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank).md
+  Interview Prep Roman Urdu Version (Poori Guide).md
+  Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways).md
+  Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior.md
+  Roman Urdu v2 (Modern Dev Style).md
+  Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers).md
+  Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers-2.md
+  Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel.md
+  Failure-First Backend Interview What Happens When Things Fail (PHP Laravel).md
+
+=== question src values with NO files-meta entry ===
+  Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank) (137)
+  Interview Prep Roman Urdu Version (Poori Guide) (184)
+  Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways) (81)
+  Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior (73)
+  Roman Urdu v2 (Modern Dev Style) (28)
+  Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers) (20)
+  Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel (1)
+  Failure-First Backend Interview What Happens When Things Fail (PHP Laravel) (2)
+
+=== does the Answers-2 file exist on disk? ===
+  as imported (no closing paren): true
+  with closing paren: true
+
+=== id uniqueness + priority/lvl/s sanity ===
+  total=531  unique ids=531
+  lvl: {"mixed":523,"senior":8}
+  priority: {"3":531}
+  s: {"my":531}

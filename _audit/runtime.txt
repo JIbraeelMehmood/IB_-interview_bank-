@@ -1,0 +1,46 @@
+
+========== mkQ ==========
+--- @348878 ---
+ch(function(t){t.re=kwRegex(t.kw);TMAP[t.id]=t});\n}\n\n/* ---------- bank ---------- */\nvar RAW=JSON.parse(document.getElementById('bank').textContent), QS=[], QMAP={};\nvar PARTS_BOOK=[], PARTS_NEW=[];\nfunction mkQ(o){\n  var q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.to
+(matches: 1)
+
+========== modern ==========
+--- @755265 ---
+tion(x){return [lexRe(x[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ur'),x[1]]}),hi:LEX_HI.map(function(x){return [lexRe(x[0],'hi'),x[1]]}),ru:LEX_RU.map(function(x){return [lexRe(x[0],'lat'),x[1]]})};\nfunction modern(t,lang){if(!t)return t;var L=LEX[lang];if(!L)return t;return String(t).split(/(`[^`]*`|```[\s\S]*?```)/).map(function(seg,i){if(i%2)return seg;\n  L.forEach(function(r){seg=seg.replace(r[0],function(m,
+(matches: 1)
+
+========== TR decl ==========
+--- @421391 ---
+ow" style="margin-top:8px"><button type="button" class="btn sm lis" data-say>🎧 Listen</button></div>'}\n\n/* translations cache: memory map + IndexedDB (falls back to localStorage) */\nvar TRK='ibx-tr',TR={},IDB=null,TR_DIRTY={},trSaveT,TR_MAX=3000;\ntry{TR=JSON.parse(localStorage.getItem(TRK)||'{}')||{}}catch(e){TR={}}\nfunction trPrune(keep){var ks=Object.keys(TR).sort(function(a,b){return (TR[a].t||0)-
+--- @421503 ---
+slations cache: memory map + IndexedDB (falls back to localStorage) */\nvar TRK='ibx-tr',TR={},IDB=null,TR_DIRTY={},trSaveT,TR_MAX=3000;\ntry{TR=JSON.parse(localStorage.getItem(TRK)||'{}')||{}}catch(e){TR={}}\nfunction trPrune(keep){var ks=Object.keys(TR).sort(function(a,b){return (TR[a].t||0)-(TR[b].t||0)});var gone=ks.slice(0,Math.max(0,ks.length-keep));gone.forEach(function(k){delete TR[k];TR_DIRTY[k]
+--- @422395 ---
+on(k){TR_DIRTY[k]=1});if(Object.keys(TR).length>TR_MAX)trPrune(TR_MAX-200);clearTimeout(trSaveT);trSaveT=setTimeout(trFlush,300)}\nfunction trDel(key){delete TR[key];trSave(key)}\nfunction trClearAll(){TR={};TR_DIRTY={};try{localStorage.removeItem(TRK)}catch(e){}if(IDB){try{IDB.transaction('tr','readwrite').objectStore('tr').clear()}catch(e){}}}\nfunction trGet(id,lang){var T=TR[id+'|'+lang];if(T)T.t=Dat
+(matches: 3)
+
+========== x field ==========
+--- @22895 ---
+ground:var(--card);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-width:720px;margin:0 auto}\n.sheet .card h2{font-size:1.2rem;margin-bottom:6px}\n.sheet .x{position:sticky;top:0;float:right;border:0;background:var(--card2);border-radius:50%;width:34px;height:34px;font-size:1.1rem}\n.techrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bot
+--- @67703 ---
+er autoloader.","t":["bank","qa"],"lvl":"mixed","s":"my","src":"Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank)","priority":3},{"id":"q_13_vbe4","q":"Q15. What are PHP 8.x features you use?","a":"Typed properties, enums, match, readonly properties, constructor promotion, named arguments, nullsafe operator and attributes. They make code clearer and catch mistakes earlie
+--- @127761 ---
+r optimized Composer autoloader istemal karta hun.","t":["bank","qa"],"lvl":"mixed","s":"my","src":"Interview Prep Roman Urdu Version (Poori Guide)","priority":3},{"id":"q_13_6id1","q":"Q15. Aap PHP 8.x ke kaun se features istemal karte hain?","a":"** Jawab: Typed properties, enums, match, readonly properties, constructor promotion, named arguments, nullsafe operator aur attributes. Yeh code ko saaf
+--- @242067 ---
+:["pitb","railways","itops","senior","laravel"],"lvl":"mixed","s":"my","src":"Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways)","priority":3},{"id":"q_2_mjje","q":"Q15. Aap PHP 8.x ke kaun se features use karte hain?","a":"** Answer: Typed properties, enums, match, readonly properties, constructor promotion, named arguments, nullsafe operator, attributes. Code clear hota hai au
+--- @290154 ---
+n, aur bataiye ke kaun se sirf concept level par jaante hain.","t":["bank","qa"],"lvl":"mixed","s":"my","src":"Roman Urdu v2 (Modern Dev Style)","priority":3},{"id":"q_1_698x","q":"Q1. \\[Mid\\] PHP 8.x aur purane versions ka kya farq hai?","a":"** Answer: PHP 8.0 mein JIT, union types, named arguments, attributes, `match`, constructor promotion aur nullsafe operator aaye. 8.1 mein enums, readonly p
+--- @348990 ---
+t.getElementById('bank').textContent), QS=[], QMAP={};\nvar PARTS_BOOK=[], PARTS_NEW=[];\nfunction mkQ(o){\n  var q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();\n  return q;\n}\nfunction tagQ(q){\n  var set={};q.t0.forEach(function(t){set[t]=1});\n  v
+--- @365918 ---
+ar i=arr.findIndex(function(o){return o.id===q.id});if(i>=0)arr.splice(i,1);save();rebuild();toast('Question deleted')}}\n    return}\n  var ai=e.target.closest('[data-ai][data-x]');\n  if(ai&&ai.dataset.x==='ask'){closeSheet();AIS.tab='agent';go('ai');var ta=$('#agIn');if(ta){ta.value='Help me master ['+q.id+'] "'+q.q.slice(0,160)+'": explain the core idea, find related questions in my bank I should r
+--- @366211 ---
+master ['+q.id+'] "'+q.q.slice(0,160)+'": explain the core idea, find related questions in my bank I should revise, and make me a short drill playlist.';ta.focus()}return}\n  if(ai)askCard(q,ai.dataset.x,card.querySelector('.aibox'),ai);\n});\nfunction updateState(card,q){card.classList.toggle('done',!!S.done[q.id]);card.querySelector('.qstate').textContent=(S.star[q.id]?'★':'')+(S.done[q.id]?' ✓':'')}
+--- @492869 ---
+ٹرویو میں یوں کہیں',hook:'یاد رکھیں',again:'ایک بار پھر'}}\nfunction urPart(q,m,T){\n  var a=au(),out=[],k=scriptFor(audLang()),L=urLabels(k);\n  if(m==='ur'||m==='mix'||m==='both')segsOf((m==='ur'?L.a:L.x)+'. '+T.sa,k,out);\n  if(T.key){out.push({pause:500});segsOf(L.key+'.',k,out);segsOf(T.key,'en',out)}\n  if(T.hook){out.push({pause:400});segsOf(L.hook+'. '+T.hook,k,out)}\n  if(a.mem&&(T.key||T.hook)){
+--- @695165 ---
+tAttribute('aria-pressed',String(x===b))})})});\n  $('#exGo').onclick=function(){runExplain(q,false)};$('#exRedo').onclick=function(){runExplain(q,true)};\n  var k=exKey(q);if(TR[k]){showExplain(q,TR[k].x,false)}\n}\nfunction exKey(q){var st=exSt();return q.id+'|x|'+st.lang+'|'+st.focus+'|'+st.style}\nfunction exPrompt(q){var st=exSt(),code=codeBlocks(q.a).replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').repl
+--- @697032 ---
+).slice(0,3000)+(code&&st.focus!=='concept'?'\n\nCODE:\n'+code:'')}\nfunction runExplain(q,fresh){\n  var st=exSt(),out=$('#exOut');if(!out)return;var k=exKey(q);\n  if(!fresh&&TR[k]){showExplain(q,TR[k].x,true);return}\n  if(!SAMPLE){ // no AI: give the answer in the chosen language by free translation\n    if(st.lang==='en'){showExplain(q,prose(q.a),true,'Offline: this is the reference answer. Connect 
+--- @875536 ---
+=E.f;var ca=E.g;var da=E.h;var ea=E.i;var fa=E.j;var ga=E.k;var ha=E.l;var ia=E.m;var ja=E.n;var ka=E.o;var la=E.p;var ma=E.q;var na=E.r;var oa=E.s;var pa=E.t;var qa=E.u;var ra=E.v;var sa=E.w;var ta=E.x;var ua=E.y;var va=E.z;var wa=E.A;var xa=E.B;var ya=E.C;var za=E.D;var Aa=E.E;var Ba=E.F;var Ca=E.G;var Da=E.H;var Ea=E.I;var Fa=5316688;var Ga=0;var Ha=0;var Ia=0;\n// EMSCRIPTEN_START_FUNCS\nfunction 
+(matches: 12)

@@ -1,0 +1,72 @@
+CUR bank isArray=false
+cur bank type=[object Array] count=531
+v1  bank type=[object Array] count=1950
+
+=== CUR bank keys (key:count) ===
+{
+ "id": 531,
+ "q": 531,
+ "a": 531,
+ "t": 531,
+ "lvl": 531,
+ "s": 531,
+ "src": 531,
+ "priority": 531
+}
+
+=== V1 bank keys (key:count) ===
+{
+ "id": 1950,
+ "q": 1950,
+ "a": 1950,
+ "l": 1950,
+ "p": 1950,
+ "c": 1950,
+ "f": 1950,
+ "t": 1950,
+ "s": 1950,
+ "x": 1839,
+ "tr": 20,
+ "ex": 17
+}
+
+=== CUR sample[0] ===
+{
+ "id": "q_1_dqky",
+ "q": "Q1. Why do you want to work on Pakistan Railways digital transformation?",
+ "a": "It is a large public system with real impact: ticketing, tracking, safety and transparency. I like long programs where quality matters more than quick demos, and I have led delivery as a team lead.",
+ "t": [
+  "bank",
+  "qa"
+ ],
+ "lvl": "mixed",
+ "s": "my",
+ "src": "Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank)",
+ "priority": 3
+}
+
+=== CUR ids first 15 ===
+q_1_dqky, q_2_k0q8, q_3_gexe, q_4_bkqc, q_5_dxhw, q_6_6xwn, q_7_tjhl, q_8_vb0a, q_9_okpj, q_10_8mz4, q_11_y6eg, q_12_23bv, q_13_vbe4, q_14_xbbj, q_15_qgqj
+
+=== CUR ids last 15 ===
+q_14_qxvg, q_15_1dby, q_16_v8pg, q_17_komu, q_18_qkns, q_19_d1lt, q_20_uhfh, sc_1, f_F1, f_F91, sc_2, sc_3, sc_4, sc_5, f_F93
+
+=== CUR duplicate ids ===
+dup id count=0 -> 
+
+=== V1 ids first 10 ===
+CB-1, CB-2, CB-3, CB-4, CB-5, CB-6, CB-7, CB-8, CB-9, CB-10
+
+=== CUR s values ===
+{"my":531}
+
+=== CUR l values ===
+{"undefined":531}
+
+=== CUR f values ===
+{"undefined":531}
+
+=== CUR p values (top 40) ===
+{
+ "undefined": 531
+}

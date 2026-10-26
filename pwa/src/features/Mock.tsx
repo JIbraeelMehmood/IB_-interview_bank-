@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, deviceId } from '../lib/db'
 import { review } from '../lib/fsrs'
 import { mockCodes, DEFAULT_FILTERS } from '../lib/queries'
-import { gradeAnswer, mockScorecard } from '../lib/features'
+import { gradeAnswer, mockScorecard, classifyMistake, starEval, prosodyAnalyze, vocabDiversity, COMPANY_PROFILES, pakistaniInterviewerPrompt } from '../lib/features'
 import { listen, recognitionAvailable, recError, stopSpeaking, pickVoice, ttsAvailable, speakSegments } from '../lib/speech'
 import type { RecHandle } from '../lib/speech'
 import { useSettings } from '../lib/settings'
@@ -13,12 +13,14 @@ import type { MockEval, MockSession, Question, Scorecard } from '../lib/types'
 import { Chip, Chips, Empty, Md, Sheet, toast } from '../components/ui'
 import { aiReady, aiWhy } from '../lib/ai'
 import { stripHtml } from '../lib/text'
+import { ankiAdd, ankiAvailable } from '../lib/backup'
 
 const PERSONAS = [
   { id: 'friendly', label: 'Friendly', note: 'Warm, encouraging, focuses on your story' },
   { id: 'technical', label: 'Deep technical', note: 'Dives into internals and trade-offs' },
   { id: 'hr', label: 'HR screen', note: 'Behavioural, motivation, salary' },
   { id: 'stern', label: 'Stern', note: 'Short questions, quick follow-ups' },
+  { id: 'pakistani', label: '🇵🇰 Pakistani Tech', note: 'PITB/Arbisoft style — Pakistani ecosystem context' },
 ]
 
 export default function Mock() {
@@ -316,6 +318,43 @@ function Runner({
             </span>
             <b className="grow">{evalr.verdict}</b>
           </div>
+
+          {/* MistakeClassifier — 4-tier diagnosis */}
+          {(() => {
+            const m = classifyMistake(answer)
+            return m ? (
+              <div className="card small" style={{ borderColor: m.color, padding: '8px 10px' }}>
+                <span className="small"><b>{m.icon} {m.cat}</b> — {m.critique}</span>
+                <p className="tiny muted" style={{ margin: '4px 0 0' }}>{m.golden}</p>
+              </div>
+            ) : null
+          })()}
+
+          {/* STAR score — only for behavioral questions */}
+          {(() => {
+            const star = starEval(answer)
+            return star.isBehavioral && star.total > 0 ? (
+              <div className="card small">
+                <b className="small">⭐ STAR Score: {star.total}/100 ({star.grade})</b>
+                {star.feedback.map((f, i) => (
+                  <p key={i} className="tiny muted" style={{ margin: '2px 0' }}>{f}</p>
+                ))}
+              </div>
+            ) : null
+          })()}
+
+          {/* Prosody + vocab metrics */}
+          {(() => {
+            const p = prosodyAnalyze(answer, (Date.now() - t0.current) / 1000)
+            const v = vocabDiversity(answer)
+            return (
+              <div className="spread small muted" style={{ fontSize: '0.78rem' }}>
+                <span>{p.wpm} WPM · pacing {p.pacingScore}/100</span>
+                <span>{v.diversity}</span>
+              </div>
+            )
+          })()}
+
           {!!evalr.strengths.length && (
             <div>
               <b className="small">What you got right</b>
@@ -413,8 +452,72 @@ function Result({
       <button className="btn primary" onClick={onExit}>
         Done
       </button>
+      <button
+        className="btn"
+        onClick={() => exportMockSession(turns, scorecard)}
+        title="Download as Markdown"
+      >
+        📄 Export session
+      </button>
+      {ankiAvailable() && turns.filter(t => (t.score || 10) < 6).length > 0 && (
+        <button
+          className="btn"
+          title="Export weak answers to Anki (AnkiConnect required)"
+          onClick={async () => {
+            const weak = turns.filter(t => (t.score || 10) < 6)
+            let ok = 0
+            for (const t of weak) {
+              try {
+                await ankiAdd(t.q, `<b>Your answer:</b> ${t.me}<br><b>Score:</b> ${t.score ?? '?'}/10`)
+                ok++
+              } catch {
+                break
+              }
+            }
+            toast(ok ? `${ok} weak answer${ok > 1 ? 's' : ''} added to Anki.` : 'Could not reach Anki. Is it running?')
+          }}
+        >
+          🃏 Weak answers → Anki ({turns.filter(t => (t.score || 10) < 6).length})
+        </button>
+      )}
     </div>
   )
+}
+
+function exportMockSession(turns: { q: string; me: string; score?: number }[], scorecard: Scorecard) {
+  const lines = [
+    `# Mock Interview — ${new Date().toLocaleDateString()}`,
+    `**Overall:** ${scorecard.overall || 0}/10 | **Verdict:** ${scorecard.verdict || '—'}`,
+    '',
+    '---',
+    '',
+  ]
+  turns.forEach((t, i) => {
+    lines.push(`### Q${i + 1}`)
+    lines.push(`**Question:** ${t.q}`)
+    lines.push(`**Your answer:** ${t.me}`)
+    if (t.score !== undefined) lines.push(`**Score:** ${t.score}/10`)
+    lines.push('')
+  })
+  lines.push('## Scorecard')
+  if (scorecard.technical) lines.push(`- Technical: ${scorecard.technical}/10`)
+  if (scorecard.communication) lines.push(`- Communication: ${scorecard.communication}/10`)
+  if (scorecard.confidence) lines.push(`- Confidence: ${scorecard.confidence}/10`)
+  if (scorecard.tip) lines.push(`\n**Tip:** ${scorecard.tip}`)
+  if (scorecard.strengths?.length) {
+    lines.push('\n**Strengths**')
+    scorecard.strengths.forEach((s) => lines.push(`- ${s}`))
+  }
+  if (scorecard.risks?.length) {
+    lines.push('\n**Risks**')
+    scorecard.risks.forEach((s) => lines.push(`- ${s}`))
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `mock-interview-${Date.now()}.md`
+  a.click()
+  URL.revokeObjectURL(a.href)
 }
 
 function History() {

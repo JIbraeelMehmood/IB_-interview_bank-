@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "buildCommand": "cd pwa && npm install --prefer-offline && npm run build",
+  "outputDirectory": "pwa/dist",
+  "routes": [
+    { "src": "/v7", "dest": "/interview-box.html" },
+    { "src": "/ibx-transliteration.js", "dest": "/ibx-transliteration.js" },
+    {
+      "src": "/sw.js",
+      "headers": {
+        "Service-Worker-Allowed": "/",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      },
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/(assets|data|icons|audio)/(.*)",
+      "dest": "/$1/$2"
+    },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}

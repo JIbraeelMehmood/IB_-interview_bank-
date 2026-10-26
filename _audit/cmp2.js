@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('fs'),path=require('path');
+const DIR=path.resolve(__dirname,'..');
+const a=JSON.parse(fs.readFileSync(path.join(DIR,'interview-box-banks-clean.json'),'utf8'));
+const h=fs.readFileSync(path.join(DIR,'interview-box.html'),'utf8');
+const m=h.match(/<script[^>]*id=["']bank["'][^>]*>([\s\S]*?)<\/script>/);
+const b=JSON.parse(m[1].trim());
+const aArr=Array.isArray(a)?a:Object.keys(a).map(function(k){return a[k];});
+console.log('clean.json count', aArr.length, 'embedded count', b.length);
+const ids=new Set(b.map(function(x){return x.id;}));
+const missing=aArr.filter(function(x){return ids.has(x.id)===false;});
+console.log('in clean.json but not embedded:', missing.length, missing.slice(0,10).map(function(x){return x.id;}).join(', '));
+const embIds=new Set(aArr.map(function(x){return x.id;}));
+const extra=b.filter(function(x){return embIds.has(x.id)===false;});
+console.log('in embedded but not clean.json:', extra.length, extra.slice(0,10).map(function(x){return x.id;}).join(', '));
+console.log('clean.json first record:', JSON.stringify(aArr[0]).slice(0,300));

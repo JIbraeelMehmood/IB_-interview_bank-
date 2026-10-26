@@ -318,3 +318,57 @@ export async function upgradeOldTranslations(currentRules = 3): Promise<number> 
 }
 
 export { TR_LIMIT }
+
+/* ───────────────────────── Anki export (Phase I) ──────────────────────────
+ * Sends a note to Anki via AnkiConnect (localhost:6006).
+ * Gracefully fails when Anki is not running — expected on Vercel/mobile.
+ * Desktop users: install Anki + the AnkiConnect add-on, then use this.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Export one question to Anki via AnkiConnect (localhost:6006).
+ * On mobile or Vercel, Anki won't be running, so this throws a user-friendly
+ * message instead of silently failing.
+ *
+ * @param front - The front of the card (question text).
+ * @param back  - The back of the card (answer text, may include HTML).
+ * @param deck  - Target deck name (default: "Interview Box").
+ */
+export async function ankiAdd(front: string, back: string, deck = 'Interview Box'): Promise<void> {
+  try {
+    const res = await fetch('http://localhost:6006', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'addNote',
+        version: 6,
+        params: {
+          note: {
+            deckName: deck,
+            modelName: 'Basic',
+            fields: { Front: front, Back: back },
+            options: { allowDuplicate: false },
+          },
+        },
+      }),
+    })
+    if (!res.ok) throw new Error('Anki returned HTTP ' + res.status)
+    const data = await res.json() as { result?: number | null; error?: string | null }
+    if (data.error) throw new Error(data.error)
+  } catch (e: unknown) {
+    const msg = e instanceof TypeError
+      ? 'Anki is not running. Start Anki with the AnkiConnect add-on on this device.'
+      : (e as Error).message
+    throw new Error(msg)
+  }
+}
+
+/** True when we are on localhost — Anki only runs there. */
+export function ankiAvailable(): boolean {
+  try {
+    return typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  } catch {
+    return false
+  }
+}

@@ -342,4 +342,6 @@ export interface UserSettings {
   aiMode: 'client' | 'server'
   serverUrl: string
   profile: Profile
+  /** Key from COMPANY_PROFILES — used to inject company style into mock + coaching prompts. */
+  companyProfile?: string
 }

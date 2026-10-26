@@ -1,0 +1,26 @@
+'use strict';
+const {parseFile}=require('../build-pitb-bank.js');
+const F='Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank).md';
+const R='Interview Prep Roman Urdu Version (Poori Guide).md';
+const L='Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior.md';
+const S='Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways).md';
+const en=parseFile(F,{src:'en'}), ru=parseFile(R,{src:'ru'}), lvl=parseFile(L,{src:'lvl'}), sen=parseFile(S,{src:'sen'});
+function idx(a){const m={};a.forEach(function(x){if(x.tag==='Q'&&!m[x.num])m[x.num]=x});return m;}
+const E=idx(en),RU=idx(ru);
+const LQ=lvl.filter(function(x){return x.tag==='Q';});
+let s=0,d=0,sru=0,dru=0;
+LQ.forEach(function(x){const e=E[x.num],r=RU[x.num];if(e&&e.q===x.q)s++;else d++;if(r&&r.q===x.q)sru++;else dru++;});
+console.log('counts: en='+en.length+' ru='+ru.length+' lvl='+lvl.length+' sen='+sen.length);
+console.log('lvl Q='+LQ.length+' matches en text='+s+' differs='+d+' | matches ru text='+sru+' differs='+dru);
+const seen={};lvl.forEach(function(x){seen[x.tag]=(seen[x.tag]||0)+1;});
+console.log('lvl tags:',JSON.stringify(seen));
+const seen2={};[en,ru,sen].forEach(function(a){a.forEach(function(x){seen2[x.tag]=(seen2[x.tag]||0)+1;});});
+console.log('en/ru/sen tags:',JSON.stringify(seen2));
+console.log('\n-- lvl samples --');
+LQ.slice(0,3).forEach(function(x){console.log('Q'+x.num+' | '+x.heading+' | '+x.q.slice(0,90));});
+console.log('\n-- en samples --');
+en.filter(function(x){return x.tag==='Q';}).slice(0,3).forEach(function(x){console.log('Q'+x.num+' | '+x.heading+' | '+x.q.slice(0,90));});
+console.log('\n-- ru samples --');
+ru.filter(function(x){return x.tag==='Q';}).slice(0,3).forEach(function(x){console.log('Q'+x.num+' | '+x.heading+' | '+x.q.slice(0,90));});
+console.log('\n-- headings en --');
+console.log(JSON.stringify([...new Set(en.map(function(x){return x.heading;}))].slice(0,20),null,1));

@@ -13,7 +13,7 @@
 
 import { db, TR_LIMIT } from './db'
 import { aiJson, AiError, aiText } from './ai'
-import { RULES_VERSION, loadPrompts, modern, protectObject, restoreObject, ruNorm } from './lang'
+import { RULES_VERSION, loadPrompts, modern, normalizeUrduText, protectObject, restoreObject, ruNorm } from './lang'
 import type { Lang, Question, Translation } from './types'
 import { splitText, stripHtml } from './text'
 
@@ -108,9 +108,11 @@ async function translateOne(q: Question, lang: Lang, signal?: AbortSignal): Prom
   const entry = toEntry(q.code, lang, payload, 'llm')
   if (!entry.a && !entry.q) throw new AiError('empty', 'The model returned an empty translation.')
   // Post-edit into the modern register.
-  entry.a = await modern(ruNorm(entry.a || ''), lang)
-  entry.q = await modern(entry.q || '', lang)
-  entry.hook = await modern(entry.hook || '', lang)
+  // For Urdu-script text, normalize Arabic-variant chars first (WhatsApp/SMS copies).
+  const norm = (t: string) => lang === 'ur' ? normalizeUrduText(t) : t
+  entry.a = await modern(ruNorm(norm(entry.a || '')), lang)
+  entry.q = await modern(norm(entry.q || ''), lang)
+  entry.hook = await modern(norm(entry.hook || ''), lang)
   return entry
 }
 
@@ -148,11 +150,12 @@ export async function getTranslation(code: string, lang: Lang): Promise<Translat
   // Touch for pruning, and modernise old text without re-translating (C-10).
   void db.translations.update(row.id, { t: Date.now() }).catch(() => {})
   if (row.rules !== RULES_VERSION && !row.mt) {
+    const norm = (t: string) => lang === 'ur' ? normalizeUrduText(t) : t
     const fresh: Translation = {
       ...row,
-      a: await modern(row.a || '', lang),
-      q: await modern(row.q || '', lang),
-      hook: await modern(row.hook || '', lang),
+      a: await modern(norm(row.a || ''), lang),
+      q: await modern(norm(row.q || ''), lang),
+      hook: await modern(norm(row.hook || ''), lang),
       rules: RULES_VERSION,
     }
     void db.translations.put(fresh).catch(() => {})

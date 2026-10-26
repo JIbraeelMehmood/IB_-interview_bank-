@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('fs'),path=require('path');
+const DIR=path.resolve(__dirname,'..');
+const h=fs.readFileSync(path.join(DIR,'v1-interview-box/interview-box.html'),'utf8');
+const m=h.match(/<script[^>]*id=["']bank["'][^>]*>([\s\S]*?)<\/script>/);
+const b=JSON.parse(m[1].trim());
+const ex=b.filter(function(x){return x.ex;});
+console.log('ex count='+ex.length);
+console.log('ex ids: '+ex.map(function(x){return x.id;}).join(', '));
+console.log('\n--- first ex full ---');
+console.log(JSON.stringify(ex[0].ex,null,1).slice(0,1500));
+console.log('\n--- ex types ---');
+ex.forEach(function(x){console.log(x.id+' -> '+typeof x.ex+' '+(typeof x.ex==='object'?'keys='+Object.keys(x.ex).join(','):''));});
+console.log('\n--- tr structure (first) ---');
+const tr=b.filter(function(x){return x.tr;});
+console.log('tr langs: '+JSON.stringify(tr.reduce(function(a,x){Object.keys(x.tr).forEach(function(k){a[k]=(a[k]||0)+1;});return a;},{})));
+console.log('tr subkeys: '+JSON.stringify(tr.reduce(function(a,x){Object.keys(x.tr).forEach(function(l){Object.keys(x.tr[l]).forEach(function(k){a[k]=(a[k]||0)+1;});});return a;},{})));
+console.log(JSON.stringify(tr[0].tr,null,1).slice(0,1200));

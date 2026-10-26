@@ -769,6 +769,7 @@ var WS={rec:null,chunks:[],url:'http://127.0.0.1:5051',model:'base',lang:'auto',
 /* Whisper service status — checked silently; UI shows Whisper buttons only when service is reachable */
 whisperStatus(function(h){
   var wd=$('#wsDot'),wt=$('#wsTxt');
+  if(typeof CLOUD_MODE!=='undefined'&&CLOUD_MODE){wd.style.background='#999';wt.textContent='Whisper (localhost only)';wsState.title='Whisper STT requires the local Python server. Use browser speech recognition in cloud mode.';return}
   if(h){wd.style.background='#4CAF50';wt.textContent='Whisper '+WS.model+' ready';wsState.title='Whisper offline STT — '+WS.model+' model'}
   else if(WS.enabled){wd.style.background='#f44336';wt.textContent='Whisper service unreachable';wsState.title='Start: python whisper_server.py'}
   else {wd.style.background='#999';wt.textContent='Whisper (disabled)';wsState.title='Enable Whisper in Speaking Coach › Answer'}
@@ -2672,6 +2673,14 @@ var SPR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
 /* ---------- WHISPER transcription (offline STT via local Python service) ---------- */
 /* WS defined above before whisperStatus() call */
 function whisperStatus(cb){
+  /* Cloud mode: skip localhost Whisper check, show cloud-appropriate status */
+  if(typeof CLOUD_MODE!=='undefined'&&CLOUD_MODE){
+    WS.ready=false;WS.err='Whisper requires the local Python server (not available in cloud mode)';
+    var wd0=$('#wsDot'),wt0=$('#wsTxt');
+    if(wd0)wd0.style.background='#999';
+    if(wt0)wt0.textContent='Whisper (localhost only)';
+    cb&&cb(null);return;
+  }
   fetch(WS.url+'/health',{mode:'cors',signal:AbortSignal.timeout(3000)}).then(function(r){return r.json()}).then(function(hj){
     WS.ready=hj.ok&&hj.loaded;WS.model=hj.model||WS.model;WS.err='';
     // Auto-enable Whisper the FIRST time the service is detected running
@@ -3607,6 +3616,8 @@ var PROV={
   openrouter:{name:'OpenRouter (free models)',cost:'Free models (daily limit)',keyUrl:'https://openrouter.ai/keys',model:'openrouter/free',base:'https://openrouter.ai/api/v1',note:'One key for many models. "openrouter/free" picks a free model automatically.'},
   openai:{name:'OpenAI (ChatGPT API)',cost:'Paid — API credits',keyUrl:'https://platform.openai.com/api-keys',model:'gpt-4o-mini',base:'https://api.openai.com/v1',note:'A ChatGPT Plus subscription does not include API use; the API is billed separately.'},
   anthropic:{name:'Anthropic (Claude API)',cost:'Paid — API credits',keyUrl:'https://console.anthropic.com/settings/keys',model:'claude-haiku-4-5',note:'Same Claude models, billed per use to your API account.'},
+  freellmpool:{name:'Free AI Pool (178 routes, no key)',cost:'Free — no key needed',model:'auto',base:'http://localhost:8000/v1',note:'Run: pip install freellmpool && freellmpool serve. 178 free routes from 23 providers with auto-failover. Keyless start possible (Pollinations, OVHcloud, LLM7).'},
+  ollama:{name:'Ollama (100% offline, local LLM)',cost:'Free on your computer',model:'llama3.2',base:'http://localhost:11434/v1',note:'Install Ollama + pull a model (ollama pull llama3.2). AI works with zero internet. Start with OLLAMA_ORIGINS=* so the browser may call it.'},
   custom:{name:'Custom / local (Ollama, LM Studio)',cost:'Free on your own computer',model:'llama3.1',base:'http://localhost:11434/v1',note:'Any OpenAI-compatible server. For Ollama on a PC, start it with OLLAMA_ORIGINS=* so the browser may call it.'}
 };
 var KEYK='ibx-keys';
@@ -3668,11 +3679,11 @@ function makeExt(p){
   f.limits=function(){return Promise.resolve({maxPromptBytes:65536})};
   f.provider=p;return f;
 }
-function provLabel(p){return p==='puter'?'Puter':p==='claude'?'Claude':p==='custom'?'Local AI':PROV[p].name.split(' (')[0]}
+function provLabel(p){return p==='puter'?'Puter':p==='claude'?'Claude':p==='custom'?'Local AI':p==='freellmpool'?'Free AI Pool':p==='ollama'?'Ollama':PROV[p].name.split(' (')[0]}
 function applyProvider(){
   var o=kSt(),pick=o.prov,p=null;
-  if(pick==='auto'){if(CLAUDE_S)p='claude';else if(o.acct&&typeof ENV!=='undefined'&&ENV==='web')p='puter';else{var order=['openrouter','gemini','groq','anthropic','openai','custom'];for(var i=0;i<order.length;i++){var k=order[i];if((o.keys[k]||'').trim()||(k==='custom'&&(o.base.custom||'').trim())){p=k;break}}
-    if(!p&&!window.claude&&o.puterOk)p='puter'; /* downloaded copy: free keyless AI after one sign-in */}}
+  if(pick==='auto'){if(CLAUDE_S)p='claude';else if(o.acct&&typeof ENV!=='undefined'&&ENV==='web'&&!CLOUD_MODE)p='puter';else{var order=CLOUD_MODE?['openrouter','gemini','groq','anthropic','openai']:['freellmpool','ollama','openrouter','gemini','groq','anthropic','openai','custom'];for(var i=0;i<order.length;i++){var k=order[i];if(k==='freellmpool'||k==='ollama'){p=k;break} /* localhost providers: available without a key */ if((o.keys[k]||'').trim()||(k==='custom'&&(o.base.custom||'').trim())){p=k;break}}
+    if(!p&&!window.claude&&o.puterOk&&!CLOUD_MODE)p='puter'; /* downloaded copy: free keyless AI after one sign-in */}}
   else if(pick==='claude'){p=CLAUDE_S?'claude':null}
   else if(pick==='puter'){p=o.acct?'puter':null}
   else if(pick==='puter')p='puter';
@@ -3950,6 +3961,16 @@ function clipSeg(s,tok){P.busy=true;uiPlayer();vpGet(s.clip).then(function(b){if
 
 /* ================= ACCOUNT: email sign-in (Puter), OpenRouter sign-in, sync, phone link ================= */
 var ENV=(window.claude&&typeof window.claude.use==='function')?'claude':location.protocol==='file:'?'file':'web';
+/* ── Cloud mode detection ── When deployed on Vercel/Netlify/etc, localhost services
+   (Whisper STT port 5051, Anki port 6006, Ollama port 11434, freellmpool port 8000)
+   are unreachable. CLOUD_MODE lets the UI gracefully hide those features and guide
+   users to cloud-appropriate AI providers (Groq/Gemini free API keys). */
+var IS_CLOUD = location.hostname !== 'localhost'
+            && location.hostname !== '127.0.0.1'
+            && !location.hostname.startsWith('192.168.')
+            && !location.hostname.startsWith('10.')
+            && location.protocol !== 'file:';
+var CLOUD_MODE = IS_CLOUD;
 PROV.puter={name:'My account (email sign-in)',cost:'Free allowance, then pay-as-you-go',model:'',note:'One login gives GPT, Claude and Gemini models, cloud sync of your progress, and your own phone link. Powered by Puter.'};
 var PT={p:null,user:null,loading:false};
 function puterLoad(){if(window.puter&&window.puter.ai)return Promise.resolve(window.puter);if(ENV!=='web')return Promise.reject({code:ENV==='file'?'file_mode':'network_blocked'});
@@ -4990,6 +5011,10 @@ window.normalizeUrdu = function(text) {
  * ═══════════════════════════════════════════════════════════ */
 window.ankiAdd = function(front, back, deck) {
   deck = deck || 'Interview Box';
+  if(typeof CLOUD_MODE!=='undefined'&&CLOUD_MODE){
+    window.toast && window.toast('Anki export requires Anki desktop (localhost only) — not available in cloud mode');
+    return;
+  }
   fetch('http://localhost:6006', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},

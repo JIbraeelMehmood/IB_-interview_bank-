@@ -444,3 +444,412 @@ Give a practical plan for today. Be specific about what to do first.${ENGLISH_ON
 
 export { AiError }
 
+/* ═══════════════════════════════════════════════════════════════════════
+ * INTELLIGENCE LAYER — ported from v7 Phase 1 patch + Intervity integration
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. MistakeClassifier ───────────────────────────────────────────── */
+
+export type MistakeTier = 'CONCEPTUAL' | 'L4_CEILING' | 'VAGUE' | 'STRUCTURAL'
+
+export interface MistakeResult {
+  cat: MistakeTier
+  color: string
+  icon: string
+  critique: string
+  golden: string
+  model: string
+}
+
+/**
+ * 4-tier answer diagnosis (ported from Intervity MistakeClassifier.ts via v7 Phase 1 patch).
+ * Returns null when the answer is solid.
+ */
+export function classifyMistake(answer: string): MistakeResult | null {
+  if (!answer || answer.length < 10) return null
+  const t = answer.toLowerCase()
+
+  // Tier 1: Conceptual / Factual error
+  if (
+    t.includes('direct on gpu') ||
+    t.includes('dom element') ||
+    t.includes('threads without locks') ||
+    t.includes('javascript is synchronous so') ||
+    t.includes('single threaded so no concurrency')
+  ) {
+    return {
+      cat: 'CONCEPTUAL',
+      color: '#B3261E',
+      icon: '🔴',
+      critique: 'Fundamental misunderstanding of core architecture and runtime memory models.',
+      golden: 'Ground explanations in memory ownership and native runtime thread boundaries.',
+      model: 'Always ground explanations in memory ownership and native runtime thread boundaries.',
+    }
+  }
+
+  // Tier 2: L4 Ceiling — technically correct but missing senior-level failure modes
+  if (
+    (t.includes('redis') && !t.includes('stampede') && !t.includes('eviction') && !t.includes('lock') && !t.includes('cache')) ||
+    (t.includes('kafka') && !t.includes('partition') && !t.includes('offset') && !t.includes('consumer group')) ||
+    (t.includes('queue') && !t.includes('retry') && !t.includes('dead letter') && !t.includes('idempoten'))
+  ) {
+    return {
+      cat: 'L4_CEILING',
+      color: '#E65100',
+      icon: '🟠',
+      critique: 'Technically correct happy-path, but missing high-throughput failure modes (cache stampede, eviction, dead-letter queues).',
+      golden: 'Add: cache stampede mitigation, eviction strategies, write storm handling, consumer group rebalance, offset commit semantics.',
+      model: 'When discussing caching or messaging, explain invalidation, concurrency locks, eviction, and failure recovery.',
+    }
+  }
+
+  // Tier 3: Vague hand-waving
+  if (
+    answer.length < 80 ||
+    /it handled everything|we used .* to make it fast|basically it just works|it was very efficient/i.test(t) ||
+    (
+      !t.includes('ms') && !t.includes('%') && !t.includes('per second') &&
+      !t.includes('qps') && !t.includes('rps') && !t.includes('users') &&
+      !t.includes('reduced') && !t.includes('improved') && !t.includes('latency') &&
+      answer.length < 150
+    )
+  ) {
+    return {
+      cat: 'VAGUE',
+      color: '#F4D83D',
+      icon: '🟡',
+      critique: 'Superficial buzzword usage without explaining underlying mechanics, partition keys, or failure recovery.',
+      golden: 'Add: throughput numbers, partition strategy, batch sizes, specific metrics. "We partitioned by merchant ID, kept lag under 200ms."',
+      model: 'Never state what technology you used without quantifying throughput, partition strategies, and failure modes.',
+    }
+  }
+
+  // Tier 4: Structural — missing personal ownership
+  if (
+    !t.includes(' i ') &&
+    !t.includes('i designed') && !t.includes('i implemented') &&
+    !t.includes('i built') && !t.includes('i led') && !t.includes('i solved') &&
+    !t.includes('i refactored') && !t.includes('i chose')
+  ) {
+    return {
+      cat: 'STRUCTURAL',
+      color: '#1565C0',
+      icon: '🟣',
+      critique: 'Answer lacks quantitative metrics and personal ownership ("I" vs "We"), failing STAR expectations for senior roles.',
+      golden: 'Use "I designed/implemented" + p99 latency, % improvement, cost savings. "I reduced query time by 74% and saved $8K/month."',
+      model: 'Always deliver BLUF (Bottom Line Up Front) and close with measurable business impact using first-person ownership.',
+    }
+  }
+
+  return null // answer is solid
+}
+
+/* ── 2. STAR Evaluator ──────────────────────────────────────────────── */
+
+export interface StarScore {
+  situation: number   // max 15
+  task: number        // max 15
+  action: number      // max 50
+  result: number      // max 20
+  total: number       // /100
+  grade: 'Excellent' | 'Good' | 'Needs work' | 'Incomplete'
+  feedback: string[]
+  isBehavioral: boolean
+}
+
+/**
+ * STAR method evaluator — Situation(15%) + Task(15%) + Action(50%) + Result(20%).
+ * Ported from Intervity StarMethodEvaluator.ts via v7 Phase 1 patch.
+ */
+export function starEval(answer: string): StarScore {
+  const empty: StarScore = { situation: 0, task: 0, action: 0, result: 0, total: 0, grade: 'Incomplete', feedback: [], isBehavioral: false }
+  if (!answer || answer.length < 10) return empty
+  const t = answer.toLowerCase()
+  const fb: string[] = []
+
+  // Situation: context setting
+  const hasSit = t.includes('when') || t.includes('at ') || t.includes('project') ||
+    t.includes('team') || t.includes('while working') || t.includes('our ')
+  const sitS = hasSit ? 15 : 5
+  if (!hasSit) fb.push('Clarify the business context or project scope early in your response.')
+
+  // Task: problem definition
+  const hasTask =
+    t.includes('goal') || t.includes('needed to') || t.includes('problem') ||
+    t.includes('sla') || t.includes('bottleneck') || t.includes('challenge') ||
+    t.includes('issue') || t.includes('faced') || t.includes('deadline')
+  const taskS = hasTask ? 15 : 5
+  if (!hasTask) fb.push('Explicitly state the SLA, deadline, or engineering hurdle.')
+
+  // Action: individual contribution — worth 50%, most important
+  const actCount = (t.match(/\b(i implemented|i designed|i built|i refactored|i profiled|i debugged|i led|i chose|i solved|i resolved|i migrated|i optimized|i created|i developed|i architected)\b/g) || []).length
+  const actS = actCount >= 2 ? 50 : actCount >= 1 ? 35 : 20
+  if (actCount === 0) fb.push('Take direct ownership: use "I designed/implemented" instead of "We".')
+
+  // Result: measurable metrics
+  const hasRes =
+    /\b(\d+%|\d+\s*ms|\d+\s*seconds|\$\d+|\d+\s*k|\d+\s*qps|\d+\s*users|\d+\s*rps)\b/i.test(t) ||
+    t.includes('reduced') || t.includes('increased') || t.includes('improved') ||
+    t.includes('saved') || t.includes('decreased')
+  const resS = hasRes ? 20 : 5
+  if (!hasRes) fb.push('Quantify the outcome with concrete metrics (latency reduction, cost savings, RPS, user impact).')
+
+  const total = sitS + taskS + actS + resS
+  const grade = total >= 85 ? 'Excellent' : total >= 65 ? 'Good' : total >= 45 ? 'Needs work' : 'Incomplete'
+
+  return { situation: sitS, task: taskS, action: actS, result: resS, total, grade, feedback: fb, isBehavioral: true }
+}
+
+/* ── 3. Prosody Analyzer ────────────────────────────────────────────── */
+
+export interface ProsodyResult {
+  wpm: number
+  words: number
+  fillerCount: number
+  fillerDensity: number
+  pacingScore: number   // 0–100
+  rating: 'excellent' | 'good' | 'needs work'
+  advice: string
+  fillers: string[]
+}
+
+/**
+ * Enhanced prosody analyzer with South Asian English verbal crutches.
+ * Replaces the basic speechMetrics() for graded feedback.
+ * Ported from Intervity SoftSkillsProsodyAnalyzer.ts via v7 Phase 1 patch.
+ */
+export function prosodyAnalyze(text: string, durationSec: number, turnLatencyMs = 0): ProsodyResult {
+  const t = String(text || '').trim()
+  const wordCount = t ? t.split(/\s+/).length : 0
+  const duration = durationSec > 0 ? durationSec : 1
+  const wpm = wordCount > 0 ? Math.round((wordCount / duration) * 60) : 0
+
+  // Universal fillers + South Asian English crutches (na, means, ya, correct?)
+  const FILLER_RE = /\b(um+|uh+|er+|ah+|hmm+|basically|actually|sort of|kind of|i mean|ya|na|means|you know|like|literally|right|okay|so|correct\?)\b/gi
+  const matches = t.match(FILLER_RE) || []
+  const fillerCount = matches.length
+  const fillerDensity = wordCount > 0 ? Math.round((fillerCount / wordCount) * 100) : 0
+
+  // Pacing score: 120–155 WPM sweet spot
+  let pacingScore = 100
+  if (wpm > 0) {
+    if (wpm < 100) pacingScore -= (100 - wpm) * 0.8
+    else if (wpm > 165) pacingScore -= (wpm - 165) * 0.7
+  }
+  if (fillerDensity > 1.5) pacingScore -= (fillerDensity - 1.5) * 8
+  if (turnLatencyMs > 4500) pacingScore -= (turnLatencyMs - 4500) / 200
+  pacingScore = Math.min(100, Math.max(0, Math.round(pacingScore)))
+
+  const rating: ProsodyResult['rating'] =
+    wpm >= 120 && wpm <= 160 && fillerDensity < 5 ? 'excellent'
+    : wpm >= 100 && fillerDensity < 10 ? 'good'
+    : 'needs work'
+
+  const advice =
+    wpm < 100 ? 'Speak faster — aim for 120–160 WPM'
+    : wpm > 180 ? 'Slow down — clarity over speed'
+    : fillerDensity > 10 ? 'Reduce fillers (um, uh, like) — pause instead'
+    : 'Good pacing!'
+
+  return { wpm, words: wordCount, fillerCount, fillerDensity, pacingScore, rating, advice, fillers: matches.map((m) => m.toLowerCase()) }
+}
+
+/* ── 4. Vocabulary Diversity ────────────────────────────────────────── */
+
+export interface VocabResult {
+  uniqueWords: number
+  totalWords: number
+  uniqueRatio: number
+  diversity: 'Rich vocabulary' | 'Average vocabulary' | 'Limited vocabulary'
+  topWords: { word: string; count: number }[]
+  fillerWords: string[]
+}
+
+export function vocabDiversity(text: string): VocabResult {
+  const words = String(text || '').toLowerCase().match(/[a-z]+/g) || []
+  const counts: Record<string, number> = {}
+  for (const w of words) counts[w] = (counts[w] || 0) + 1
+  const total = String(text || '').match(/\S+/g)?.length || 0
+  const unique = Object.keys(counts)
+  const FILLERS = new Set(['um', 'uh', 'like', 'basically', 'actually', 'you', 'know', 'so', 'right', 'okay', 'hmm', 'err', 'kind', 'sort', 'of'])
+  const fillerWords = unique.filter((w) => FILLERS.has(w))
+  const topWords = unique
+    .map((w) => ({ word: w, count: counts[w] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+  const uniqueRatio = total ? Math.round(unique.length / total * 100) : 0
+  return {
+    uniqueWords: unique.length,
+    totalWords: total,
+    uniqueRatio,
+    diversity: unique.length > 40 ? 'Rich vocabulary' : unique.length > 20 ? 'Average vocabulary' : 'Limited vocabulary',
+    topWords,
+    fillerWords,
+  }
+}
+
+/* ── 5. Pakistani Interviewer Persona ───────────────────────────────── */
+
+/**
+ * Pakistani interviewer system prompt.
+ * Ported from Intervity SystemPrompts.ts + v7 Phase 1 patch.
+ */
+export function pakistaniInterviewerPrompt(
+  role = 'Senior Software Engineer',
+  company = 'a leading Pakistani tech company',
+  resume = '',
+): string {
+  return `You are a Senior Technical Interviewer at ${company} in Lahore/Karachi/Islamabad conducting a realistic mock interview for: ${role}.
+
+Candidate Resume:
+"""
+${resume.slice(0, 3000)}
+"""
+
+PAKISTANI TECH CONTEXT:
+- Understand: BS-CS/BCS/MIT degrees, CGPA (4.0 scale), PITB/PASHA/P@SHA ecosystem
+- Know: IT services (Techlogix, NetSol, Systems Ltd, Arbisoft, Devsinc) vs product (Airlift, Bazaar, Tajir, Dastgyr)
+- Terms: "done from" (graduated), "outstation", "CTC in PKR", NUST/LUMS/FAST/UIT colleges
+- Pakistani English idioms: "revert back" (reply), "prepone" (schedule earlier), "doubts" (questions), "batch pass out" (graduating class). Do not critique these colloquialisms.
+
+STRICT INTERVIEWING RULES:
+1. Ask only ONE question at a time. Max 3 sentences per response.
+2. No markdown, bullet points, or code blocks — response will be spoken aloud via TTS.
+3. Deep-dive into specific resume claims (architecture choices, scalability, code).
+4. If the candidate gives a vague answer, probe deeper ("Could you share the specific latency metrics?").
+5. Acknowledge the candidate's previous response briefly before asking your next question.`
+}
+
+/* ── 6. Company Style Profiles ──────────────────────────────────────── */
+
+export interface CompanyProfile {
+  name: string
+  focus: string
+  time: string
+  style: string
+  tips: string
+}
+
+export const COMPANY_PROFILES: Record<string, CompanyProfile> = {
+  google:    { name: 'Google',    focus: 'System design + coding clarity + trade-off reasoning + Googliness', time: '45+45 min', style: 'collaborative', tips: 'Clarify requirements first. Discuss trade-offs. Show how you handle ambiguity.' },
+  amazon:    { name: 'Amazon',    focus: 'Leadership Principles + Dive Deep + measurable impact + Customer Obsession', time: '60 min', style: 'LP-first', tips: 'Structure every answer around a Leadership Principle. Use "I" not "We". Quantify everything.' },
+  meta:      { name: 'Meta',      focus: 'Coding speed + scale problems + data-driven decisions', time: '45 min', style: 'fast-paced', tips: 'Move fast. Show impact at scale. Be direct about trade-offs.' },
+  microsoft: { name: 'Microsoft', focus: 'Problem-solving + collaboration + growth mindset', time: '45 min', style: 'conversational', tips: 'Show how you learn from failure. Demonstrate collaboration across teams.' },
+  bytedance: { name: 'ByteDance', focus: 'Algorithms + business impact + data scale', time: '45 min', style: 'intensive', tips: 'Practice LeetCode Medium+. Billion-user scale thinking required.' },
+  pitb:      { name: 'PITB / Pakistan Railways', focus: 'Laravel/PHP + delivery track record + govt digital systems + practical coding', time: '30 min', style: 'practical', tips: 'Show working code. Talk about government/digital transformation projects. Be practical.' },
+  nadra:     { name: 'NADRA',     focus: 'Database systems + security + national-scale systems + biometrics', time: '30 min', style: 'technical', tips: 'Emphasize data security, national-scale architecture, database optimization.' },
+  arbisoft:  { name: 'Arbisoft',  focus: 'Full-stack + agile + client communication + problem-solving', time: '45 min', style: 'cultural-fit', tips: 'Show cultural fit. Demonstrate full-stack capability. Be ready for pair programming.' },
+  netsol:    { name: 'NetSol',    focus: 'Enterprise software + ERP + team leadership + financial domain', time: '45 min', style: 'formal', tips: 'Show enterprise experience. Discuss financial domain knowledge and large-team management.' },
+  systems:   { name: 'Systems Limited', focus: 'SAP/ERP + large team + enterprise delivery + offshore model', time: '30 min', style: 'experienced', tips: 'Show enterprise delivery experience. Discuss offshore coordination.' },
+  techlogix: { name: 'Techlogix', focus: 'Architecture + client-facing + digital transformation', time: '45 min', style: 'consultative', tips: 'Show consulting mindset. Architecture decisions with client context.' },
+  devsinc:   { name: 'Devsinc',   focus: 'Full-stack + quick delivery + startup agility', time: '30 min', style: 'fast-paced', tips: 'Show speed and adaptability. Startup-style quick delivery.' },
+  tencent:   { name: 'Tencent',   focus: 'Gaming + social + performance optimization', time: '45 min', style: 'technical-deep', tips: 'Go deep on performance. High-concurrency systems experience.' },
+}
+
+export function matchCompanyProfile(name: string): CompanyProfile | null {
+  const k = name.toLowerCase()
+  for (const [id, p] of Object.entries(COMPANY_PROFILES)) {
+    if (k.includes(id) || k.includes(p.name.toLowerCase())) return p
+  }
+  return null
+}
+
+/* ── 7. Coaching Strategy Dispatcher ───────────────────────────────── */
+
+const COACHING_STRATEGIES: Record<string, string> = {
+  behavioral:    'Use STAR method. Probe for Situation, Task, Action, Result. Ask for metrics.',
+  system_design: 'Ask to clarify requirements first. Probe for scale estimation and trade-offs.',
+  debugging:     'Ask how they approached the problem, what they ruled out, and how they confirmed the fix.',
+  code_review:   'Ask why they made specific choices, what they would change now, and what the trade-offs were.',
+  architecture:  'Ask about failure modes, scaling limits, and what they would do differently at 10× load.',
+  database:      'Ask about indexing strategy, query optimization, transaction isolation, and replication.',
+  security:      'Ask about specific attack vectors, mitigation approach, and what could still go wrong.',
+  leadership:    'Ask about conflict resolution, how they brought a team member up to speed, and metrics they tracked.',
+  default:       'Probe for depth. Ask "Why?", "What would break?", and "What would you do differently now?"',
+}
+
+export function coachStrategy(tags: string[], questionText: string): string {
+  const q = questionText.toLowerCase()
+  const t = tags.join(' ').toLowerCase()
+  if (/tell me about|describe a time|example of|when did you/i.test(q)) return COACHING_STRATEGIES.behavioral
+  if (/design a|design an|system design|architect/i.test(q)) return COACHING_STRATEGIES.system_design
+  if (t.includes('sql') || t.includes('database') || t.includes('postgres') || t.includes('mysql')) return COACHING_STRATEGIES.database
+  if (/debug|fix|error|exception|crash|memory leak/i.test(q)) return COACHING_STRATEGIES.debugging
+  if (/security|xss|csrf|injection|auth|jwt|owasp/i.test(q)) return COACHING_STRATEGIES.security
+  if (/lead|team|mentor|manage|conflict/i.test(q)) return COACHING_STRATEGIES.leadership
+  if (/review|refactor|improve|clean/i.test(q)) return COACHING_STRATEGIES.code_review
+  if (/architect|pattern|solid|microservice|monolith/i.test(q)) return COACHING_STRATEGIES.architecture
+  return COACHING_STRATEGIES.default
+}
+
+/* ── 8. Reference Answer (cache-first, AI-generated) ───────────────── */
+
+import { db } from './db'
+
+/**
+ * Get a model answer for a question — checks Dexie cache first, generates via AI if not cached.
+ * mode 'compare' gives a good answer and a weak answer side-by-side.
+ */
+export async function getRefAnswer(q: Question, mode: 'single' | 'compare' = 'single'): Promise<string> {
+  const cacheKey = `ref:${q.code}:${mode}`
+  const cached = await db.explains.get(cacheKey)
+  if (cached) return cached.markdown
+
+  const prompt =
+    mode === 'compare'
+      ? `Give a HIGH-SCORE model answer then a LOW-SCORE answer for this interview question.
+Label them "✅ Strong Answer:" and "❌ Weak Answer:". Explain what makes each good or bad in 2-3 bullets.
+Question: ${q.q}`
+      : `You are a senior interviewer. Give a concise, well-structured model answer for this question.
+Use 3-5 bullet points. Be direct and specific. First person.
+Question: ${q.q}
+Context (existing answer summary): ${stripHtml(q.a).slice(0, 500)}`
+
+  const text = await aiText(prompt, { task: 'quick' })
+  await db.explains.put({
+    id: cacheKey,
+    code: q.code,
+    lang: 'en',
+    focus: 'concept',
+    style: 'interview',
+    markdown: text,
+    updatedAt: Date.now(),
+  })
+  return text
+}
+
+/* ── 9. Anki flashcard export (localhost only — graceful failure on Vercel/mobile) ── */
+
+/**
+ * Export a question to Anki via AnkiConnect on localhost:6006.
+ * Silently fails on Vercel/mobile — only works on desktop with Anki running.
+ */
+export async function ankiAdd(front: string, back: string, deck = 'Interview Box'): Promise<void> {
+  const res = await fetch('http://localhost:6006', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'addNote',
+      version: 6,
+      params: {
+        note: {
+          deckName: deck,
+          modelName: 'Basic',
+          fields: { Front: front, Back: back },
+          options: { allowDuplicate: false },
+        },
+      },
+    }),
+  })
+  if (!res.ok) throw new Error('Anki returned ' + res.status)
+  const data = await res.json()
+  if (data.error) throw new Error(data.error)
+}
+
+/** True when Anki export is available (localhost only). */
+export function ankiAvailable(): boolean {
+  return (
+    typeof location !== 'undefined' &&
+    (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  )
+}

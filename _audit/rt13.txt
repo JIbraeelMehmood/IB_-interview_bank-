@@ -1,0 +1,40 @@
+
+===== TECHS =====
+--- @10681 --- wt.textContent='Whisper (disabled)';wsState.title='Enable Whisper in Speaking Coach › Answer'}\n});\n\nvar TECHS=[], TMAP={};\nfunction buildTechs(){\n  TECHS=BASE_TECHS.map(function(t){return {id:t[0],label:t[1],kw:t[2],custom:false}}).concat(S.customTechs.map(function(t){return {id:t.id,label:t.label,kw:t.kw,custom:true}}));\n  TMAP={};TECHS.forEach(function(t){t.re=kwRegex(t.kw);TMAP[t.id]=t});\n}\n\n/* ---------- bank ---------- */\nvar RAW=JSON.parse(document.getElementById('bank').textContent), QS=[], QMAP={};\nvar PARTS_BOOK=[], PARTS_NEW=[];\nfunction mkQ(o){\n  var q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();\n  return q;\n}\nfunction tagQ(q){\n  var set={};q.t0.forEach(function(t){set[t]=1});\n  var head=q.q+' \n '+q.c;\n  TECHS.forEach(function(t){\n    if(!t.re)return; t.re.lastIndex=0;\n    if(t.re.test(head)){set[t.id]=1;return}\n    if(t.custom){t.re.lastIndex=0;if(t.re.test(q.plain))set[t.id]=1}\n  });\n  if(q.f.indexOf('h')>=0)set.deep=1;\n  q.t=Object.keys(set);\n}\nfunction buildBank(){\n  QS=[];QMAP={};\n  RAW.forEach(function(o,i){var q=mkQ(o);q.n=i;QS.push(q);if(o.tr&&typeof TR==='object')['ru','ur'].forEach(function(l){var k=o.id+'|'+l,b=o.tr[l];if(b&&!TR[k])TR[k]={q:b.q,a:b.a,hook:b.hook||'',key:b.key||'',t:1,builtin:1}})});\n  S.my.forEach(function(o,i){var q=mkQ(Object.assign({},o,{s:'my',a:o.html||md(o.ans||'')}));q.raw=o;q.n=100000+i;QS.push(q)});\n  S.ai.forEach(function(o,i){var q=mkQ(Object.assign({},o,{s:'ai',a:md(o.ans||'')}));q.raw=o;q.n=200000+i;QS.push(q)});\n  QS.forEach(function(q){tagQ(q);QMAP[q.id]=q});\n  var pb={},pn={};RAW.forEach(function(o){(o.s==='n'?pn:pb)[o.p]=1});\n  PARTS_BOOK=Object.keys(pb);PARTS_NEW=Object.keys(pn);\n}\n\n/* ---------- AI ---------- */\nvar SAMPLE=null, AIOK=false;\nfunction setAi(ok,msg){
+(matches 1)
+
+===== TMAP =====
+(matches 0)
+
+===== LAB_EX ids =====
+--- @166571 --- INSERT INTO invoices VALUES (1001),(1002),(1003),(1006),(1007),(1010);"\n].join('\n');\nvar LAB_EX=[\n {id:'v1',set:'Video set',lvl:'j',t:'Engineering staff
+--- @166978 --- DER BY salary DESC',q:'Show all Engineering employees ordered by salary from highest to lowest.'},\n {id:'v2',set:'Video set',lvl:'j',t:'Employees per dep
+--- @167320 --- )',q:'Count employees in each department, and show only departments with more than 2 employees.'},\n {id:'v3',set:'Video set',lvl:'j',t:'Departments with 
+--- @167718 --- E',q:'Count employees in each department, and show only departments with more than 2 employees.'},\n {id:'v4',set:'Video set',lvl:'m',t:'Second highest di
+--- @168080 --- he MAX — or DISTINCT + ORDER BY + LIMIT 1 OFFSET 1',q:'Find the second highest distinct salary.'},\n {id:'v5',set:'Video set',lvl:'m',t:'Above the company
+--- @168446 --- AVG(salary) FROM employees)',q:"Find employees who earn more than the company's average salary."},\n {id:'v6',set:'Video set',lvl:'m',t:'Top salary per de
+--- @168757 ---  department with MAX(salary)',q:'Find the highest salary in each department (and who earns it).'},\n {id:'v7',set:'Video set',lvl:'m',t:'Earning more than
+--- @169242 --- m ON e.manager_id = m.id',q:"Find employees whose salary is higher than their manager's salary."},\n {id:'v8',set:'Video set',lvl:'j',t:'Orders with custo
+--- @169581 --- IN customers ON customers.id = orders.customer_id',q:"Show each order with the customer's name."},\n {id:'v9',set:'Video set',lvl:'j',t:'Customers with no
+--- @169912 --- FT JOIN orders, keep rows where o.id IS NULL',q:'Find customers who have never placed an order.'},\n {id:'v10',set:'Video set',lvl:'j',t:'More than one ord
+--- @170301 --- JOIN, GROUP BY customer, HAVING COUNT(*) > 1',q:'Find customers who placed more than one order.'},\n {id:'v11',set:'Video set',lvl:'m',t:'Top spender (deli
+--- @170796 --- R BY SUM DESC → LIMIT 1",q:'Find the highest-spending customer, counting only delivered orders.'},\n {id:'v12',set:'Video set',lvl:'j',type:'state',t:'Empt
+--- @171338 --- 0 million rows. You must remove all rows as fast as possible but keep the table. Which command?'},\n {id:'v13',set:'Video set',lvl:'m',t:'RANK vs DENSE_RAN
+--- @171712 --- OVER (ORDER BY salary DESC)',q:'ROW_NUMBER vs RANK vs DENSE_RANK when salaries have duplicates?'},\n {id:'v14',set:'Video set',lvl:'j',t:'COUNT and NULLs',
+--- @172110 --- ,q:'COUNT(*) vs COUNT(email) vs COUNT(DISTINCT email) when the column has NULLs and duplicates?'},\n {id:'v15',set:'Video set',lvl:'j',t:'First available p
+--- @172544 ---  first available phone number: primary, else alternate, else emergency, else \'Not available\'.'},\n {id:'v16',set:'Video set',lvl:'m',t:'Previous login da
+--- @172910 --- date) OVER (PARTITION BY user_id ORDER BY login_date)',q:"Find each user's previous login date."},\n {id:'v17',set:'Video set',lvl:'j',t:'Salary bands',p:"
+--- @173280 --- ees;",h:'CASE WHEN ... THEN ... ELSE ... END',q:'Label employees as High / Medium / Low salary.'},\n {id:'v18',set:'Video set',lvl:'m',t:'Achievement % wit
+--- @173682 --- ltiply by 100.0',q:'Calculate achieved ÷ target as a percentage without a divide-by-zero error.'},\n {id:'v19',set:'Video set',lvl:'m',type:'state',t:'Dele
+--- @174283 ---  created_at DESC), delete rn > 1',q:'Delete duplicate customer records but keep the latest one.'},\n {id:'c1',set:'Classics',lvl:'m',t:'2nd highest in eac
+--- @174732 --- K() ... PARTITION BY department, keep r = 2',q:'Find the Nth highest salary in each department.'},\n {id:'c2',set:'Classics',lvl:'m',t:'Latest order per c
+--- @175147 --- OW_NUMBER() per customer, newest first, keep rn = 1',q:'Get the latest order for each customer.'},\n {id:'c3',set:'Classics',lvl:'m',t:'Running total',p:'
+--- @175461 --- ales;',h:'SUM(amount) OVER (ORDER BY sale_date)',q:'Calculate a running total of sales by date.'},\n {id:'c4',set:'Classics',lvl:'m',t:'Month vs previous 
+--- @175923 ---  in SQLite (MySQL: DATE_FORMAT)",q:"Compare each month's revenue with the previous month (LAG)."},\n {id:'c5',set:'Classics',lvl:'s',t:'Top 2 products per
+--- @176507 --- ate per product, then ROW_NUMBER() per category',q:'Top 3 products by revenue in each category.'},\n {id:'c6',set:'Classics',lvl:'j',t:'Find duplicate cus
+--- @176910 --- HAVING COUNT(*) > 1',q:'How do you find duplicate rows, and how do you delete them keeping one?'},\n {id:'c7',set:'Classics',lvl:'m',t:'Orders per status 
+--- @177401 ---  WHEN status = ... THEN 1 ELSE 0 END)',q:'Count orders per status in one row (pivot with CASE).'},\n {id:'c8',set:'Classics',lvl:'s',t:'3+ day login strea
+--- @177960 --- | ' days') is the same for consecutive days",q:'Find users who logged in on 3 consecutive days.'},\n {id:'c9',set:'Classics',lvl:'m',t:'Missing invoice nu
+--- @178369 --- ;',h:'LEAD(invoice_no) and keep differences > 1',q:'Find gaps in a sequence of invoice numbers.'},\n {id:'c10',set:'Classics',lvl:'m',t:'Bought Keyboard bu
+--- @178994 --- d Keyboard buyers, NOT EXISTS for Mouse',q:'Customers who bought product A but never product B.'},\n {id:'c11',set:'Classics',lvl:'m',t:'Salary vs departme
+(matches 30)

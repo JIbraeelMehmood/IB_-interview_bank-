@@ -1,0 +1,10 @@
+node: v10.19.0
+typeof parsed: array
+top keys: 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39
+top keys count: 531
+
+first key: 0
+first value type: object
+first value (truncated): {"id":"q_1_dqky","q":"Q1. Why do you want to work on Pakistan Railways digital transformation?","a":"It is a large public system with real impact: ticketing, tracking, safety and transparency. I like long programs where quality matters more than quick demos, and I have led delivery as a team lead.","t":["bank","qa"],"lvl":"mixed","s":"my","src":"Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank)","priority":3}
+
+raw head of script tag: [{"id":"q_1_dqky","q":"Q1. Why do you want to work on Pakistan Railways digital transformation?","a":"It is a large public system with real impact: ticketing, tracking, safety and transparency. I like long programs where quality matters more than quick demos, and I have led delivery as a team lead.","t":["bank","qa"],"lvl":"mixed","s":"my","src":"Interview Prep 2 PITB Pakistan Railways ITOPS (Progok

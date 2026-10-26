@@ -6,7 +6,7 @@ import { useSettings } from '../lib/settings'
 import { listen, pickVoice, recognitionAvailable, recError, speakSegments, ttsAvailable, stopSpeaking } from '../lib/speech'
 import type { RecHandle } from '../lib/speech'
 import { alignWords, words as normWords } from '../lib/text'
-import { speechMetrics, speakingFeedback } from '../lib/features'
+import { speechMetrics, speakingFeedback, prosodyAnalyze, vocabDiversity, classifyMistake, starEval } from '../lib/features'
 import { Chip, Chips, Md, toast } from '../components/ui'
 import { aiReady, aiWhy } from '../lib/ai'
 import type { SpeakingFeedback } from '../lib/types'
@@ -338,6 +338,8 @@ function AnswerTab() {
   const [fb, setFb] = useState<SpeakingFeedback | null>(null)
   const rec = useRef<RecHandle | null>(null)
   const t0 = useRef(0)
+  // Enhanced analysis state
+  const [elapsed, setElapsed] = useState(0)
 
   const start = () => {
     t0.current = Date.now()
@@ -345,6 +347,8 @@ function AnswerTab() {
       lang: settings.sp.listener || 'en-US',
       onInterim: setInterim,
       onFinal: (r) => {
+        const dur = (Date.now() - t0.current) / 1000
+        setElapsed(dur)
         setQ(r.text)
         setMetrics(speechMetrics(r.text, r.dur, r.pauses))
         setListening(false)
@@ -363,7 +367,8 @@ function AnswerTab() {
     if (!q.trim()) return
     setBusy(true)
     try {
-      const m = metrics || speechMetrics(q, Math.max(20, q.split(/\s+/).length / 2))
+      const dur = elapsed > 0 ? elapsed : Math.max(20, q.split(/\s+/).length / 2)
+      const m = metrics || speechMetrics(q, dur)
       setMetrics(m)
       if (!aiReady()) {
         toast(aiWhy() || 'Offline metrics only — connect AI for full feedback.')
@@ -450,6 +455,63 @@ function AnswerTab() {
             <span className="badge">{metrics.words} words</span>
           </div>
         </div>
+      )}
+
+      {/* Enhanced analysis — prosody, vocab diversity, MistakeClassifier, STAR */}
+      {q.trim().length > 20 && (
+        <>
+          {(() => {
+            const dur = elapsed > 0 ? elapsed : Math.max(20, q.split(/\s+/).length / 2)
+            const p = prosodyAnalyze(q, dur)
+            const v = vocabDiversity(q)
+            return (
+              <div className="card stack-sm">
+                <b className="small">📊 Detailed analysis</b>
+                <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                  <span className="badge">{p.wpm} WPM</span>
+                  <span className={`badge ${p.pacingScore >= 70 ? 'ok' : p.pacingScore >= 40 ? 'warn' : 'bad'}`}>
+                    Pacing {p.pacingScore}/100
+                  </span>
+                  <span className={`badge ${p.fillerDensity < 5 ? 'ok' : p.fillerDensity < 10 ? 'warn' : 'bad'}`}>
+                    {p.fillerCount} fillers ({p.fillerDensity}%)
+                  </span>
+                  <span className="badge">{v.uniqueRatio}% unique words</span>
+                  <span className={`badge ${v.uniqueWords > 40 ? 'ok' : v.uniqueWords > 20 ? 'warn' : 'bad'}`}>
+                    {v.diversity}
+                  </span>
+                </div>
+                {p.advice !== 'Good pacing!' && (
+                  <div className="small muted">💡 {p.advice}</div>
+                )}
+                {p.fillers.length > 0 && (
+                  <div className="tiny muted">Fillers detected: {[...new Set(p.fillers)].join(', ')}</div>
+                )}
+              </div>
+            )
+          })()}
+
+          {(() => {
+            const m = classifyMistake(q)
+            return m ? (
+              <div className="card small" style={{ borderColor: m.color, padding: '8px 10px' }}>
+                <span className="small"><b>{m.icon} {m.cat}</b> — {m.critique}</span>
+                <p className="tiny muted" style={{ margin: '4px 0 0' }}>{m.golden}</p>
+              </div>
+            ) : null
+          })()}
+
+          {(() => {
+            const star = starEval(q)
+            return star.isBehavioral && star.total > 0 ? (
+              <div className="card small">
+                <b className="small">⭐ STAR Score: {star.total}/100 ({star.grade})</b>
+                {star.feedback.map((f, i) => (
+                  <p key={i} className="tiny muted" style={{ margin: '2px 0' }}>{f}</p>
+                ))}
+              </div>
+            ) : null
+          })()}
+        </>
       )}
 
       {fb && (

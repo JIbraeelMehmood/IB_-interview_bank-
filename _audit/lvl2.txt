@@ -1,0 +1,28 @@
+levelHint distribution: {"":157}
+lvl Q with matching num in ru guide: 157/157 (identical text 67)
+
+headings in lvl file:
+[
+ "PHP aur Laravel basics",
+ "MySQL basics",
+ "Web, Git aur tools",
+ "Testing, Docker aur security basics",
+ "Soft skills",
+ "Coding tasks (junior level)",
+ "Laravel aur PHP practice mein",
+ "Database",
+ "Design patterns",
+ "APIs aur integration",
+ "QA aur CI/CD (mid level)",
+ "Operations aur monitoring (mid level)",
+ "Security, performance aur Redis (mid level)",
+ "Coding tasks (mid level)",
+ "Delivery aur ownership",
+ "Is program ke system designs",
+ "Database aur Laravel depth (4-year must)",
+ "QA, security, operations aur BI (4-year must)",
+ "Tricky aur behavioral sawal (4-year must)",
+ "Architecture aur trade-offs",
+ "Scale aur data",
+ "Leadership aur governance"
+]

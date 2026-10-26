@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('fs'),path=require('path');
+const DIR=path.resolve(__dirname,'..');
+const a=JSON.parse(fs.readFileSync(path.join(DIR,'interview-box-banks-clean.json'),'utf8'));
+const h=fs.readFileSync(path.join(DIR,'interview-box.html'),'utf8');
+const m=h.match(/<script[^>]*id=["']bank["'][^>]*>([\s\S]*?)<\/script>/);
+const b=JSON.parse(m[1].trim());
+const q=a.questions;
+console.log('clean.questions='+q.length+' embedded='+b.length);
+console.log('clean.version='+JSON.stringify(a.version)+' total='+JSON.stringify(a.total));
+console.log('files meta: '+JSON.stringify(a.files).slice(0,700));
+const ids=new Set(b.map(function(x){return x.id;}));
+console.log('clean q not in embedded:', q.filter(function(x){return ids.has(x.id)===false;}).length);
+const eq=new Set(q.map(function(x){return x.id;}));
+console.log('embedded not in clean:', b.filter(function(x){return eq.has(x.id)===false;}).length);
+console.log('sample clean question:', JSON.stringify(q[0]).slice(0,400));

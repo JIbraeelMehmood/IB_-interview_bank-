@@ -1,0 +1,20 @@
+
+===== V1 q.x usage =====
+--- @72194 --- _NEW=[];\nfunction mkQ(o){\n  var q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();\n  ret
+(matches 1)
+
+===== V1 x: field in mkQ =====
+--- @72192 --- .l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();\n  return q;\n}\nfunction tagQ(q){\n  var set={};q.t0.forEach(function(t){set[t]=1});\n  v
+(matches 1)
+
+===== V1 s=== n semantics =====
+--- @73281 --- .n=200000+i;QS.push(q)});\n  QS.forEach(function(q){tagQ(q);QMAP[q.id]=q});\n  var pb={},pn={};RAW.forEach(function(o){(o.s==='n'?pn:pb)[o.p]=1});\n  PARTS_BOOK=Object.keys(pb);PARTS_NEW=Object.keys(pn);\n}\n\n/* ---------- AI ---------- */\nvar SAMPLE=n
+--- @79230 --- alse;\n    if(fl.h&&q.f.indexOf('h')<0)return false;\n    if(srcFlags.length&&!srcFlags.some(function(k){return (k==='n'&&q.s==='n')||(k==='mine'&&q.s==='my')||(k==='ai'&&q.s==='ai')}))return false;\n    if(opt.status==='todo'&&S.done[q.id])return fals
+--- @80823 --- <span class="tag">'+esc(TMAP[t].label)+'</span>'});\n  tags+='<span class="tag src">'+(q.s==='my'?'Mine':q.s==='ai'?'AI':q.s==='n'?'2026':esc(q.id))+'</span>';\n  var st=(S.star[q.id]?'★':'')+(S.done[q.id]?' ✓':'');\n  return '<article class="qc l-'+q.
+(matches 3)
+
+===== V1 srcFlags =====
+--- @78611 --- r(Boolean);\n  var tk=Object.keys(opt.techs||{}).filter(function(k){return opt.techs[k]});\n  var fl=opt.flags||{};\n  var srcFlags=['n','mine','ai'].filter(function(k){return fl[k]});\n  var r=QS.filter(function(q){\n    if(opt.cat&&q.p!==opt.cat)return false;\n    if(opt.src&&!(q.raw&&q.raw.src===opt.src))return false;\n    if(fl.imp&&!(q.raw&&q.raw.src))return false;\n    if(fl.due&&!srsDue(q.id))return false;\n    if(opt.lvl&&q.l!==opt.lvl)return fa
+--- @79169 --- 'c')<0)return false;\n    if(fl.i&&q.f.indexOf('i')<0)return false;\n    if(fl.h&&q.f.indexOf('h')<0)return false;\n    if(srcFlags.length&&!srcFlags.some(function(k){return (k==='n'&&q.s==='n')||(k==='mine'&&q.s==='my')||(k==='ai'&&q.s==='ai')}))return false;\n    if(opt.status==='todo'&&S.done[q.id])return false;\n    if(opt.status==='done'&&!S.done[q.id])return false;\n    if(opt.status==='weak'&&S.rate[q.id]!==1)return false;\n    if(opt.status===
+--- @79187 --- e;\n    if(fl.i&&q.f.indexOf('i')<0)return false;\n    if(fl.h&&q.f.indexOf('h')<0)return false;\n    if(srcFlags.length&&!srcFlags.some(function(k){return (k==='n'&&q.s==='n')||(k==='mine'&&q.s==='my')||(k==='ai'&&q.s==='ai')}))return false;\n    if(opt.status==='todo'&&S.done[q.id])return false;\n    if(opt.status==='done'&&!S.done[q.id])return false;\n    if(opt.status==='weak'&&S.rate[q.id]!==1)return false;\n    if(opt.status==='star'&&!S.star[q.
+(matches 3)

@@ -213,3 +213,105 @@ export async function keepList(limit = 60): Promise<string[]> {
   return [...m.keys()].slice(0, limit)
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Urduhack character normalization — 71+ mappings
+ * Maps Arabic-variant lookalike characters to canonical Urdu Unicode.
+ * Source: urduhack Python library, ported via v7 Phase 1 patch.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+const URDU_CHAR_NORM: Record<string, string> = {
+  // Alef variants
+  '\uFE81': '\u0622', '\uFE82': '\u0622',
+  '\uFE83': '\u0623',
+  '\uFE8D': '\u0627', '\uFE8E': '\u0627',
+  // Be / Pe / Te / Tte
+  '\uFE8F': '\u0628', '\uFE90': '\u0628', '\uFE91': '\u0628', '\uFE92': '\u0628',
+  '\uFB56': '\u067E', '\uFB57': '\u067E', '\uFB58': '\u067E', '\uFB59': '\u067E',
+  '\uFE93': '\u062A', '\uFE94': '\u062A', '\uFE95': '\u062A', '\uFE96': '\u062A',
+  '\uFB66': '\u0679', '\uFB67': '\u0679', '\uFB68': '\u0679', '\uFB69': '\u0679',
+  // Se / Jeem / Che / He / Khe
+  '\uFE99': '\u062B', '\uFE9A': '\u062B', '\uFE9B': '\u062B',
+  '\uFE9D': '\u062C', '\uFE9E': '\u062C', '\uFE9F': '\u062C', '\uFEA0': '\u062C',
+  '\uFB7A': '\u0686', '\uFB7B': '\u0686', '\uFB7C': '\u0686', '\uFB7D': '\u0686',
+  '\uFEA1': '\u062D', '\uFEA2': '\u062D', '\uFEA3': '\u062D', '\uFEA4': '\u062D',
+  '\uFEA5': '\u062E', '\uFEA6': '\u062E', '\uFEA7': '\u062E',
+  // Dal / Dda / Dhal / Re / Rha / Ze / Zhe
+  '\uFEA9': '\u062F', '\uFEAA': '\u062F',
+  '\uFB88': '\u0688', '\uFB89': '\u0688',
+  '\uFEAB': '\u0630', '\uFEAC': '\u0630',
+  '\uFEAD': '\u0631', '\uFEAE': '\u0631',
+  '\uFB8C': '\u0691', '\uFB8D': '\u0691',
+  '\uFEAF': '\u0632', '\uFEB0': '\u0632',
+  '\uFB8A': '\u0698',
+  // Seen / Sheen / Sad / Dad / Tah / Zah / Ain / Ghain
+  '\uFEB1': '\u0633', '\uFEB2': '\u0633', '\uFEB3': '\u0633', '\uFEB4': '\u0633',
+  '\uFEB5': '\u0634', '\uFEB6': '\u0634', '\uFEB7': '\u0634', '\uFEB8': '\u0634',
+  '\uFEB9': '\u0635', '\uFEBA': '\u0635', '\uFEBB': '\u0635', '\uFEBC': '\u0635',
+  '\uFEBD': '\u0636', '\uFEBE': '\u0636', '\uFEBF': '\u0636', '\uFEC0': '\u0636',
+  '\uFEC3': '\u0637', '\uFEC4': '\u0637',
+  '\uFEC5': '\u0638', '\uFEC6': '\u0638', '\uFEC7': '\u0638',
+  '\uFEC9': '\u0639', '\uFECA': '\u0639', '\uFECB': '\u0639', '\uFECC': '\u0639',
+  '\uFECD': '\u063A', '\uFECE': '\u063A', '\uFECF': '\u063A',
+  // Fe / Qaf / Ke (ka) / Gaf / Noon ghunna / Lam / Meem / Noon
+  '\uFED1': '\u0641', '\uFED2': '\u0641', '\uFED3': '\u0641', '\uFED4': '\u0641',
+  '\uFED5': '\u0642', '\uFED6': '\u0642', '\uFED7': '\u0642', '\uFED8': '\u0642',
+  '\uFB8E': '\u06A9', '\uFB8F': '\u06A9', '\uFB90': '\u06A9', '\uFB91': '\u06A9',
+  '\uFB4B': '\u06A9', '\u0643': '\u06A9',   // Arabic kaf → Urdu ke
+  '\uFB92': '\u06AF', '\uFB93': '\u06AF', '\uFB94': '\u06AF', '\uFB95': '\u06AF',
+  '\uFB9E': '\u06BA', '\uFB9F': '\u06BA',
+  '\uFEDD': '\u0644', '\uFEDE': '\u0644', '\uFEDF': '\u0644', '\uFEE0': '\u0644',
+  '\uFEE1': '\u0645', '\uFEE2': '\u0645', '\uFEE3': '\u0645', '\uFEE4': '\u0645',
+  '\uFEE5': '\u0646', '\uFEE6': '\u0646', '\uFEE7': '\u0046', '\uFEE8': '\u0046',
+  // Waw / Waw hamza / Do chashmi he / Goal he / Ta marbuta / Hamza
+  '\uFEED': '\u0648', '\uFEEE': '\u0648', '\uFEEF': '\u0648',
+  '\uFE85': '\u0624',
+  '\uFEEA': '\u06BE', '\uFBA6': '\u06BE', '\uFBA7': '\u06BE', '\uFBA8': '\u06BE',
+  '\uFBA9': '\u06BE', '\uFBAA': '\u06BE',
+  '\uFEE9': '\u06C1', '\uFEEC': '\u06C1', '\u0647': '\u06C1', // Arabic heh → goal he
+  '\u0629': '\u06C3',  // ta marbuta → te with goal
+  '\uFE80': '\u0621',
+  // Yeh / Bari yeh / Yeh hamza
+  '\uFBFC': '\u06CC', '\u0649': '\u06CC', '\uFBFD': '\u06CC', '\uFEF0': '\u06CC',
+  '\uFEF1': '\u06CC', '\uFEF2': '\u06CC', '\uFBFE': '\u06CC', '\uFBFF': '\u06CC',
+  '\u064A': '\u06CC',  // Arabic yeh → Urdu yeh
+  '\uFE89': '\u0626', '\uFE8B': '\u0626', '\uFE8C': '\u0626',
+  '\uFBEE': '\u06D2', '\uFBEF': '\u06D2', '\uFBF0': '\u06D2', '\uFBF1': '\u06D2',
+  '\uFBF2': '\u06D3', '\uFBF3': '\u06D3', '\uFBF4': '\u06D3', '\uFBF5': '\u06D3',
+  // Arabic-Indic digits → Extended Arabic-Indic (Urdu digits)
+  '\u0660': '\u06F0', '\u0661': '\u06F1', '\u0662': '\u06F2', '\u0663': '\u06F3',
+  '\u0664': '\u06F4', '\u0665': '\u06F5', '\u0666': '\u06F6', '\u0667': '\u06F7',
+  '\u0668': '\u06F8', '\u0669': '\u06F9',
+  // Lam-alef ligatures
+  '\uFEFB': '\u0644\u0627', '\uFEFC': '\u0644\u0627',
+  // Tatweel/kashida → remove
+  '\u0640': '',
+}
+
+/**
+ * Normalize Urdu text: NFC → remove zero-width chars → strip diacritics (tashkeel)
+ * → map Arabic-variant characters to canonical Urdu Unicode.
+ *
+ * This fixes text copied from WhatsApp, SMS, and websites that use Arabic keyboard
+ * layouts rather than Urdu-specific Unicode. Without this, dictionary lookups for
+ * transliteration and translation silently fail.
+ */
+export function normalizeUrduText(text: string): string {
+  if (!text) return ''
+  // Step 1: NFC + remove zero-width characters common in WhatsApp/SMS Urdu
+  let out = text.normalize('NFC').replace(/[\u200C\u200D\u200B\uFEFF]/g, '')
+  // Step 2: Strip diacritics (tashkeel — harakat, shadda, etc.)
+  out = out.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '')
+  // Step 3: Map Arabic-variant chars to canonical Urdu (check pairs first for lam-alef)
+  let result = ''
+  for (let i = 0; i < out.length; i++) {
+    const pair = out[i] + (out[i + 1] ?? '')
+    if (URDU_CHAR_NORM[pair] !== undefined) {
+      result += URDU_CHAR_NORM[pair]
+      i++ // consumed two chars
+      continue
+    }
+    result += URDU_CHAR_NORM[out[i]] !== undefined ? URDU_CHAR_NORM[out[i]] : out[i]
+  }
+  return result.replace(/\s+/g, ' ').trim()
+}

@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>💬</text></svg>">
+<meta name="theme-color" content="#1D5C48">
+<title>Interview Box — Q&amp;A bank, JD prep &amp; mock interviewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('ibx-theme');if(t&&t!=='auto')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<style>
+:root{
+  --bg:#EEF0EA;--card:#FFFFFF;--card2:#F7F8F4;--ink:#16201C;--muted:#5C6862;--line:#D6DBD2;
+  --brand:#1D5C48;--brand-ink:#FFFFFF;--brand-soft:#DDEBE3;--hl:#F4D83D;--hl-soft:#FBF1B8;
+  --j:#2C7552;--m:#2D5FA6;--s:#7A3D90;--bad:#B3261E;--bad-soft:#FBE3E0;--ok:#1E7A45;--ok-soft:#DDF2E4;--warn:#9A5A00;--warn-soft:#FFF1D2;
+  --code:#EDF0EA;--shadow:0 1px 0 rgba(22,32,28,.06),0 6px 18px -10px rgba(22,32,28,.25);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --nav:64px;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1311;--card:#161D1A;--card2:#1B2420;--ink:#E3EAE6;--muted:#98A69F;--line:#2A3530;
+  --brand:#7FCBA9;--brand-ink:#0E1311;--brand-soft:#1A2F26;--hl:#E2C53A;--hl-soft:#3A3417;
+  --j:#76D1A2;--m:#8FB4F0;--s:#C9A4EA;--bad:#F2968D;--bad-soft:#3A1F1C;--ok:#7FD6A0;--ok-soft:#173226;--warn:#F0C060;--warn-soft:#3A2F14;
+  --code:#0B100E;--shadow:0 1px 0 rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1311;--card:#161D1A;--card2:#1B2420;--ink:#E3EAE6;--muted:#98A69F;--line:#2A3530;
+  --brand:#7FCBA9;--brand-ink:#0E1311;--brand-soft:#1A2F26;--hl:#E2C53A;--hl-soft:#3A3417;
+  --j:#76D1A2;--m:#8FB4F0;--s:#C9A4EA;--bad:#F2968D;--bad-soft:#3A1F1C;--ok:#7FD6A0;--ok-soft:#173226;--warn:#F0C060;--warn-soft:#3A2F14;
+  --code:#0B100E;--shadow:0 1px 0 rgba(0,0,0,.4);color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);min-height:100%;padding-bottom:calc(var(--nav) + 12px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+img{max-width:100%}
+a{color:var(--brand)}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0}
+code{font-family:var(--mono);font-size:.86em;background:var(--code);padding:.08em .35em;border-radius:5px}
+pre{background:var(--code);padding:12px 14px;border-radius:10px;overflow-x:auto;font:13px/1.5 var(--mono);border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:inherit}
+.hidden,[hidden]{display:none!important}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;align-items:center;gap:10px;padding-top:10px;padding-bottom:10px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:1.12rem;letter-spacing:-.01em;white-space:nowrap}
+.logo .box{width:30px;height:30px;border-radius:8px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-size:.95rem;position:relative}
+.logo .box::after{content:"";position:absolute;right:-3px;top:-3px;width:10px;height:10px;border-radius:3px;background:var(--hl)}
+.ai-state{margin-left:auto;font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--ok)}
+
+/* bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav .in{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--nav)}
+.nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.72rem;color:var(--muted);font-weight:700;position:relative}
+.nav button svg{width:22px;height:22px}
+.nav button[aria-current="page"]{color:var(--brand)}
+.nav button[aria-current="page"]::before{content:"";position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 3px 3px;background:var(--brand)}
+
+/* generic */
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;font-weight:700;font-size:.92rem;display:inline-flex;align-items:center;gap:6px;min-height:40px;line-height:1.1}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.hl{background:var(--hl);color:#221c00;border-color:var(--hl)}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:32px;padding:5px 10px;font-size:.82rem;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.danger{color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.field{display:block;width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;font-size:16px}
+textarea.field{min-height:110px;resize:vertical;line-height:1.5}
+label.lab{display:block;font-weight:700;font-size:.88rem;margin:12px 0 5px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin:12px 0}
+.panel h2{font-size:1.25rem;margin-bottom:4px}
+.panel h3{font-size:1.02rem;margin:14px 0 6px}
+.view{display:none;padding-top:12px}
+.view.on{display:block}
+.pagehead{margin:10px 0 4px}
+.pagehead h1{font-size:clamp(1.5rem,5vw,2rem);letter-spacing:-.02em}
+.pagehead p{margin:4px 0 0;color:var(--muted)}
+
+/* search + filters */
+.search{position:relative;flex:1;min-width:0}
+.search input{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 12px 11px 38px;font-size:16px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.chips.wrapit{flex-wrap:wrap;overflow:visible}
+.tr-r{display:flex;align-items:center;gap:8px}
+.field.sm{width:auto;display:inline-block;padding:6px 8px;min-height:38px;margin-left:4px}
+.langbtn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:4px 11px;font-weight:700;font-size:.82rem;min-height:34px;font-family:var(--body)}
+.ur{font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic",serif;direction:rtl;text-align:right;line-height:2.3;font-size:1.02rem}
+.ur code,.ur pre{direction:ltr;unicode-bidi:isolate;font-family:var(--mono);line-height:1.5}
+.ur ul,.ur ol,.ans .ur ul,.ans .ur ol,.lines li.ur{padding-right:1.3em;padding-left:0}
+.lines li.ur{margin-right:0;list-style-position:inside}
+.ui-ur [data-i18n]{font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",serif;line-height:1.9}
+.ui-ur .nav [data-i18n]{line-height:1.5;font-size:.74rem}
+.ltabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;align-items:center}
+.ltabs .chip{min-height:32px;padding:4px 11px}
+.ltabs .lis{margin-left:auto}
+.trq{font-weight:700;margin:0 0 6px}
+.trnote{font-size:.8rem;color:var(--muted);margin:10px 0 0;direction:ltr;text-align:left;font-family:var(--body);line-height:1.5}
+.linkbtn{border:0;background:none;padding:0;color:var(--brand);font-weight:700;text-decoration:underline;font:inherit;cursor:pointer}
+.lis{white-space:nowrap}
+.player{position:fixed;left:0;right:0;bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px));z-index:26;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -8px 20px -14px rgba(0,0,0,.45)}
+.player .pin{display:flex;align-items:center;gap:2px;padding:6px 0}
+.player button{border:0;background:none;color:var(--ink);min-width:40px;min-height:44px;display:grid;place-items:center;border-radius:10px;padding:0;font:inherit}
+.player .pp{background:var(--brand);color:var(--brand-ink);min-width:46px;min-height:46px;width:46px;border-radius:50%}
+.player .pinfo{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;overflow:hidden;text-align:left;padding:2px 6px}
+.player .pinfo>span{max-width:100%;min-width:0}
+.player .pinfo .pt{display:block;font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player .pinfo .ps{display:block;font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player .spd{font-weight:700;font-size:.82rem;min-width:44px}
+.pbar{height:3px;background:var(--line)}.pbar i{display:block;height:100%;background:var(--hl);width:0;transition:width .3s}
+body.has-player{padding-bottom:calc(var(--nav) + 86px)}
+body.has-player .toast{bottom:calc(var(--nav) + 84px + env(safe-area-inset-bottom,0px))}
+.np .seg{padding:6px 8px;border-radius:8px;margin:0 0 4px;cursor:pointer}
+.np .seg.on{background:var(--hl-soft)}
+.np .seg.hid{display:none}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.tile{border:0;border-radius:14px;background:rgba(255,255,255,.12);color:inherit;font:700 .8rem var(--body);padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:64px}
+.tile span{font-size:1.35rem;line-height:1}.tile.hl{background:var(--hl);color:#16201C}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 12px}
+.ttile{position:relative;overflow:hidden;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:10px 10px 14px;color:var(--ink);font:inherit;display:flex;flex-direction:column;gap:2px}
+.ttile i{position:absolute;left:0;bottom:0;height:4px;background:var(--brand)}
+.lncode{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+#helpBtn{min-width:34px;padding:4px 0}
+.spplan{list-style:none;padding:0;margin:10px 0;counter-reset:s}.spplan li{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--card2)}
+.spplan li.done{border-color:var(--ok);background:var(--ok-soft)}.spstep{flex:1;text-align:left;border:0;background:none;padding:10px 12px;color:var(--ink);font:inherit}.spck{padding-right:12px;font-weight:800;color:var(--ok)}
+.splist{display:grid;gap:8px}.spitem{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}.spitem .row{margin-top:6px}.spitem.line .spt{font-size:1.02rem}
+.spw{padding:1px 3px;border-radius:5px}.spw.ok{background:var(--ok-soft)}.spw.miss{background:var(--bad-soft);color:var(--bad);font-weight:700}.spres{margin-top:6px}
+.fnw{color:var(--muted)}.spcard{font-size:1.25rem;line-height:1.6;margin:14px 0;padding:14px;border-radius:14px;background:var(--hl-soft)}.okc{color:var(--ok)}
+.brwrap{display:flex;flex-direction:column;align-items:center;padding:18px 0 8px}.brc{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--brand-soft),var(--brand));transform:scale(.7);transition:transform 1s}
+.brtxt{margin:14px 0 0;font-weight:700;text-align:center;min-height:1.5em}.spchk{display:flex;gap:8px;align-items:center;margin:6px 0}
+.dlbar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:10px}.dlbar i{display:block;height:100%;width:0;background:var(--brand);transition:width .3s}
+.keyline,.hookline{margin:10px 0 0;padding:9px 12px;border-radius:10px;background:var(--brand-soft);font-weight:700}
+.hookline{background:var(--hl-soft)}
+.keyline span,.hookline span{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;font-family:var(--body)}
+.hookline.ur span{text-transform:none}
+.lnq{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.lnq input{margin-top:5px;width:18px;height:18px;flex:none}
+.lnq details{flex:1;min-width:0}.lnq summary{cursor:pointer;font-weight:700}
+.imps li{margin:8px 0}
+.help summary{cursor:pointer}
+.labsql{font-family:var(--mono);font-size:15px;min-height:130px;line-height:1.45;tab-size:2}
+.labkeys{margin-top:6px}.labkeys .chip{font-family:var(--mono);font-size:.78rem;min-height:32px;padding:4px 9px}
+.labtbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;max-height:55vh;overflow-y:auto}
+.labtbl table{border-collapse:collapse;font-size:.82rem;min-width:100%}
+.labtbl th,.labtbl td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.labtbl th{background:var(--card2);position:sticky;top:0;font-family:var(--mono)}
+.labtbl td.nul{color:var(--muted);font-style:italic}
+.labmsg{padding:9px 12px;border-radius:10px;font-weight:700;margin-bottom:8px}
+.labmsg.ok{background:var(--ok-soft);color:var(--ok)}.labmsg.bad{background:var(--bad-soft);color:var(--bad);font-weight:600;word-break:break-word}
+.labt{padding:6px 0;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.colbtn{border:0;background:none;padding:0;color:var(--ink);font-family:var(--mono);font-size:.78rem;text-decoration:underline dotted}
+.np+h3{margin-top:14px}
+.np .seg.pz{color:var(--muted);font-size:.8rem;font-style:italic}
+.np{max-height:42vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px;background:var(--card2)}
+.lbig{display:grid;gap:8px}.lbig .chip{justify-content:flex-start;min-height:48px;font-size:1rem;border-radius:12px;padding:8px 14px}
+.chips.wrapit .chip{white-space:normal;max-width:100%;text-align:left;flex-shrink:1}
+.composer textarea{min-width:0}
+html,body{overflow-x:clip}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 11px;font-size:.84rem;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;min-height:34px}
+.chip .n{font-weight:400;color:var(--muted);font-size:.78rem}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.chip[aria-pressed="true"] .n{color:inherit;opacity:.8}
+.chip.flag[aria-pressed="true"]{background:var(--hl);border-color:var(--hl);color:#221c00}
+.chip.add{border-style:dashed;color:var(--brand)}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}
+.filters select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 10px;font-size:15px;min-width:0;width:100%}
+.resbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px;margin:6px 0 2px;font-size:.88rem;color:var(--muted)}
+
+/* cue cards */
+.list{display:flex;flex-direction:column;gap:9px;margin-top:8px}
+.qc{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;border-left:5px solid var(--line)}
+.qc.l-j{border-left-color:var(--j)}.qc.l-m{border-left-color:var(--m)}.qc.l-s{border-left-color:var(--s)}
+.qc.done{opacity:.86}
+.qh{display:block;width:100%;text-align:left;border:0;background:none;padding:12px 14px 10px}
+.qmeta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:5px;font-size:.74rem}
+.tag{border-radius:6px;padding:1px 7px;background:var(--card2);border:1px solid var(--line);color:var(--muted);font-weight:700}
+.tag.lv-j{color:var(--j)}.tag.lv-m{color:var(--m)}.tag.lv-s{color:var(--s)}
+.tag.imp{background:var(--hl-soft);border-color:transparent;color:var(--ink)}
+.tag.com{background:var(--brand-soft);border-color:transparent;color:var(--ink)}
+.tag.how{background:var(--card2)}
+.tag.src{font-weight:400}
+.qt{font-weight:700;font-size:1.02rem;line-height:1.4}
+.qt mark,.ans mark{background:var(--hl-soft);color:inherit;border-radius:3px}
+.qstate{position:absolute;right:10px;top:10px;font-size:.9rem}
+.ans{padding:0 14px 14px;border-top:1px dashed var(--line);font-size:.98rem}
+.ans>p:first-child{margin-top:12px}
+.ans ul,.ans ol{padding-left:1.2em}
+.ans li{margin:3px 0}
+.ans .follow{margin:14px 0 8px;padding:10px 14px 4px;background:var(--brand-soft);border-radius:10px;border-left:3px solid var(--brand)}
+.ans .trap{margin:14px 0 8px;padding:10px 14px 4px;background:var(--warn-soft);border-radius:10px;border-left:3px solid var(--warn)}
+.ans .fq{margin:0 0 4px;font-weight:700}
+.ans .fq span{display:block;font-size:.76rem;color:var(--brand);margin-bottom:2px}
+.ans .trap .fq span{color:var(--warn)}
+.ans .fill{display:block;background:var(--warn-soft);border:1px dashed var(--warn);padding:8px 10px;border-radius:8px;margin:8px 0}
+.ans .fill b{display:block;font-size:.76rem;color:var(--warn)}
+.ans .tbl{overflow-x:auto}
+.ans table{border-collapse:collapse;font-size:.9rem;min-width:100%}
+.ans th,.ans td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.qa-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.rate{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rate button{border:1px solid var(--line);background:var(--card2);border-radius:8px;padding:5px 10px;font-size:.82rem;font-weight:700;min-height:34px}
+.rate button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.aibox{margin-top:10px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.95rem}
+.aibox:empty{display:none}
+.more{display:flex;justify-content:center;margin:14px 0}
+.empty{text-align:center;padding:30px 12px;color:var(--muted)}
+
+/* JD */
+.detected{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.grp{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--card)}
+.grp>summary{list-style:none;padding:12px 14px;display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary .w{margin-left:auto;font-weight:400;font-size:.82rem;color:var(--muted)}
+.grp .list{padding:0 10px 10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.92rem}
+.kv b{white-space:nowrap}
+.lines{margin:6px 0;padding-left:1.1em;font-size:.93rem}
+.lines li{margin:3px 0}
+.stream{white-space:normal}
+.stream h4{font-family:var(--display);font-size:1.05rem;margin:14px 0 4px}
+.prog{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
+/* mock */
+.stage{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin:12px 0}
+.stage .count{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:var(--muted);margin-bottom:10px}
+.stage .bigq{font-family:var(--display);font-size:clamp(1.25rem,4.6vw,1.6rem);line-height:1.25;font-weight:600;margin:4px 0 14px}
+.timer{font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:var(--card2)}
+.timer.low{background:var(--bad-soft);color:var(--bad)}
+.bar{height:6px;background:var(--card2);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.bar i{display:block;height:100%;background:var(--brand);width:0}
+.score{display:flex;align-items:center;gap:14px;margin:6px 0 10px}
+.score .num{font-family:var(--display);font-weight:800;font-size:2.4rem;line-height:1}
+.score .num small{font-size:1rem;color:var(--muted)}
+.fb{display:grid;gap:10px}
+.fb .box{border-radius:10px;padding:10px 12px}
+.fb .good{background:var(--ok-soft)}
+.fb .miss{background:var(--bad-soft)}
+.fb .box h4{margin:0 0 4px;font-size:.88rem}
+.fb ul{margin:0;padding-left:1.1em}
+.opt{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.opt label{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);font-size:.9rem;cursor:pointer}
+.opt input{margin-top:3px;accent-color:var(--brand)}
+.opt label:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px;margin:10px 0 90px}
+.msg{max-width:92%;padding:10px 13px;border-radius:14px;font-size:.97rem}
+.msg.u{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:4px;white-space:pre-wrap}
+.msg.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.a p{margin:.4em 0}
+.msg.a h4{margin:.7em 0 .2em;font-family:var(--display)}
+.composer{position:fixed;left:0;right:0;bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px));z-index:25;background:var(--bg);border-top:1px solid var(--line);padding:8px 0}
+.composer .wrap{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{flex:1;min-height:44px;max-height:140px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);resize:none;font-size:16px}
+
+/* progress */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card2);border-radius:12px;padding:12px}
+.stat b{display:block;font-family:var(--display);font-size:1.5rem}
+.stat span{font-size:.8rem;color:var(--muted)}
+.tp{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:8px;align-items:center;font-size:.88rem;margin:6px 0}
+.tp .m{height:8px;background:var(--card2);border-radius:5px;overflow:hidden}
+.tp .m i{display:block;height:100%;background:var(--brand)}
+
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:50;display:none}
+.sheet.on{display:block}
+.sheet .scrim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet .card{position:absolute;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;background:var(--card);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-width:720px;margin:0 auto}
+.sheet .card h2{font-size:1.2rem;margin-bottom:6px}
+.sheet .x{position:sticky;top:0;float:right;border:0;background:var(--card2);border-radius:50%;width:34px;height:34px;font-size:1.1rem}
+.techrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.93rem}
+.techrow .nm{flex:1;min-width:0}
+.techrow .nm small{display:block;color:var(--muted);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.switch{position:relative;width:42px;height:24px;flex:0 0 auto}
+.switch input{opacity:0;position:absolute;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:12px;pointer-events:none}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--card);transition:left .15s}
+.switch input:checked+span{background:var(--brand)}
+.switch input:checked+span::after{left:21px}
+.toast{position:fixed;left:50%;bottom:calc(var(--nav) + 18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:.9rem;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+.toast.on{opacity:1}
+.hero{background:var(--brand);color:var(--brand-ink);border-radius:16px;padding:16px 16px 14px;margin:12px 0;position:relative;overflow:hidden}
+.hero h1{font-size:clamp(1.3rem,5vw,1.8rem);letter-spacing:-.02em;max-width:22ch;padding-right:54px}
+.hero .btn:not(.hl){color:var(--ink)}
+.fbox{margin:2px 0 4px}.fbox>summary{list-style:none;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--muted);padding:6px 0;display:inline-flex;gap:6px;align-items:center}.fbox>summary::-webkit-details-marker{display:none}.fbox>summary::before{content:'▸';transition:transform .15s}.fbox[open]>summary::before{transform:rotate(90deg)}
+.hero p{margin:6px 0 12px;opacity:.9;max-width:52ch;font-size:.95rem}
+.hero .row .btn{border-color:transparent}
+.hero .stick{position:absolute;right:-18px;top:-18px;width:70px;height:70px;background:var(--hl);border-radius:14px;transform:rotate(12deg);opacity:.95}
+.hero .stick::after{content:"Q?";position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-weight:800;color:#221c00;font-size:1.4rem;transform:rotate(-12deg) translate(-6px,6px)}
+@media (min-width:760px){.filters{grid-template-columns:repeat(4,1fr)}}
+
+/* AI Studio */
+.tile.wide{grid-column:1/-1;flex-direction:row;justify-content:flex-start;gap:10px;min-height:52px;padding:10px 14px;background:rgba(255,255,255,.94);color:#16201C;text-align:left}
+.tile.wide b{font-family:var(--display);font-size:.98rem;white-space:nowrap}
+.tile.wide em{font-style:normal;font-weight:400;font-size:.76rem;opacity:.85;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qref{display:inline-block;border:1px solid var(--brand);background:var(--brand-soft);color:var(--ink);border-radius:999px;padding:0 8px;font:700 .78rem var(--mono);vertical-align:baseline;margin:0 1px}
+.actrow{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.ok-t{color:var(--ok)}.bad-t{color:var(--bad)}
+.cbx{display:flex;gap:6px;align-items:center}
+.field.sm{display:inline-block;width:auto;padding:6px 8px}
+.ivchat{margin:10px 0;max-height:52vh;overflow-y:auto;overscroll-behavior:contain}
+.ivev{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.35);font-size:.85rem}
+.ivh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.ivh:first-of-type{border-top:0}
+.verdict{display:inline-block;font-weight:700;border-radius:999px;padding:2px 10px;font-size:.85rem;margin-bottom:2px}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)}.verdict.warn{background:var(--warn-soft);color:var(--warn)}.verdict.bad{background:var(--bad-soft);color:var(--bad)}
+.meter{margin:10px 0}.meter .mh{display:flex;justify-content:space-between;gap:8px;font-size:.9rem}
+.meter .mb{height:8px;border-radius:99px;background:var(--card2);border:1px solid var(--line);overflow:hidden;display:flex;margin-top:3px}
+.meter .mb i{display:block;height:100%;background:var(--brand)}.meter .mb i.w{background:var(--bad)}
+.pblk{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.pmin{flex:0 0 52px;text-align:center;font:800 1.3rem/1 var(--display);background:var(--brand-soft);border-radius:10px;padding:8px 0}
+.pmin small{display:block;font:400 .7rem var(--body);color:var(--muted)}
+.rw{padding:8px 0;border-top:1px solid var(--line);font-size:.95rem}
+.star{display:grid;gap:6px;margin:10px 0}.star div{display:flex;gap:8px;font-size:.93rem}
+.star i{flex:0 0 24px;height:24px;border-radius:7px;background:var(--brand);color:var(--brand-ink);font:800 .8rem/24px var(--display);text-align:center;font-style:normal}
+.story h4{margin:.8em 0 .2em}
+
+/* v4: cleaner cards, segmented controls, menus, AI Connect */
+select{max-width:100%}
+.seg2{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;margin:4px 0 10px}
+.seg2 button{flex:1 1 0;min-width:0;border:0;background:transparent;border-radius:9px;padding:8px 4px;font:700 .86rem var(--body);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg2 button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.seg2 [lang="ur"]{font-family:"Noto Nastaliq Urdu",var(--body);font-weight:400}
+.ltabs.seg2{margin:0 0 12px}
+.cbar{display:grid;grid-template-columns:1fr 1fr 1fr 44px;gap:6px;margin:14px 0 8px}
+.cbar .btn{justify-content:center;padding:10px 4px;font-size:.88rem;white-space:nowrap;min-width:0}
+.btn.icon{font-size:1.2rem;line-height:1;padding:8px 0}
+.qa-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rate.seg3{display:flex;align-items:center;gap:4px;flex:1 1 220px}
+.rate.seg3 span{margin-right:4px}
+.hidacts[hidden]{display:none!important}
+.qmeta{display:flex;flex-wrap:nowrap;overflow:hidden;gap:4px;mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.qmeta .tag{flex:0 0 auto}.qmeta .tag.src{display:none}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mitem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:10px;min-height:62px}
+.mitem span{font-size:.78rem;color:var(--muted)}.mitem:disabled{opacity:.5}
+.opt.pvs{display:flex;flex-direction:column;gap:6px}.opt.pvs .pv{display:flex;gap:10px;align-items:flex-start;padding:10px 12px}.pv .pill{margin:2px 2px 0 0}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--warn-soft);color:var(--warn);vertical-align:middle}.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.exout{margin-top:12px}.exout:empty{display:none}
+.ai-state{cursor:pointer;border-radius:999px;padding:4px 8px;border:1px solid var(--line);max-width:40vw}
+.ai-state #aiTxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tr-r{margin-left:auto;min-width:0;flex:0 1 auto;gap:6px}.ai-state{margin-left:0;min-height:34px;min-width:0}
+@media (max-width:420px){.logo span:not(.box){display:none}.ai-state{max-width:44vw}}
+label.btn input[hidden]{display:none}
+.aiban{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-color:var(--hl);background:var(--hl-soft)}
+
+.envb{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:14px;padding:12px 14px;margin:12px 0;font-size:.93rem}
+.envb .row{margin-top:8px}
+
+.ur bdi.en{font-family:var(--body);font-size:.9em;unicode-bidi:isolate;direction:ltr;line-height:1.4}
+.ur code{unicode-bidi:isolate;direction:ltr;font-family:var(--mono)}
+.famrow{gap:6px;margin:4px 0 8px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo"><span class="box" aria-hidden="true">IB</span><span>Interview Box</span></div>
+  <div class="tr-r"><button type="button" class="langbtn" id="helpBtn" aria-label="How to use">?</button><button type="button" class="langbtn" id="langBtn" aria-label="Language and audio">EN</button><div class="ai-state" id="aiState" title="AI features use your Claude account"><span class="dot" id="aiDot"></span><span id="aiTxt">Connecting AI…</span></div><div class="ai-state" id="wsState" title="Whisper offline speech-to-text" style="margin-left:8px;font-size:.9em;opacity:.8"><span id="wsDot" class="dot" style="background:#999"></span><span id="wsTxt">Whisper</span></div></div>
+</div></header>
+
+<main class="wrap">
+
+<!-- LIBRARY -->
+<section class="view on" id="v-lib" aria-labelledby="h-lib">
+  <div id="envBanner"></div>
+  <div class="hero">
+    <span class="stick" aria-hidden="true"></span>
+    <h1 id="h-lib" data-i18n="h.lib">Your interview question bank</h1>
+    <p id="heroTxt" class="small">Filter by tech, level or "most asked". Paste a job description in JD Prep to get the questions most likely to come up.</p>
+    <div class="tiles">
+      <button class="tile hl" type="button" data-go="jd"><span>📋</span>JD Prep</button>
+      <button class="tile" type="button" id="tListen"><span>🎧</span>Listen</button>
+      <button class="tile" type="button" data-go="speak"><span>🗣</span>Speak</button>
+      <button class="tile" type="button" data-go="mock"><span>🎯</span>Mock</button>
+      <button class="tile" type="button" id="tTopics"><span>📚</span>Topics</button>
+      <button class="tile" type="button" data-go="lab"><span>🧪</span>SQL Lab</button>
+      <button class="tile" type="button" data-go="learn"><span>📺</span>Learn</button>
+      <button class="tile" type="button" data-go="dl"><span>⬇</span>Offline</button>
+      <button class="tile wide" type="button" data-go="ai"><span>🤖</span><b>AI Studio</b><em>Agent · Live voice interview · Smart review · CV match · Stories</em></button>
+    </div>
+  </div>
+  <div class="panel aiban" id="aiBanner" hidden><div><b>AI isn't connected in this copy.</b><br><span class="small muted">Explain, Urdu/Hindi, AI Studio and the coach need it. Free options, one minute.</span></div><div class="row"><button type="button" class="btn sm primary" data-connect>Connect free AI</button><button type="button" class="btn sm ghost" id="aiBanX" aria-label="Hide">✕</button></div></div>
+  <div class="row" style="flex-wrap:nowrap">
+    <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="q" placeholder="Search questions and answers" aria-label="Search questions and answers" autocomplete="off"></div>
+    <button class="btn" type="button" id="addQBtn" aria-label="Add your own question">+ Add</button><button class="btn" type="button" data-go="learn" aria-label="Import from a video or article">📺</button>
+  </div>
+  <div class="chips" id="flagChips" aria-label="Quick filters"></div>
+  <div class="chips" id="techChips" aria-label="Filter by technology"></div>
+  <details class="fbox" id="fbox"><summary id="fsum">Category, level, progress &amp; sort</summary><div class="filters">
+    <select id="fCat" aria-label="Category"></select>
+    <select id="fLvl" aria-label="Level"><option value="">All levels</option><option value="j">Basic</option><option value="m">Mid</option><option value="s">Senior</option></select>
+    <select id="fStatus" aria-label="Progress"><option value="">Any progress</option><option value="todo">Not practised</option><option value="done">Practised</option><option value="weak">Marked weak</option><option value="star">Bookmarked</option></select>
+    <select id="fSort" aria-label="Sort"><option value="rel">Most important first</option><option value="book">Book order</option><option value="rand">Shuffle</option></select>
+  </div></details>
+  <div class="resbar"><span id="resCount"></span><span class="row"><button class="btn sm" type="button" data-go="dl" aria-label="Downloads and offline">⬇</button><button class="btn sm" type="button" id="listenAll">🎧 Listen</button><button class="btn sm ghost" type="button" id="clearF">Clear filters</button><button class="btn sm" type="button" id="aiMore" hidden>AI: more like these</button></span></div>
+  <div class="list" id="list"></div>
+  <div class="more"><button class="btn" type="button" id="moreBtn" hidden>Show more</button></div>
+</section>
+
+<!-- JD PREP -->
+<section class="view" id="v-jd" aria-labelledby="h-jd">
+  <div class="pagehead"><h1 id="h-jd" data-i18n="h.jd">JD Prep</h1><p data-i18n="p.jd">Paste the job description. You get the techs it asks for, the questions most likely to come up, and a mock interview built from them.</p></div>
+  <div class="panel">
+    <label class="lab" for="jdText">Job description</label>
+    <textarea class="field" id="jdText" placeholder="Paste the full job post here — title, responsibilities, requirements, nice-to-haves…" style="min-height:170px"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" type="button" id="jdGo">Analyse JD</button>
+      <button class="btn" type="button" id="jdAi" disabled>AI deep prep</button>
+      <button class="btn ghost" type="button" id="jdClear">Clear</button>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Analyse works offline and instantly. AI deep prep writes tailored Q&amp;A, likely rounds, gaps and your intro pitch.</p>
+  </div>
+  <div id="jdOut"></div>
+  <div id="jdAiOut"></div>
+</section>
+
+<!-- SQL LAB -->
+<section class="view" id="v-lab" aria-labelledby="h-lab">
+  <div class="pagehead"><h1 id="h-lab" data-i18n="h.lab">SQL Lab</h1><p data-i18n="p.lab">Write real queries on sample tables and check them instantly — works offline on your phone.</p></div>
+  <div class="panel">
+    <div class="row" style="flex-wrap:nowrap"><button class="btn sm" type="button" id="labPrev" aria-label="Previous exercise">‹</button><select class="field" id="labSel" style="flex:1;min-width:0" aria-label="Exercise"></select><button class="btn sm" type="button" id="labNext" aria-label="Next exercise">›</button></div>
+    <p class="small muted" id="labDone" style="margin:6px 0 0"></p>
+  </div>
+  <div class="panel" id="labEx"></div>
+  <div class="panel">
+    <label class="lab" for="labSql">Your query</label>
+    <textarea class="field labsql" id="labSql" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="SELECT …"></textarea>
+    <div class="chips labkeys" id="labKeys" aria-label="Insert keyword">
+      <button type="button" class="chip" data-k="SELECT">SELECT</button><button type="button" class="chip" data-k="*">*</button><button type="button" class="chip" data-k="FROM">FROM</button><button type="button" class="chip" data-k="WHERE">WHERE</button><button type="button" class="chip" data-k="JOIN">JOIN</button><button type="button" class="chip" data-k="LEFT JOIN">LEFT JOIN</button><button type="button" class="chip" data-k="ON">ON</button><button type="button" class="chip" data-k="GROUP BY">GROUP BY</button><button type="button" class="chip" data-k="HAVING">HAVING</button><button type="button" class="chip" data-k="ORDER BY">ORDER BY</button><button type="button" class="chip" data-k="DESC">DESC</button><button type="button" class="chip" data-k="LIMIT">LIMIT</button><button type="button" class="chip" data-k="AS">AS</button><button type="button" class="chip" data-k="COUNT(*)">COUNT(*)</button><button type="button" class="chip" data-k="SUM()">SUM()</button><button type="button" class="chip" data-k="AVG()">AVG()</button><button type="button" class="chip" data-k="MAX()">MAX()</button><button type="button" class="chip" data-k="DISTINCT">DISTINCT</button><button type="button" class="chip" data-k="OVER (PARTITION BY  ORDER BY )">OVER()</button><button type="button" class="chip" data-k="CASE WHEN  THEN  ELSE  END">CASE</button><button type="button" class="chip" data-k="=">=</button><button type="button" class="chip" data-k=">">&gt;</button><button type="button" class="chip" data-k="''">' '</button><button type="button" class="chip" data-k="()">( )</button><button type="button" class="chip" data-k=",">,</button><button type="button" class="chip" data-k=";">;</button>
+    </div>
+    <div class="row" style="margin-top:8px"><button class="btn primary" type="button" id="labRun">▶ Run</button><button class="btn hl" type="button" id="labChk">✓ Check</button><button class="btn sm" type="button" id="labHintB">💡 Hint</button><button class="btn sm" type="button" id="labSolB">👁 Solution</button><button class="btn sm ghost" type="button" id="labClearQ">Clear</button><button class="btn sm ghost" type="button" id="labReset">↺ Reset data</button></div>
+    <div id="labOut" style="margin-top:10px"></div>
+  </div>
+  <details class="panel fbox"><summary><b>Tables &amp; sample data</b></summary><p class="small muted" style="margin:6px 0">Tap a name to insert it into your query. This runs <b>SQLite</b>: almost the same as MySQL — use <code>strftime('%Y-%m', d)</code> instead of DATE_FORMAT and <code>DELETE FROM t</code> instead of TRUNCATE.</p><div id="labTbls"></div></details>
+</section>
+
+<!-- LEARN -->
+<section class="view" id="v-learn" aria-labelledby="h-learn">
+  <div class="pagehead"><h1 id="h-learn" data-i18n="h.learn">Learn from a video or article</h1><p data-i18n="p.learn">Paste a YouTube transcript, an article, course notes or docs. AI writes a summary, key points and interview Q&amp;As from it — save them to your library, listen, or run a mock interview.</p></div>
+  <div class="panel">
+    <label class="lab" for="lnUrl">Link <span class="muted">(optional — saved as the source)</span></label>
+    <input class="field" id="lnUrl" type="url" inputmode="url" placeholder="https://youtube.com/watch?v=…" autocomplete="off">
+    <label class="lab" for="lnTitle" style="margin-top:10px">Title <span class="muted">(optional)</span></label>
+    <input class="field" id="lnTitle" placeholder="e.g. SQL window functions tutorial">
+    <label class="lab" for="lnTxt" style="margin-top:10px">Transcript or text</label>
+    <textarea class="field" id="lnTxt" style="min-height:170px" placeholder="Paste the transcript, article or notes here. Timestamps are removed automatically."></textarea>
+    <p class="small muted" id="lnCount" style="margin:4px 0 0"></p>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sm" type="button" id="lnPaste">📋 Paste</button>
+      <label class="btn sm">📄 File (.txt .srt .vtt)<input type="file" id="lnFile" accept=".txt,.vtt,.srt,.md,.json,text/plain" hidden></label>
+      <label class="btn sm" id="lnImgL" hidden>🖼 Screenshots<input type="file" id="lnImg" accept="image/*" multiple hidden></label>
+      <button class="btn sm ghost" type="button" id="lnClean">Clean text</button>
+    </div>
+    <p class="small muted" id="lnImgs" style="margin:6px 0 0"></p>
+    <div class="row" style="margin-top:10px">
+      <label class="small"><b>Categories</b> <select class="field sm" id="lnCats"><option value="auto" selected>Auto (3–6)</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option></select></label><label class="small"><b>Q&amp;A per category</b> <select class="field sm" id="lnN"><option>3</option><option selected>5</option><option>8</option></select></label>
+      <label class="small"><b>Level</b> <select class="field sm" id="lnLvl"><option value="mixed">Mixed</option><option value="j">Basic</option><option value="m">Mid</option><option value="s">Senior</option></select></label>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn primary" type="button" id="lnGo" disabled>Summarise + make Q&amp;A</button><button class="btn ghost" type="button" id="lnClear">Clear</button></div>
+    <p class="small" id="lnAiNote" style="margin:8px 0 0"><b>Needs AI:</b> open this page in the Claude app or claude.ai and allow AI.</p>
+    <details class="help" style="margin-top:12px"><summary class="small"><b>How do I get a YouTube transcript on my phone?</b></summary>
+      <ol class="small" style="padding-left:1.2em;margin:8px 0 0">
+        <li>Open the video, tap the description (<b>…more</b>), scroll down and tap <b>Show transcript</b>.</li>
+        <li>If your YouTube app won't let you select the text, open the video in <b>Chrome</b>, tap ⋮ › <b>Desktop site</b>, open the transcript, then long-press › select all › Copy. A free "YouTube transcript" website also works: paste the video link there and copy the text.</li>
+        <li>Come back here, tap <b>📋 Paste</b> and put the link in the Link box so you remember the source.</li>
+      </ol>
+      <p class="small muted" style="margin:8px 0 0">Why paste? For your privacy this page runs in a sandbox and can't open other websites itself. Subtitle files (.srt / .vtt), blog posts, docs pages and your own notes all work the same way.</p>
+    </details>
+  </div>
+  <div id="lnOut"></div>
+  <div id="lnHist"></div>
+</section>
+
+<!-- DOWNLOADS -->
+<section class="view" id="v-dl" aria-labelledby="h-dl">
+  <div class="pagehead"><h1 id="h-dl" data-i18n="h.dl">Downloads &amp; offline</h1><p data-i18n="p.dl">Choose what you want, let AI prepare it once while you're online, then read and listen without internet — or download it as a file.</p></div>
+  <div class="panel">
+    <h2>1. What do you want?</h2>
+    <label class="lab" for="dlScope">Questions</label>
+    <select class="field" id="dlScope"></select>
+    <p class="small muted" id="dlCount" style="margin:6px 0 0"></p>
+    <label class="lab" for="dlLang" style="margin-top:10px">Language</label>
+    <select class="field" id="dlLang"><option value="ur">اردو (Urdu)</option><option value="ru">Roman Urdu</option><option value="hi">हिंदी (Hindi)</option><option value="en">English only</option></select>
+    <label class="small" id="dlSayL" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="dlSay" checked> Include the spoken version (best audio quality with Urdu voices)</label>
+  </div>
+  <div class="panel">
+    <h2>2. Save on this phone (uses AI once)</h2>
+    <p class="small muted" style="margin:0 0 8px">Everything is stored in the app on this phone. If the internet or AI drops, it pauses and <b>continues by itself</b> when you're back online.</p>
+    <div class="row"><button class="btn primary" type="button" id="dlPrep">⬇ Prepare offline</button><button class="btn" type="button" id="dlPause" hidden>Pause</button><button class="btn ghost" type="button" id="dlCancel" hidden>Cancel</button></div>
+    <div class="dlbar" id="dlBarW" hidden><i id="dlBar"></i></div>
+    <p class="small" id="dlStat" style="margin:8px 0 0"></p>
+  </div>
+  <div class="panel">
+    <h2>3. Download as a file</h2>
+    <p class="small muted" style="margin:0 0 8px">Keep a copy anywhere: open it in Chrome or Edge, read it, or tap ▶ to listen with auto-next. Only explanations already saved on this phone are included — prepare them first for the full pack.</p>
+    <div class="row"><label class="small"><b>Format</b> <select class="field sm" id="dlFmt"><option value="html">Study pack (.html, with listen)</option><option value="md">Notes (.md)</option><option value="txt">Plain text (.txt)</option><option value="json">Data (.json)</option></select></label></div>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="dlEn" checked> Include the full English answers</label>
+    <div class="row" style="margin-top:10px"><button class="btn primary" type="button" id="dlFile">⬇ Download file</button></div>
+    <p class="small" id="dlFileStat" style="margin:6px 0 0"></p>
+  </div>
+  <div class="panel">
+    <h2>Saved on this phone</h2>
+    <p class="small" id="dlSaved"></p>
+    <p class="small muted" id="dlNet"></p>
+  </div>
+  <div class="panel">
+    <h3 style="margin-top:0">Translation packs</h3>
+    <p class="small muted" style="margin:0 0 8px">Move saved Urdu / Roman Urdu / Hindi to another phone, or import a pack for <b>all questions</b> made for free with the Colab/Python tool (<code>interview_box_tools.ipynb</code> — upload it to colab.research.google.com and Run all). With a pack, every language works offline, even where AI is off.</p>
+    <div class="row"><button type="button" class="btn sm primary" data-trimp>⬆ Import pack</button><button type="button" class="btn sm" data-trupgrade>✨ Upgrade old translations</button><button type="button" class="btn sm" data-trexp>⬇ Export my translations</button><button type="button" class="btn sm" data-bankexp>⬇ Question list (for the tool)</button><button type="button" class="btn sm" data-connect>⚙ AI Connect</button></div>
+  </div>
+</section>
+
+<!-- SPEAK -->
+<section class="view" id="v-speak" aria-labelledby="h-speak">
+  <div class="pagehead"><h1 id="h-speak" data-i18n="h.speak">Speak with confidence</h1><p data-i18n="p.speak">Train your spoken English and your nerves for interviews: clear sounds, natural rhythm, better phrases, and a calm body. 10 minutes a day.</p></div>
+  <div class="chips wrapit" id="spTabs" role="tablist"></div>
+  <div id="spBody"></div>
+</section>
+
+<!-- AI STUDIO -->
+<section class="view" id="v-ai" aria-labelledby="h-ai">
+  <div class="pagehead"><h1 id="h-ai">AI Studio</h1><p>Advanced AI for your prep: an agent that works inside your question bank, a live voice interviewer with a hiring scorecard, smart spaced review with a daily plan, CV ↔ JD match and your STAR story bank.</p></div>
+  <div class="chips wrapit" id="aiTabs" role="tablist" aria-label="AI Studio tools"></div>
+  <div id="aiBody"></div>
+</section>
+
+<!-- MOCK -->
+<section class="view" id="v-mock" aria-labelledby="h-mock">
+  <div class="pagehead"><h1 id="h-mock" data-i18n="h.mock">Mock interview</h1><p data-i18n="p.mock">The interview bot asks, you answer, and it scores you against the model answer — then asks a cross-question like a real interviewer.</p></div>
+  <div class="panel" style="display:flex;gap:10px;align-items:center;justify-content:space-between"><span class="small"><b>Nervous or not fluent when speaking?</b> Train your voice and nerves first.</span><button class="btn sm primary" type="button" data-go="speak">🗣 Speaking coach</button></div>
+  <div id="mockSetup" class="panel">
+    <h3 style="margin-top:0">Questions from</h3>
+    <div class="opt" id="mSrc">
+      <label><input type="radio" name="msrc" value="jd" checked><span><b>My JD plan</b><br><span class="small muted" id="mSrcJd">Paste a JD first</span></span></label>
+      <label><input type="radio" name="msrc" value="filters"><span><b>Library filters</b><br><span class="small muted" id="mSrcF"></span></span></label>
+      <label><input type="radio" name="msrc" value="imp"><span><b>Most important</b><br><span class="small muted">Across your selected techs</span></span></label>
+      <label><input type="radio" name="msrc" value="weak"><span><b>My weak spots</b><br><span class="small muted" id="mSrcW"></span></span></label>
+    </div>
+    <h3>Mode</h3>
+    <div class="opt">
+      <label><input type="radio" name="mmode" value="ai" checked><span><b>AI interviewer</b><br><span class="small muted">Type or speak, get a score</span></span></label>
+      <label><input type="radio" name="mmode" value="self"><span><b>Flashcards</b><br><span class="small muted">Reveal and rate yourself</span></span></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="small"><b>Questions</b> <select id="mCount" class="field" style="display:inline-block;width:auto;padding:6px 8px"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
+      <label class="small"><b>Timer</b> <select id="mTime" class="field" style="display:inline-block;width:auto;padding:6px 8px"><option value="0">Off</option><option value="60">1 min</option><option value="120" selected>2 min</option><option value="180">3 min</option></select></label>
+      <label class="small"><input type="checkbox" id="mSpeak"> Read questions aloud</label>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" type="button" id="mStart">Start interview</button></div>
+    <div id="mHist"></div>
+  </div>
+  <div id="mockRun"></div>
+</section>
+
+<!-- COACH -->
+<section class="view" id="v-coach" aria-labelledby="h-coach">
+  <div class="chips wrapit" style="margin-top:10px"><button type="button" class="chip" data-go="ai">← AI Studio</button><button type="button" class="chip" data-connect>⚙ AI Connect</button></div>
+  <div class="pagehead"><h1 id="h-coach" data-i18n="h.coach">Coach</h1><p data-i18n="p.coach">Ask anything about your prep. The coach knows your JD, your profile and your weak topics.</p></div>
+  <div class="chips wrapit" id="coachChips"></div>
+  <div class="chat" id="chat"></div>
+  <div class="composer hidden" id="composer"><div class="wrap">
+    <textarea id="chatIn" rows="1" placeholder="Ask your interview coach…" aria-label="Message"></textarea>
+    <button class="btn primary" type="button" id="chatSend">Send</button>
+  </div></div>
+</section>
+
+<!-- ME -->
+<section class="view" id="v-me" aria-labelledby="h-me">
+  <div class="pagehead"><h1 id="h-me" data-i18n="h.me">Progress &amp; settings</h1></div>
+  <div class="panel"><h2 style="margin-top:0">Your account</h2><div class="acctBox"></div></div>
+  <div class="panel"><div class="stats" id="stats"></div><h3>By technology</h3><div id="techProg"></div></div>
+  <div class="panel">
+    <h2>About me</h2>
+    <p class="small muted" style="margin:0">Your experience, projects and numbers. The AI uses this to tailor answers, your intro pitch and grading.</p>
+    <textarea class="field" id="about" style="margin-top:8px" placeholder="e.g. Senior Laravel developer, 5 years. Built HOLOIN (multi-tenant IoT SaaS: MQTT, Redis, MongoDB, Docker) and AI-BDM (RAG). Worked with Livewire, React, Shopify apps, WooCommerce…"></textarea>
+  </div>
+  <div class="panel" id="laPanel">
+    <h2>Language &amp; audio</h2>
+    <h3 style="margin-top:6px">Read answers in</h3>
+    <div class="row" id="langSeg"><button class="chip" type="button" data-lang="en">English</button><button class="chip" type="button" data-lang="ur">اردو</button><button class="chip" type="button" data-lang="ru">Roman Urdu</button><button class="chip" type="button" data-lang="hi">हिंदी</button></div>
+    <p class="small muted" style="margin:6px 0 0">Questions stay in English, because that's how you'll be asked. Answers, AI explanations, coach replies and mock feedback switch to your language. Each Urdu translation is written by AI the first time you open or play a question, then saved on this phone.</p>
+    <h3>Listen mode</h3>
+    <div class="row" id="amodeSeg"><button class="chip" type="button" data-am="en">English only</button><button class="chip" type="button" data-am="mix">English Q + Urdu explanation</button><button class="chip" type="button" data-am="ur">All in Urdu</button><button class="chip" type="button" data-am="both">English, then Urdu</button></div>
+    <div class="row" style="margin-top:10px">
+      <label class="small"><b>Speed</b> <select class="field sm" id="aRate"><option value="0.8">0.8×</option><option value="0.9">0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option><option value="1.5">1.5×</option></select></label>
+      <label class="small"><b>Think time</b> <select class="field sm" id="aGap"><option value="0">None</option><option value="3">3 sec</option><option value="5">5 sec</option><option value="10">10 sec</option></select></label>
+    </div>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="aAuto"> <b>Auto-play next question</b> (hands-free, e.g. while travelling)</label>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="aLoop"> Start again from the top at the end of the list</label>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="aMem"> Memorise mode: repeat the English interview line and the Urdu memory hook</label>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="aEnMix"> Speak English tech words with the English voice (otherwise they are pronounced the Urdu/Hindi way)</label>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="aQonly"> Questions only (quiz yourself, no answers)</label>
+    <label class="small" style="display:block;margin-top:10px"><b>English accent</b> <select class="field sm" id="aAcc"><option value="in">South Asian (closest to Pakistani English)</option><option value="us">American</option><option value="gb">British</option></select></label>
+    <label class="lab" for="aVen" style="margin-top:12px">English voice</label>
+    <div class="row" style="flex-wrap:nowrap"><select class="field" id="aVen" style="flex:1;min-width:0"></select><button class="btn sm" type="button" id="aVenT">Test</button></div>
+    <label class="lab" for="aVhi" style="margin-top:10px">Hindi voice</label>
+    <div class="row" style="flex-wrap:nowrap"><select class="field" id="aVhi" style="flex:1;min-width:0"></select><button class="btn sm" type="button" id="aVhiT">Test</button></div>
+    <label class="lab" for="aVur" style="margin-top:10px">Urdu voice</label>
+    <div class="row" style="flex-wrap:nowrap"><select class="field" id="aVur" style="flex:1;min-width:0"></select><button class="btn sm" type="button" id="aVurT">Test</button></div>
+    <p class="small" id="voiceHelp" style="margin:8px 0 0"></p>
+    <div class="row" style="margin-top:8px"><button class="btn sm" type="button" id="aCheck">🔊 Sound test / No sound?</button></div>
+    <div class="row" style="margin-top:10px"><button class="btn sm" type="button" data-connect>⚙ AI Connect</button><button class="btn sm" type="button" data-voice>🎙 My voice</button><button class="btn sm" type="button" data-trexp>⬇ Export translations</button><button class="btn sm" type="button" data-trimp>⬆ Import translations</button><button class="btn sm" type="button" data-trupgrade>✨ Upgrade old translations</button><button class="btn sm ghost" type="button" id="trClear">Clear saved translations</button></div>
+  </div>
+  <div class="panel">
+    <h2>Technologies</h2>
+    <p class="small muted" style="margin:0 0 8px">Add any tech (e.g. Filament, Stripe, Kafka). Questions and JDs that mention its keywords get tagged automatically.</p>
+    <button class="btn" type="button" id="techMgrBtn">Manage technologies</button> <button class="btn" type="button" data-go="dl">⬇ Downloads &amp; offline</button> <button class="btn" type="button" data-go="speak">🗣 Speaking coach</button>
+  </div>
+  <div class="panel">
+    <h2>Appearance</h2>
+    <div class="row" id="themeSeg"><button class="chip" data-v="auto" type="button">Auto</button><button class="chip" data-v="light" type="button">Light</button><button class="chip" data-v="dark" type="button">Dark</button></div>
+  </div>
+  <div class="panel">
+    <h2>Backup</h2>
+    <p class="small muted" style="margin:0 0 8px">Progress, your questions, AI questions, techs and JD are saved on this device. Export a backup before clearing app data.</p>
+    <div class="row"><button class="btn" type="button" id="expBtn">Export backup</button><button class="btn" type="button" id="copyBtn">Copy backup text</button><button class="btn" type="button" id="impBtn">Import backup</button></div>
+    <div id="impBox" class="hidden" style="margin-top:10px">
+      <textarea class="field" id="impText" placeholder="Paste backup text here"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn primary" type="button" id="impGo">Restore</button><label class="btn sm">Or choose file<input type="file" id="impFile" accept=".json,application/json,text/plain" hidden></label></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn danger ghost" type="button" id="resetBtn">Reset progress</button></div>
+  </div>
+</section>
+</main>
+
+<nav class="nav" aria-label="Sections"><div class="in">
+  <button type="button" data-tab="lib" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="14" height="15" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/></svg><span data-i18n="nav.lib">Library</span></button>
+  <button type="button" data-tab="jd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span data-i18n="nav.jd">JD Prep</span></button>
+  <button type="button" data-tab="mock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span data-i18n="nav.mock">Mock</span></button>
+  <button type="button" data-tab="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span>AI</span></button>
+  <button type="button" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span data-i18n="nav.me">Progress</span></button>
+</div></nav>
+
+<div class="player hidden" id="player" aria-label="Audio player"><div class="wrap pin">
+  <button type="button" id="pPrev" aria-label="Previous"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6 6h2v12H6zM9.5 12 18 6v12z"/></svg></button>
+  <button type="button" class="pp" id="pPlay" aria-label="Play"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+  <button type="button" id="pNext" aria-label="Next"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg></button>
+  <button type="button" class="pinfo" id="pInfo" aria-label="Show what is playing"><span class="pt" id="pTitle"></span><span class="ps" id="pSub"></span></button>
+  <button type="button" class="spd" id="pSpeed" aria-label="Speed">1×</button>
+  <button type="button" id="pClose" aria-label="Close player"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div><div class="pbar"><i id="pProg"></i></div></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="scrim" data-close></div><div class="card"><button class="x" type="button" data-close aria-label="Close">×</button><div id="sheetBody"></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+

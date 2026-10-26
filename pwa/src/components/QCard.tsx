@@ -9,10 +9,11 @@ import { usePlayer } from '../lib/player'
 import { queue } from '../lib/sync'
 import { LANGS, LANG_NAME, LEVEL_NAME, type Lang, type Question, type Translation } from '../lib/types'
 import { Md, Sheet, toast } from './ui'
-import { explain, explainKey } from '../lib/features'
+import { explain, explainKey, getRefAnswer } from '../lib/features'
 import { aiReady, aiWhy } from '../lib/ai'
-import { voiceProblem } from '../lib/speech'
+import { voiceProblem, speakSegments, ttsAvailable } from '../lib/speech'
 import { bidiFix, esc, md } from '../lib/text'
+import { ankiAdd, ankiAvailable } from '../lib/backup'
 
 export function QCard({
   q,
@@ -29,7 +30,7 @@ export function QCard({
   const [tr, setTr] = useState<Translation | null>(null)
   const [busy, setBusy] = useState('')
   const [rate, setRate] = useState<0 | 1 | 2 | 3>(0)
-  const [open, setOpen] = useState<'' | 'explain' | 'ai' | ''>('')
+  const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref'>('')
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -250,6 +251,35 @@ export function QCard({
           <button className="btn sm" onClick={() => setOpen('ai')} disabled={!aiReady()} title={aiWhy()}>
             ✨ AI
           </button>
+          <button
+            className="btn sm"
+            onClick={() => setOpen('ref')}
+            disabled={!aiReady()}
+            title={aiReady() ? 'See a model answer' : aiWhy()}
+          >
+            🎯 Ref
+          </button>
+          {ankiAvailable() && (
+            <button
+              className="btn sm"
+              disabled={!!busy}
+              title="Export to Anki (AnkiConnect must be running)"
+              onClick={async () => {
+                setBusy('anki')
+                try {
+                  const back = showEnglish ? q.a : (tr?.a || q.a)
+                  await ankiAdd(q.q, back)
+                  toast('Added to Anki.')
+                } catch (e) {
+                  toast((e as Error).message)
+                } finally {
+                  setBusy('')
+                }
+              }}
+            >
+              {busy === 'anki' ? '…' : '🃏 Anki'}
+            </button>
+          )}
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value as Lang)}
@@ -328,6 +358,8 @@ export function QCard({
       )}
 
       {open === 'ai' && <CardAiSheet q={q} lang={lang} onClose={() => setOpen('')} />}
+
+      {open === 'ref' && <RefSheet q={q} onClose={() => setOpen('')} />}
     </>
   )
 }
@@ -409,6 +441,58 @@ function CardAiSheet({ q, lang, onClose }: { q: Question; lang: Lang; onClose: (
         </div>
         <div className="small muted">Answer language: {LANG_LABEL[lang]}</div>
         {out && <Md text={out} lang={lang} />}
+      </div>
+    </Sheet>
+  )
+}
+
+/** Reference answer sheet — generates and caches a model answer via AI. */
+function RefSheet({ q, onClose }: { q: Question; onClose: () => void }) {
+  const { settings } = useSettings()
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState<'single' | 'compare'>('single')
+
+  const run = async (m: 'single' | 'compare') => {
+    setMode(m)
+    setLoading(true)
+    setText('')
+    try {
+      const result = await getRefAnswer(q, m)
+      setText(result)
+    } catch (e) {
+      toast((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Sheet title="🎯 Reference Answer" onClose={onClose}>
+      <div className="stack-sm">
+        <p className="small muted" style={{ margin: 0 }}>{q.q.slice(0, 100)}{q.q.length > 100 ? '…' : ''}</p>
+        <div className="row">
+          <button className="btn sm" onClick={() => void run('single')} disabled={loading}>
+            Model answer
+          </button>
+          <button className="btn sm" onClick={() => void run('compare')} disabled={loading}>
+            Good vs Weak
+          </button>
+        </div>
+        {loading && <p className="small muted center">Generating…</p>}
+        {text && (
+          <>
+            <Md text={text} lang={settings.lang} />
+            {ttsAvailable() && (
+              <button
+                className="btn sm"
+                onClick={() => void speakSegments([{ lang: 'en', text: text.replace(/[#*_`]/g, '') }], settings.au)}
+              >
+                🔊 Hear it
+              </button>
+            )}
+          </>
+        )}
       </div>
     </Sheet>
   )
