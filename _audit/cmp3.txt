@@ -1,6 +1,0 @@
-clean.questions=531 embedded=531
-clean.version="1.1" total=531
-files meta: {"Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank).md":137,"Interview Prep Roman Urdu Version (Poori Guide).md":191,"Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways).md":81,"Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior.md":115,"Roman Urdu v2 (Modern Dev Style).md":193,"Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers).md":20,"Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers-2.md":20,"Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel.md":5,"Failure-First Backend Interview What Happens When Things Fail (PHP Laravel).md":2,"Senior Larave
-clean q not in embedded: 0
-embedded not in clean: 0
-sample clean question: {"id":"q_1_dqky","q":"Q1. Why do you want to work on Pakistan Railways digital transformation?","a":"It is a large public system with real impact: ticketing, tracking, safety and transparency. I like long programs where quality matters more than quick demos, and I have led delivery as a team lead.","t":["bank","qa"],"lvl":"mixed","s":"my","src":"Interview Prep 2 PITB Pakistan Railways ITOPS (Progr

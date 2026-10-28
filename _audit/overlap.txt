@@ -1,7 +1,0 @@
-v1=1950
-cur=531
-overlap_text=8
-cur_only=523
-v1_distinct_keys=1922
-shared_keys=8
-id_collisions=0
