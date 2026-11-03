@@ -1,5 +1,5 @@
 import { MongoServerError } from 'mongodb'
-import { cookieIsSecure, createSession, emailOf, registerUser, setSessionCookie, type ApiRequest, type ApiResponse } from '../_lib/auth'
+import { cookieIsSecure, createSession, emailOf, registerUser, setSessionCookie, type ApiRequest, type ApiResponse } from '../../server/auth'
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -11,7 +11,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (name.length < 2) return res.status(400).json({ error: 'Enter your name.' })
   try {
     const user = await registerUser(email, name, password)
-    const token = await createSession(await (await import('../_lib/mongodb')).getDb(), user.id)
+    const token = await createSession(await (await import('../../server/mongodb')).getDb(), user.id)
     setSessionCookie(res, token, cookieIsSecure(req))
     return res.status(201).json({ user })
   } catch (error) {
