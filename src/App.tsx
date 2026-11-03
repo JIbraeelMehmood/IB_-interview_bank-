@@ -54,9 +54,13 @@ export default function App() {
       await activateAccount(data.user.id)
       localStorage.setItem('ibx-user-cache', JSON.stringify(data.user))
       await enterApp(data.user)
-    }).catch(async () => {
-      // A previously signed-in user can still open the PWA offline.
+    }).catch(async (error) => {
+      // Do not treat an expired/rejected server session as an offline session.
       if (!alive) return
+      if (/Request failed \\(\\d+\\)/.test(String(error?.message || ''))) {
+        setUser(null); setReady(false); return
+      }
+      // A previously signed-in user can still open the PWA offline.
       try {
         const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
         if (cached?.id && cached.email) {
