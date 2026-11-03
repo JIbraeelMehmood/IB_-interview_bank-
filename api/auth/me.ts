@@ -1,4 +1,4 @@
-import { currentUser, type ApiRequest, type ApiResponse } from '../../server/auth'
+import { currentUser, type ApiRequest, type ApiResponse } from '../../server/auth.js'
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
