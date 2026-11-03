@@ -10,7 +10,7 @@ const globalForMongo = globalThis as typeof globalThis & {
 export function getDb() {
   if (!globalForMongo.__interviewBoxMongo) {
     const client = new MongoClient(uri, { maxPoolSize: 10, appName: 'InterviewBox' })
-    globalForMongo.__interviewBoxMongo = client.connect()
+    globalForMongo.__interviewBoxMongo = client.connect().catch((error) => { delete globalForMongo.__interviewBoxMongo; throw error })
   }
   const name = process.env.MONGODB_DATABASE || 'interview_box'
   return globalForMongo.__interviewBoxMongo.then((client) => client.db(name))
