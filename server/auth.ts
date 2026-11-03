@@ -1,7 +1,7 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import type { Collection, Db } from 'mongodb'
-import { getDb } from './mongodb'
+import { getDb } from './mongodb.js'
 
 const scrypt = promisify(scryptCallback)
 const COOKIE = 'ibx_session'
