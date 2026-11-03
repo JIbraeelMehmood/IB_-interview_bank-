@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { accountRequest, activateAccount, type AccountUser } from '../lib/account'
 
-export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) => void }) {
+export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) => Promise<void> }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -16,7 +16,7 @@ export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) =
       const data = await accountRequest(mode === 'signup' ? '/api/auth/signup' : '/api/auth/login',
         mode === 'signup' ? { name, email, password } : { email, password })
       await activateAccount(data.user.id)
-      onSignedIn(data.user)
+      await onSignedIn(data.user)
     } catch (e) {
       setError((e as Error).message)
     } finally {
