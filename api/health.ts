@@ -1,4 +1,4 @@
-import { getDb } from '../server/mongodb'
+import { getDb } from '../server/mongodb.js'
 
 export default async function handler(req: { method?: string }, res: {
   status(code: number): any
