@@ -23,11 +23,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       if (serialized.length > 256_000) continue
       const id = `${user.id}:${table}:${key}`
       const updatedAt = Number(row.updatedAt) || Date.now()
-      await records.updateOne(
-        { _id: id, $or: [{ updatedAt: { $lte: updatedAt } }, { updatedAt: { $exists: false } }] },
-        { $set: { userId: user.id, table, key, row, updatedAt } },
-        { upsert: true },
-      )
+      const existing = await records.findOne({ _id: id, userId: user.id }, { projection: { updatedAt: 1 } })
+      if (!existing || updatedAt >= Number(existing.updatedAt || 0)) {
+        await records.updateOne(
+          { _id: id },
+          { $set: { userId: user.id, table, key, row, updatedAt } },
+          { upsert: true },
+        )
+      }
       if (Number.isInteger(item.id)) acked.push(item.id)
     }
 
