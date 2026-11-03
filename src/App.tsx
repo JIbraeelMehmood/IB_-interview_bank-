@@ -57,7 +57,7 @@ export default function App() {
     }).catch(async (error) => {
       // Do not treat an expired/rejected server session as an offline session.
       if (!alive) return
-      if (/Request failed \\(\\d+\\)/.test(String(error?.message || ''))) {
+      if (/Request failed \(\d+\)/.test(String(error?.message || ''))) {
         setUser(null); setReady(false); return
       }
       // A previously signed-in user can still open the PWA offline.
