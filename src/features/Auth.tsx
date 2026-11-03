@@ -33,7 +33,7 @@ export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) =
           <p className="muted">{mode === 'signup' ? 'Create your account to save your progress.' : 'Sign in to continue your interview preparation.'}</p>
         </div>
         <form onSubmit={submit} style={{ display: 'grid', gap: 12 }}>
-          {mode === 'signup' && <label className="field">Name<input autoComplete="name" required minLength={2} maxLength={80} value={name} onChange={e => setName(e.target.value)} placeholder="Your name" /></label>}
+          {mode === 'signup' && <label className="fld">Name<input autoComplete="name" required minLength={2} maxLength={80} value={name} onChange={e => setName(e.target.value)} placeholder="Your name" /></label>}
           <label className="field">Email<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
           <label className="field">Password<input type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={8} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
           {error && <p role="alert" style={{ color: 'var(--bad)', margin: 0 }}>{error}</p>}
@@ -41,7 +41,7 @@ export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) =
         </form>
         <p className="center muted" style={{ marginTop: 18 }}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-          <button className="btn link" type="button" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}>
+          <button className="btn ghost" type="button" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}>
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>
         </p>
