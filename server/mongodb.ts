@@ -1,0 +1,19 @@
+import { MongoClient } from 'mongodb'
+
+const globalForMongo = globalThis as typeof globalThis & {
+  __interviewBoxMongo?: Promise<MongoClient>
+}
+
+export function getDb() {
+  if (!globalForMongo.__interviewBoxMongo) {
+    const uri = process.env.MONGODB_URI
+    if (!uri) throw new Error('MONGODB_URI is not configured for this Vercel environment')
+    const client = new MongoClient(uri, { maxPoolSize: 10, appName: 'InterviewBox' })
+    globalForMongo.__interviewBoxMongo = client.connect().catch((error) => {
+      delete globalForMongo.__interviewBoxMongo
+      throw error
+    })
+  }
+  const name = process.env.MONGODB_DATABASE || 'interview_box'
+  return globalForMongo.__interviewBoxMongo.then((client) => client.db(name))
+}
