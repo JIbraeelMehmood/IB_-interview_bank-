@@ -7,7 +7,7 @@ import { startSync, flush } from './lib/sync'
 import { dueCount } from './lib/fsrs'
 import { aiReady, aiWhy } from './lib/ai'
 import { finishSignIn } from './lib/auth'
-import { accountRequest, type AccountUser } from './lib/account'
+import { accountRequest, activateAccount, type AccountUser } from './lib/account'
 import Auth from './features/Auth'
 import { usePlayer } from './lib/player'
 import { PlayerBar } from './components/Player'
@@ -36,8 +36,11 @@ export default function App() {
 
   async function enterApp(account: AccountUser) {
     setUser(account)
+    // Restore this account's cloud state before initializing the local settings store.
+    await flush()
     await init()
     try { await ensureSeeded() } catch { /* Library displays seed errors */ }
+    localStorage.setItem('ibx-user-cache', JSON.stringify(account))
     const r = await finishSignIn()
     if (r.message) toast(r.message)
     setReady(true)
@@ -48,16 +51,23 @@ export default function App() {
     let alive = true
     void accountRequest('/api/auth/me').then(async data => {
       if (!alive) return
-      const marker = localStorage.getItem('ibx-active-account')
-      if (marker && marker !== data.user.id) {
-        const { activateAccount } = await import('./lib/account')
-        await activateAccount(data.user.id)
-      } else {
-        localStorage.setItem('ibx-active-account', data.user.id)
-      }
+      await activateAccount(data.user.id)
+      localStorage.setItem('ibx-user-cache', JSON.stringify(data.user))
       await enterApp(data.user)
-    }).catch(() => {
-      if (alive) { setUser(null); setReady(false) }
+    }).catch(async () => {
+      // A previously signed-in user can still open the PWA offline.
+      if (!alive) return
+      try {
+        const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+        if (cached?.id && cached.email) {
+          await activateAccount(cached.id)
+          await enterApp(cached)
+        } else {
+          setUser(null); setReady(false)
+        }
+      } catch {
+        setUser(null); setReady(false)
+      }
     }).finally(() => { if (alive) setAuthChecked(true) })
     return () => { alive = false }
   }, [])
@@ -87,6 +97,7 @@ export default function App() {
     // Best-effort upload before ending the session; pending rows remain local if offline.
     if (online) await flush()
     try { await accountRequest('/api/auth/logout', {}) } catch { /* local sign-out still proceeds */ }
+    localStorage.removeItem('ibx-user-cache')
     setUser(null); setReady(false); setDue(0)
   }
 
