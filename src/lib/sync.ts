@@ -1,5 +1,6 @@
 /** Offline-first, account-scoped sync. Local writes stay in Dexie/outbox. */
 import { db } from './db'
+import { serverUrl } from './ai'
 
 const SYNCED = ['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings'] as const
 let flushing = false
@@ -68,10 +69,25 @@ export async function applyChanges(rows: { table: string; row: any }[]) {
 
 /** Legacy Laravel content endpoints remain available for users who configured them. */
 export async function pullBank(updatedSince?: number): Promise<number> {
-  return 0
+  if (!serverUrl()) return 0
+  const qs = updatedSince ? `?updated_since=${updatedSince}` : ''
+  const res = await fetch(`${serverUrl()}/api/v1/questions${qs}`)
+  if (!res.ok) throw new Error(`server ${res.status}`)
+  const data = await res.json()
+  const rows: any[] = data.data || []
+  if (rows.length) await db.questions.bulkPut(rows)
+  return rows.length
 }
-export async function pullTranslations(_lang: string, _updatedSince?: number): Promise<number> {
-  return 0
+export async function pullTranslations(lang: string, updatedSince?: number): Promise<number> {
+  if (!serverUrl()) return 0
+  const qs = new URLSearchParams({ lang })
+  if (updatedSince) qs.set('updated_since', String(updatedSince))
+  const res = await fetch(`${serverUrl()}/api/v1/translations?${qs}`)
+  if (!res.ok) throw new Error(`server ${res.status}`)
+  const data = await res.json()
+  const rows: any[] = data.data || []
+  if (rows.length) await db.translations.bulkPut(rows.map((r) => ({ ...r, id: `${r.code}|${r.lang}`, t: Date.now() })))
+  return rows.length
 }
 
 export function startSync() {
