@@ -49,12 +49,17 @@ function tokenHash(token: string) {
   return createHash('sha256').update(token).digest('hex')
 }
 
-export function setSessionCookie(res: ApiResponse, token: string) {
-  res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_DAYS * 86400}`)
+export function cookieIsSecure(req: ApiRequest) {
+  const proto = req.headers['x-forwarded-proto']
+  return process.env.VERCEL === '1' || proto === 'https'
 }
 
-export function clearSessionCookie(res: ApiResponse) {
-  res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`)
+export function setSessionCookie(res: ApiResponse, token: string, secure = true) {
+  res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(token)}; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Path=/; Max-Age=${SESSION_DAYS * 86400}`)
+}
+
+export function clearSessionCookie(res: ApiResponse, secure = true) {
+  res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Path=/; Max-Age=0`)
 }
 
 export async function createSession(db: Db, userId: string) {
