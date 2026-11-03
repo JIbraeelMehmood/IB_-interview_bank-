@@ -1,5 +1,5 @@
-import { currentUser, type ApiRequest, type ApiResponse } from '../_lib/auth'
-import { getDb } from '../_lib/mongodb'
+import { currentUser, type ApiRequest, type ApiResponse } from '../../server/auth'
+import { getDb } from '../../server/mongodb'
 
 const ALLOWED = new Set(['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings'])
 const keyOf = (row: any) => String(row?.code ?? row?.id ?? row?.key ?? '')
