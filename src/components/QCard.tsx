@@ -7,7 +7,8 @@ import { getOrTranslate, getTranslation, spokenText, LANG_LABEL } from '../lib/t
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
 import { queue } from '../lib/sync'
-import { LANGS, LANG_NAME, LEVEL_NAME, EXP_SHORT, type Lang, type Question, type Translation } from '../lib/types'
+import { voteQuestion, hasVoted, getQuestionStats } from '../lib/community'
+import { LANGS, LANG_NAME, LEVEL_NAME, EXP_SHORT, EXP_LABEL, type Lang, type Question, type Translation, type ExpYears } from '../lib/types'
 import { Md, Sheet, toast } from './ui'
 import { explain, explainKey, getRefAnswer } from '../lib/features'
 import { aiReady, aiWhy } from '../lib/ai'
@@ -30,7 +31,9 @@ export function QCard({
   const [tr, setTr] = useState<Translation | null>(null)
   const [busy, setBusy] = useState('')
   const [rate, setRate] = useState<0 | 1 | 2 | 3>(0)
-  const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref'>('')
+  const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote'>('')
+  const [myVote, setMyVote] = useState<ExpYears | 0>(0)
+  const [askCount, setAskCount] = useState(0)
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -42,6 +45,18 @@ export function QCard({
   useEffect(() => {
     setLang(settings.lang)
   }, [settings.lang])
+
+  // Load community vote status + stats for this question
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      const vote = await hasVoted(q.code)
+      if (live) setMyVote(vote ? vote.expYears : 0)
+      const stats = await getQuestionStats(q.code)
+      if (live) setAskCount(stats?.askCount || 0)
+    })()
+    return () => { live = false }
+  }, [q.code])
 
   useEffect(() => {
     if (lang === 'en') {
@@ -264,6 +279,14 @@ export function QCard({
           >
             🎯 Ref
           </button>
+          <button
+            className={`btn sm${myVote ? ' primary' : ''}`}
+            onClick={() => setOpen('vote')}
+            title="Mark this question as one you were actually asked in an interview"
+          >
+            {myVote ? `✓ Asked (${myVote}yr)` : '🗳 Asked?'}
+            {askCount > 0 && <span className="n" style={{ marginLeft: 4, opacity: 0.7 }}>{askCount}</span>}
+          </button>
           {ankiAvailable() && (
             <button
               className="btn sm"
@@ -365,6 +388,26 @@ export function QCard({
       {open === 'ai' && <CardAiSheet q={q} lang={lang} onClose={() => setOpen('')} />}
 
       {open === 'ref' && <RefSheet q={q} onClose={() => setOpen('')} />}
+
+      {open === 'vote' && (
+        <VoteSheet
+          q={q}
+          currentVote={myVote}
+          askCount={askCount}
+          onClose={() => setOpen('')}
+          onVote={async (exp, company) => {
+            try {
+              await voteQuestion(q.code, exp, company)
+              setMyVote(exp)
+              const stats = await getQuestionStats(q.code)
+              setAskCount(stats ? stats.askCount : askCount + 1)
+              toast(`✓ Marked as asked in a ${exp}-yr interview. This helps everyone.`)
+            } catch (e) {
+              toast((e as Error).message)
+            }
+          }}
+        />
+      )}
     </>
   )
 }
@@ -498,6 +541,83 @@ function RefSheet({ q, onClose }: { q: Question; onClose: () => void }) {
             )}
           </>
         )}
+      </div>
+    </Sheet>
+  )
+}
+
+/** Community vote sheet — mark a question as actually asked in an interview. */
+function VoteSheet({
+  q,
+  currentVote,
+  askCount,
+  onClose,
+  onVote,
+}: {
+  q: Question
+  currentVote: ExpYears | 0
+  askCount: number
+  onClose: () => void
+  onVote: (exp: ExpYears, company?: string) => Promise<void>
+}) {
+  const [exp, setExp] = useState<ExpYears>(currentVote || (q.expYears || 3))
+  const [company, setCompany] = useState('')
+  return (
+    <Sheet title="Was this asked in an interview?" onClose={onClose}>
+      <div className="stack">
+        <p className="small muted" style={{ margin: 0 }}>
+          {q.q.slice(0, 120)}{q.q.length > 120 ? '…' : ''}
+        </p>
+        {askCount > 0 && (
+          <div className="card" style={{ padding: 10, borderColor: 'var(--brand-soft)' }}>
+            <span className="small">
+              👥 <b>{askCount}</b> {askCount === 1 ? 'person has' : 'people have'} confirmed this question was asked in real interviews.
+            </span>
+          </div>
+        )}
+        {currentVote ? (
+          <div className="card" style={{ padding: 8 }}>
+            <span className="small">
+              ✅ You marked this as asked in a <b>{currentVote}-year</b> interview.
+            </span>
+          </div>
+        ) : null}
+        <div>
+          <b className="small">Which experience level was this for?</b>
+          <div className="scroll-x" style={{ marginTop: 6 }}>
+            {([1, 2, 3, 4, 5, 6] as ExpYears[]).map((yr) => (
+              <button
+                key={yr}
+                className={`chip${exp === yr ? ' on' : ''}`}
+                onClick={() => setExp(yr)}
+                style={{ cursor: 'pointer' }}
+              >
+                {EXP_LABEL[yr]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="fld">
+          Which company asked it? <span className="muted">(optional)</span>
+          <input
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="e.g. PITB, Arbisoft, Google…"
+          />
+        </label>
+        <button
+          className="btn primary"
+          onClick={async () => {
+            await onVote(exp, company)
+            onClose()
+          }}
+        >
+          ✓ Confirm: this was asked in my interview
+        </button>
+        <p className="tiny muted" style={{ margin: 0 }}>
+          Your vote is anonymous to other users. It helps everyone see which questions are most likely
+          to come up — by category and experience level.
+        </p>
       </div>
     </Sheet>
   )

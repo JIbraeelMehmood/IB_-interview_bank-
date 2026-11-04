@@ -97,21 +97,34 @@ export function listVoices(): SpeechSynthesisVoice[] {
 
 const baseLang = (v: SpeechSynthesisVoice) => (v.lang || '').toLowerCase().replace('_', '-')
 
-/** Preference order for a language. Urdu falls back to Hindi. */
+/** Preference order for a language. Urdu falls back to Hindi.
+ *  Roman Urdu prefers Hindi (closer to South Asian pronunciation) then en-IN. */
 const PREF: Record<Lang, string[]> = {
   en: ['en-in', 'en-gb', 'en-us', 'en'],
   ur: ['ur-pk', 'ur-in', 'hi-in', 'hi-pk', 'ur', 'hi'],
-  ru: ['en-in', 'en-us', 'en-gb', 'en'],
+  ru: ['hi-in', 'en-in', 'en-us', 'en-gb', 'en', 'ur-pk', 'ur'],
   hi: ['hi-in', 'hi-pk', 'hi'],
 }
 
-/** Natural / Neural / Online voices first — they sound best. */
+/** Natural / Neural / Online voices first — they sound best.
+ *  Lower score = higher quality preference. */
 function quality(v: SpeechSynthesisVoice): number {
   const n = (v.name || '').toLowerCase()
   if (/natural|neural/.test(n)) return 0
-  if (/online|google|siri|microsoft/.test(n)) return 1
-  if (/enhanced|premium/.test(n)) return 2
+  if (/online|google|siri|microsoft|apple/.test(n)) return 1
+  if (/enhanced|premium|samantha|aaron|nick|jenny/.test(n)) return 2
+  if (/local|default/.test(n)) return 4
   return 3
+}
+
+/** Human-readable quality label for UI display. */
+export function voiceQualityLabel(v: SpeechSynthesisVoice): string {
+  const n = (v.name || '').toLowerCase()
+  if (/natural|neural/.test(n)) return 'Neural'
+  if (/online|google|siri|microsoft|apple/.test(n)) return 'Cloud'
+  if (/enhanced|premium|samantha|aaron|nick|jenny/.test(n)) return 'Enhanced'
+  if (/local|default/.test(n)) return 'Basic'
+  return 'Standard'
 }
 
 export function pickVoice(lang: Lang, override?: string): SpeechSynthesisVoice | null {
@@ -161,7 +174,14 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms))
 }
 
-function sayOne(text: string, lang: Lang, rate: number, voiceName?: string): Promise<void> {
+function sayOne(
+  text: string,
+  lang: Lang,
+  rate: number,
+  pitch: number,
+  volume: number,
+  voiceName?: string,
+): Promise<void> {
   return new Promise((resolve) => {
     let settled = false
     const done = () => {
@@ -182,6 +202,8 @@ function sayOne(text: string, lang: Lang, rate: number, voiceName?: string): Pro
       u.lang = lang === 'ur' ? 'ur-PK' : lang === 'hi' ? 'hi-IN' : 'en-IN'
     }
     u.rate = rate
+    u.pitch = pitch
+    u.volume = volume
     u.onend = done
     u.onerror = () => {
       if (v) markBroken(v)
@@ -220,6 +242,8 @@ export async function speakSegments(
 ): Promise<void> {
   stopped = false
   const rate = settings.rate ?? 0.95
+  const pitch = settings.pitch ?? 1.0
+  const volume = settings.volume ?? 1.0
   for (let i = 0; i < segments.length; i++) {
     if (stopped) break
     const seg = segments[i]
@@ -234,27 +258,46 @@ export async function speakSegments(
     if (seg.gap) await sleep(seg.gap)
     if (stopped) break
 
-    // Prepare the text for the voice of the language it is written in.
+    // Determine the effective language and prepare text.
     let text = seg.text
-    if (seg.lang === 'en') text = enSay(text)
-    else if (seg.lang === 'ur') text = await urSpeech(text)
-    else if (seg.lang === 'hi') text = await hiSpeech(text)
+    let speakLang: Lang = seg.lang
+    let voiceOverride: string | undefined
 
-    const voiceName =
-      seg.lang === 'en' ? settings.voiceEn : seg.lang === 'ur' ? settings.voiceUr : settings.voiceHi
+    if (seg.lang === 'en') {
+      text = enSay(text)
+      voiceOverride = settings.voiceEn
+    } else if (seg.lang === 'ur') {
+      text = await urSpeech(text)
+      voiceOverride = settings.voiceUr
+    } else if (seg.lang === 'hi') {
+      text = await hiSpeech(text)
+      voiceOverride = settings.voiceHi
+    } else if (seg.lang === 'ru') {
+      // Roman Urdu — two strategies:
+      // 1. ruToUrdu: transliterate to Urdu script and use an Urdu/Hindi voice
+      // 2. Default: use the Roman Urdu voice or fall back to en-IN
+      if (settings.ruToUrdu) {
+        text = await urSpeech(romanUrduToScript(text))
+        speakLang = 'ur'
+        voiceOverride = settings.voiceRu || settings.voiceUr
+      } else {
+        voiceOverride = settings.voiceRu
+        text = enSay(text)
+      }
+    }
 
     // B-05: read the English words with an English voice, the rest in-language.
-    if (settings.splitEn && seg.lang !== 'en') {
+    if (settings.splitEn && speakLang !== 'en') {
       for (const run of splitLatinRuns(text)) {
         if (stopped) break
         opts.onSegment?.(i)
-        await sayOne(run.text, run.latin ? 'en' : seg.lang, rate, run.latin ? settings.voiceEn : voiceName)
+        await sayOne(run.text, run.latin ? 'en' : speakLang, rate, pitch, volume, run.latin ? settings.voiceEn : voiceOverride)
       }
     } else {
       for (const part of chunkText(text)) {
         if (stopped) break
         opts.onSegment?.(i)
-        await sayOne(part, seg.lang, rate, voiceName)
+        await sayOne(part, speakLang, rate, pitch, volume, voiceOverride)
       }
     }
   }
@@ -275,6 +318,77 @@ function splitLatinRuns(text: string): { text: string; latin: boolean }[] {
   }
   if (last < text.length) out.push({ text: text.slice(last), latin: false })
   return out.filter((r) => r.text.trim())
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Roman Urdu → Urdu script transliteration (for TTS)
+ * Character-level mapping so Roman Urdu sounds natural with an Urdu/Hindi
+ * voice instead of being mispronounced by an English voice.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+// Digraphs sorted longest-first so "kh" matches before "k"
+const RU_DIGRAPHS: [string, string][] = [
+  ['kh', 'خ'], ['gh', 'غ'], ['ch', 'چ'], ['sh', 'ش'], ['th', 'تھ'], ['dh', 'دھ'],
+  ['ph', 'پھ'], ['bh', 'بھ'], ['jh', 'جھ'], ['nh', 'نھ'], ['mh', 'مھ'],
+  ['aa', 'ا'], ['ee', 'ی'], ['oo', 'و'], ['ai', 'ے'], ['au', 'او'], ['ei', 'ے'],
+  ['ou', 'و'], ['iy', 'ی'], ['ay', 'ے'], ['oy', 'و'],
+]
+
+const RU_SINGLE: Record<string, string> = {
+  a: 'ا', b: 'ب', p: 'پ', t: 'ت', d: 'د', r: 'ر', k: 'ک', g: 'گ', m: 'م',
+  n: 'ن', l: 'ل', s: 'س', f: 'ف', q: 'ق', v: 'و', w: 'و', y: 'ی', h: 'ہ',
+  j: 'ج', z: 'ز', x: 'کس', c: 'ک', e: 'ے', i: 'ی', o: 'و', u: 'و',
+  '0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴', '5': '۵',
+  '6': '۶', '7': '۷', '8': '۸', '9': '۹',
+}
+
+/** Convert Roman Urdu (Latin) to Urdu script for TTS. Character-level. */
+export function romanUrduToScript(text: string): string {
+  if (!text) return text
+  const lower = text.toLowerCase()
+  let out = ''
+  let i = 0
+  while (i < lower.length) {
+    let matched = false
+    for (const [from, to] of RU_DIGRAPHS) {
+      if (lower.slice(i, i + from.length) === from) {
+        out += to
+        i += from.length
+        matched = true
+        break
+      }
+    }
+    if (matched) continue
+    const ch = lower[i]
+    if (RU_SINGLE[ch] !== undefined) out += RU_SINGLE[ch]
+    else if (ch === ' ') out += ' '
+    else if (/[a-z]/.test(ch)) out += ch
+    else out += text[i]
+    i++
+  }
+  return out
+}
+
+/**
+ * Preview a single voice with sample text. Used by the voice picker so
+ * users can hear a voice before committing to it.
+ */
+export async function previewVoice(
+  voiceURI: string,
+  lang: Lang,
+  rate = 0.95,
+  pitch = 1.0,
+  volume = 1.0,
+): Promise<void> {
+  const samples: Record<Lang, string> = {
+    en: 'The queue worker processes background jobs asynchronously in Laravel.',
+    ur: 'لاراول میں کوئو ورکر بیک گراؤنڈ جابز کو غیر ہم وقت میں پروسیس کرتا ہے۔',
+    ru: 'Laravel mein queue worker background jobs ko async process karta hai.',
+    hi: 'लारावेल में क्यू वर्कर बैकग्राउंड जॉब्स को असिंक्रोनस रूप से प्रोसेस करता है।',
+  }
+  const text = samples[lang] || samples.en
+  stopSpeaking()
+  await sayOne(text, lang, rate, pitch, volume, voiceURI)
 }
 
 /* ------------------------- speech recognition ---------------------- */
@@ -643,7 +757,7 @@ export function listenWithWhisper(opts: {
       })
       if (stopped) return
       opts.onInterim?.('⏳ Transcribing…')
-      const result = await whisperTranscribe(recResult.blob, {
+      const result = await whisperTranscribe(recResult!.blob, {
         lang: opts.lang?.split('-')[0] || 'en',
       })
       opts.onFinal?.({

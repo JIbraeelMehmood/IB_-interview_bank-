@@ -1,0 +1,12 @@
+
+===== RAW build =====
+--- @73105 --- ction(t){t.re=kwRegex(t.kw);TMAP[t.id]=t});\n}\n\n/* ---------- bank ---------- */\nvar RAW=JSON.parse(document.getElementById('bank').textContent), QS=[], QMAP={};\nvar PARTS_BOOK=[], PARTS_NEW=[];\nfunction mkQ(o){\n  var q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();\n  return q;\n}\nfunction tagQ(q){\n  var set={};q.t0.forEach(function(t){set[t]=1});\n  var head=q.q+' \n '+q.c;\n  TECHS.forEach(function(t){\n    if(!t.re)return; t.re.lastIndex=0;\n    if(t.re.test(head)){set[t.id]=1;return}\n    if(t.custom){t.re.lastIndex=0;if(t.re.test(q.plain))set[t.id]=1}\n  });\n  if(q.f.indexOf('h')>=0)set.deep=1;\n  q.t=Object.keys(set);\n}\nfunction buildBank(){\n  QS=[];QMAP={};\n  RAW.forEach(function(o,i){var q=mkQ(o);q.n=i;QS.push(q);if(o.tr&&typeof TR==='object')['ru','ur'].forEach(function(l){var k=o.id+'|'+l,b=o.tr[l];if(b&&!TR[k])TR[k]=
+(matches 1)
+
+===== bank script tag =====
+--- @442908 --- {var out=$('#siteMsg');if(out)out.innerHTML=spinner('Publishing your copy…');if(btn)btn.disabled=true;\n  var fin=function(){if(btn)btn.disabled=false};\n  var getHtml=fetch(location.href.split('#')[0].split('?')[0],{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){if(t.indexOf('id="bank"')<0)throw 'bad';return t});\n  Promise.all([puterLoad(),getHtml]).then(function(r){var pt=r[0],html=r[1],DIR='InterviewBox/site';\n    return pt.fs.write(DIR+'/index.html',html,{overwrite:true,createMi
+(matches 1)
+
+===== mkQ =====
+--- @73219 --- K=[], PARTS_NEW=[];\nfunction mkQ(o){\n  var q={id:o.id,q:o.q,a:o.a,l:o.l||'m',p:o.p||'',c:o.c||'',f:o.f||'',t0:o.t||[],s:o.s||'b',x:o.x||0,n:0};\n  if(o.ex)q.ex=o.ex;\n  q.plain=strip(q.a); q.sq=(q.q+' '+q.c).toLowerCase(); q.sa=q.plain.toLowerCase();\n  return q;\n}\nfunction tagQ(q){\n  var set={};q.t0.forEach(function(t){set[t]=1});\n  var head=q.q+' \n '+q.c;\n  TECHS.forEach(function(t){\n    if(!t.re)return; t.re.lastIndex=0;\n    if(t.re.test(head)){set[t.id]=1;return}\n    if(t.custom){t.re.lastIndex=0;if(t.re.test(q.plain))set[t.id]=1}\n  });\n  if(q.f.indexOf('h')>=0)set.deep=1;\n  q.t=Object.keys(set);\n}\nfunction buildBank(){\n  QS=[];QMAP={};\n  RAW.forEach(function(o,i){var q=mkQ(o);q.n=i;QS.push(q);if(o.tr&&typeof TR==='objec
+(matches 1)

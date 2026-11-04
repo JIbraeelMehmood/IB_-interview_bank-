@@ -83,3 +83,97 @@ already speaks the API shape they will use.
 # IB\_-interview_bank-
 
 modern PWA which help to perper the interview question
+
+
+ Summary of improvements
+  
+  1. AI Auto-Failover (providers.ts)
+  
+  When the primary AI provider fails with a network or provider error, the system automatically tries other configured providers before giving
+  up. The fallback order is: groq → gemini → openrouter → puter → mistral → xai → fireworks → openai → anthropic → custom → server. User
+  errors (bad key, bad model) don't trigger failover — only provider-side failures do.
+  
+  2. Puter SDK Integration (providers.ts + ai.ts + Progress.tsx)
+  - loadPuterSDK() dynamically loads the Puter.com v2 script, enabling free AI with zero API keys
+  - puterCall() sends prompts through Puter's ai.chat() with streaming support
+  - New "🆓 Free AI — no key needed" card in AI Connect settings — one tap to enable
+  - When enabled, Puter becomes a failover target too, so if a paid provider goes down, the free AI kicks in
+  - Works on localhost and https (not on file://)
+  
+  3. PDF Resume Upload (AiStudio.tsx)
+  - CV↔JD match now accepts .pdf files in addition to .txt, .md, .json, .docx
+  - PDF is parsed in the browser using pdf.js (lazy-loaded from CDN, no dependency bloat)
+  - Shows "📄 Parsing PDF…" status while extracting text
+  - Nothing is uploaded to a server — all processing stays client-side
+  
+  4. Question Bank Expansion (1950 → 2140)
+  - New scripts/parse-markdown.mjs script parses the 9 markdown interview Q&A files in the project root
+  - Extracted 190 new questions with automatic level detection, tech tag extraction, and deduplication
+  - Questions tagged with s: 'import' so they're distinct from the original bank
+  - Run with npm run parse-md to re-parse at any time
+  - meta.json updated with new count and parts
+  
+  5. Bug Fixes
+  - Fixed pre-existing account.ts TypeScript error (Dexie transaction with too many table arguments)
+  - Fixed pre-existing speech.ts null check on recResult
+  - All TypeScript errors now resolved — tsc -b passes with 0 errors
+  
+  Build
+  
+  ✅ npm run build — 138 modules, 3.3 MB dist, 23 precached entries, 0 errors ✅ tsc -b — 0 type errors
+ 
+ How it works
+  
+  Logged-in users tap "🗳 Asked?" on any question card to confirm it was actually asked to them in a real interview. They select their
+  experience level (1–6 years) and optionally name the company. Votes sync to MongoDB and aggregate into community stats that everyone can see
+  — which questions are most likely to come up, by category and experience level.
+  
+  What was built
+  
+  New types (types.ts):
+  - CommunityVote — one vote per user per question: code, expYears, company, timestamp
+  - QuestionStats — aggregated stats per question: askCount, askByExp (per experience band), lastAskedAt
+  
+  Database (db.ts):
+  - New Dexie v2 schema with two new tables: communityVotes (user's own votes) and questionStats (cached server stats)
+  - Indexed by code, askCount, and updatedAt for fast queries
+  
+  API endpoints:
+  - POST /api/v1/vote — authenticates user, upserts vote into MongoDB community_votes collection (one vote per user per question), returns
+  updated aggregate for that question
+  - GET /api/v1/stats — authenticates user, aggregates all votes by question code with per-experience-band breakdown, returns top 500
+  questions by ask count plus summary stats (total votes, by experience band)
+  - api/v1/sync.ts updated — community votes go through the offline outbox and sync to MongoDB when online
+  
+  Community module (src/lib/community.ts):
+  - voteQuestion() — save vote locally + queue for sync
+  - hasVoted() — check if current user already voted
+  - getQuestionStats() — get cached stats for one question
+  - refreshQuestionStats() — pull fresh aggregates from server
+  - communitySummary() — aggregate stats for the insights panel (total votes, by experience band, top categories, top questions)
+  
+  UI — Question card (QCard.tsx):
+  - New "🗳 Asked?" button in the action row — shows the user's current vote (e.g. "✓ Asked (3yr)") and community ask count badge
+  - VoteSheet — a bottom sheet where users pick their experience level (1–6 yr chips), optionally name the company, and confirm
+  - Shows how many other people have confirmed the question was asked
+  
+  UI — Library (Library.tsx):
+  - New "Most asked (community verified)" sort option in the sort dropdown
+  - loadLibrary() now merges community stats and sorts by ask count when this option is selected
+  
+  UI — Progress (Progress.tsx):
+  - New "📊 Community insights" tile on the Progress dashboard
+  - InsightsSheet — full insights panel showing:
+    - Total "asked" votes and questions tracked
+    - Bar chart of questions asked by experience level (1–6 yrs)
+    - Top categories with most confirmed questions
+    - Top 20 most-confirmed questions with ask counts
+    - Refresh button to pull latest stats from server
+    - Empty state guiding users to be the first to vote
+  
+  Sync (sync.ts):
+  - communityVote added to the SYNCED record types
+  - Votes flow through the offline outbox — work offline, sync when online
+  
+  Build: ✅ tsc -b passes with 0 errors, npm run build passes with 0 errors and 0 warnings — 139 modules, 3.3 MB dist.
+ 

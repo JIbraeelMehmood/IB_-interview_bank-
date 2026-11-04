@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type {
   Answer,
   AudioAsset,
+  CommunityVote,
   ExplainEntry,
   ImportRecord,
   JdPlan,
@@ -9,6 +10,7 @@ import type {
   OutboxItem,
   Profile,
   Question,
+  QuestionStats,
   Rating,
   Review,
   Story,
@@ -43,6 +45,8 @@ class InterviewBoxDB extends Dexie {
   outbox!: Table<OutboxItem, number>
   settings!: Table<SettingsRow, string>
   kv!: Table<KVRow, string>
+  communityVotes!: Table<CommunityVote, string>
+  questionStats!: Table<QuestionStats, string>
 
   constructor() {
     super('interview-box')
@@ -61,6 +65,25 @@ class InterviewBoxDB extends Dexie {
       outbox: '++id, type, createdAt',
       settings: 'key',
       kv: 'key',
+    })
+    // v2: community question rating tables
+    this.version(2).stores({
+      questions: 'code, part, level, *t, s, updatedAt',
+      translations: '[code+lang], lang, updatedAt, t',
+      ratings: 'code, rating, updatedAt',
+      reviews: 'code, due',
+      answers: 'code, updatedAt',
+      audio: 'id, code, lang, mode, cachedAt',
+      explains: 'id, code, lang, updatedAt',
+      mocks: 'id, at',
+      jds: 'id, at',
+      stories: 'id, updatedAt',
+      imports: 'id, at',
+      outbox: '++id, type, createdAt',
+      settings: 'key',
+      kv: 'key',
+      communityVotes: 'code, updatedAt',
+      questionStats: 'code, askCount, updatedAt',
     })
   }
 }

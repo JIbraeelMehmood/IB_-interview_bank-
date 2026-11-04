@@ -1,0 +1,446 @@
+
+================ Failure-First Backend Interview What Happens When Things Fail (PHP Laravel).md (615 lines) ================
+--- headings (36) ---
+    1: # Failure-First Backend Interview: What Happens When Things Fail (PHP / Laravel)
+    5: ## Har failure answer ka 4-step pattern
+   18: # Signature question
+   38: # Section 1: Queue jobs aur retries
+   60: # Section 2: Idempotency, duplicates aur webhooks
+   80: # Section 3: Redis aur cache failures
+   98: # Section 4: Database failures
+  120: # Section 5: External APIs, timeouts aur partial failures
+  136: # Section 6: Deploy, release aur scheduler failures
+  152: # Section 7: Detection aur observability
+  170: # Section 8: Data integrity aur recovery
+  184: # Section 9: Pressure mein system
+  198: # Section 10: Aur flows: "har step par fail ho to?"
+  210: # Appendix: Laravel code patterns
+  320: # Practice kaise karein
+  328: # Rapid-fire (ek line mein)
+  345: # Part 2: Technology-wise failure questions (Nginx, PHP-FPM, Laravel, MySQL, Redis, MongoDB, Docker aur baqi)
+  349: ## A. Nginx, PHP-FPM aur Linux
+  379: ## B. Laravel application ke failure modes
+  417: ## C. MySQL ke failure modes
+  443: ## D. Redis aur queue infrastructure
+  459: ## E. MongoDB ke failure modes
+  477: ## F. Docker aur containers
+  495: ## G. Load balancer aur network failures
+  509: ## H. Security failures
+  523: ## I. CI, dependencies aur testing ke failure modes
+  539: ## J. Mobile aur API client ke failure modes
+  549: # Symptom se pehle ke checks (cheat table)
+  570: # Commands cheat sheet
+  573: # Nginx / PHP-FPM / Linux
+  581: # Laravel
+  587: # MySQL
+  593: # Redis
+  597: # Docker
+  602: # Network / TLS
+  606: # In sawalon ko level ke hisaab se kaise parhein
+--- marker prefixes --- [["",16],["F",162]]
+--- first 12 non-empty lines ---
+   # Failure-First Backend Interview: What Happens When Things Fail (PHP / Laravel)
+   Questions English mein hain (interview mein yehi poochhe jayenge), answers Roman Urdu dev-style mein. Yeh woh sawal hain jo syntax
+   ## Har failure answer ka 4-step pattern
+   **State, Detect, Recover, Prevent.**
+   1. **State:** fail hone ke baad system kis haalat mein reh jata hai? (paise kat gaye lekin order nahi bana, ya SMS gaya lekin DB u
+   2. **Detect:** kaise pata chalega, user ke batane se pehle? (alert, metric, reconciliation report)
+   3. **Recover:** ab theek kaise karenge? (retry, compensating action, replay, manual fix)
+   4. **Prevent:** dobara na ho iske liye kya lagayenge? (idempotency, unique constraint, timeout, test)
+   **Interviewer in cheezon ko dekhta hai:** kya aap partial failure samajhte hain, kya aap khud "idempotent?" ka sawal uthate hain, 
+   **Agar aap ne aisa incident nahi dekha:** seedha kahein "mujhe production mein yeh nahi hua, lekin main yeh check karunga" aur rea
+   # Signature question
+   **F1. "Take a flow you built, like checkout or a signup email. Walk me through every step where it can fail halfway, and what stat
+
+================ Interview Prep 2 PITB Pakistan Railways ITOPS (Program-Specific Question Bank).md (538 lines) ================
+--- headings (28) ---
+    1: # Interview Prep 2: PITB / Pakistan Railways ITOPS, Program-Specific Question Bank
+    5: ## 0. What they are really testing
+   14: ## A. Role, delivery and HR questions
+   40: ## B. PHP fundamentals
+   58: ## C. Laravel
+   80: ## D. MySQL, indexes and performance
+  100: ## E. BI, reporting and data
+  118: ## F. Design patterns and principles
+  134: ## G. System design for this program
+  164: ## H. Web fundamentals and integration
+  178: ## I. QA, testing and CI/CD (heart of this JD)
+  198: ## J. Docker, environments and operations
+  216: ## K. Security
+  232: ## L. Performance and scaling
+  242: ## M. Cross-check scenarios (practice out loud)
+  257: ## N. Team lead and delivery
+  271: ## O. Rapid-fire
+  289: ## P. Questions you should ask them
+  299: ## Q. Honest-gap answers (memorize)
+  307: ## R. Mock interview order (30 minutes)
+  319: # Part 2: Database, Big Data, Data Security, Scopes, Scenarios, Tricky and Concept Questions
+  323: ## S. MySQL deep dive (database questions)
+  382: ## T. Big data and data at scale
+  410: ## U. Data security and privacy
+  440: ## V. Laravel scopes and Eloquent questions
+  468: ## W. Scenario-based questions (database and data)
+  483: ## X. Tricky and "between the lines" questions
+  515: ## Y. Concept cheat sheet (one-line explanations)
+--- marker prefixes --- [["",42],["Q",186]]
+--- first 12 non-empty lines ---
+   # Interview Prep 2: PITB / Pakistan Railways ITOPS, Program-Specific Question Bank
+   Prepared for Jibraeel Mehmood, Senior Software Engineer, IT Operations. Easy wording, first person, with cross-questions, scenario
+   ## 0. What they are really testing
+   1. **Delivery owner:** can you hit targets and deadlines on a 3-year program with many stakeholders.
+   2. **Quality owner:** can you keep bugs out of a government system that thousands of staff and millions of passengers use.
+   3. **Operations mindset:** the title says IT Operations, so expect questions on uptime, monitoring, support and incidents, not onl
+   4. **Government context:** audit trails, sensitive data (CNIC, police records), role-based access, long-term maintenance, vendor a
+   **Opening line to use:** "I have built high-volume, multi-tenant platforms with queues, caching and live dashboards. The same disc
+   ## A. Role, delivery and HR questions
+   **Q1. Why do you want to work on Pakistan Railways digital transformation?** A: It is a large public system with real impact: tick
+   **Q2. This is a 3-year contract. Why should we believe you will stay and stay motivated?** A: A 3-year program lets me build thing
+   **Q3. What does "IT Operations" mean to you in a developer role?** A: Writing code that is easy to run: logs, health checks, alert
+
+================ Interview Prep Roman Urdu Version (Poori Guide).md (762 lines) ================
+--- headings (39) ---
+    1: # Interview Prep: Roman Urdu Version (Poori Guide)
+    5: ## 0. Yeh job asal mein kya parakh rahi hai
+   14: ## A. Role, delivery aur HR ke sawal
+   40: ## B. PHP ki buniyaad
+   58: ## C. Laravel
+   80: ## D. MySQL, indexes aur performance
+  100: ## E. BI, reporting aur data
+  118: ## F. Design patterns aur principles
+  134: ## G. Is program ke liye System design
+  164: ## H. Web ki buniyaad aur integration
+  178: ## I. QA, testing aur CI/CD (is JD ka dil)
+  198: ## J. Docker, environments aur operations
+  216: ## K. Security
+  232: ## L. Performance aur scaling
+  242: ## M. Cross-check scenarios (zor se bol kar practice karein)
+  257: ## N. Team lead aur delivery
+  271: ## O. Rapid-fire
+  289: ## P. Aap ko un se kaun se sawal poochne chahiyein
+  299: ## Q. Imaandar gaps ke jawab (yaad karein)
+  307: ## R. Mock interview ki tarteeb (30 minute)
+  319: # Part 2: Database, Big Data, Data Security, Scopes, Scenarios, Tricky aur Concept sawal
+  323: ## S. MySQL gehra jaiza (database ke sawal)
+  382: ## T. Big data aur bari scale par data
+  410: ## U. Data security aur privacy
+  440: ## V. Laravel scopes aur Eloquent ke sawal
+  468: ## W. Scenario-based sawal (database aur data)
+  483: ## X. Tricky aur "lines ke beech" ke sawal
+  515: ## Y. Concepts ki cheat sheet (ek line mein)
+  539: # Part 3: Baqi mauzoo (Git, Linux/Servers, Networking, Redis, APIs, Testing, Agile, Behavioral, Live Coding, C
+  543: ## Z1. Git aur team collaboration
+  557: ## Z2. Linux, Nginx aur server operations
+  577: ## Z3. Networking aur infrastructure ki buniyaad (fiber backbone wala pehlu)
+  593: ## Z4. Redis aur caching amal mein
+  605: ## Z5. API design aur documentation
+  619: ## Z6. Testing amal mein (PHPUnit aur Pest)
+  650: ## Z7. Agile, project aur requirement management
+  668: ## Z8. Behavioral sawal (STAR tareeqa)
+  693: ## Z9. Live coding aur logic tasks (kaghaz par practice)
+  745: ## Z10. Cloud, availability aur monitoring
+--- marker prefixes --- [["",48],["Q",249],["C",8]]
+--- first 12 non-empty lines ---
+   # Interview Prep: Roman Urdu Version (Poori Guide)
+   Yeh PITB / Pakistan Railways ITOPS interview guide ka Roman Urdu tarjuma hai (Part 1, 2 aur 3). Technical words (queue, index, tra
+   ## 0. Yeh job asal mein kya parakh rahi hai
+   1. **Delivery owner:** kya aap 3 saal ke program mein targets aur deadlines poore kar sakte hain, jahan bohat se stakeholders hain
+   2. **Quality owner:** kya aap government system ko bugs se bacha sakte hain jo hazaron staff aur lakhon passengers istemal karte h
+   3. **Operations mindset:** title mein IT Operations hai, is liye uptime, monitoring, support aur incidents ke sawal aayenge, sirf 
+   4. **Government context:** audit trails, sensitive data (CNIC, police records), role-based access, long-term maintenance, vendors 
+   **Opening line:** "Maine high-volume, multi-tenant platforms banaye hain jin mein queues, caching aur live dashboards hain. Reliab
+   ## A. Role, delivery aur HR ke sawal
+   **Q1. Aap Pakistan Railways ki digital transformation par kyun kaam karna chahte hain?** Jawab: Yeh ek bara public system hai jis 
+   **Q2. Yeh 3 saal ka contract hai. Hum kyun maane ke aap tikenge aur motivated rahenge?** Jawab: 3 saal ka program mujhe cheezein t
+   **Q3. Developer role mein "IT Operations" ka matlab aap ke liye kya hai?** Jawab: Aisa code likhna jo chalana aasan ho: logs, heal
+
+================ Interview Prep Senior Software Engineer ITOPS (PITB Pakistan Railways).md (358 lines) ================
+--- headings (20) ---
+    1: # Interview Prep: Senior Software Engineer, IT Operations (PITB / Pakistan Railways)
+    5: ## 0. What this job is really testing
+   17: ## A. Role, delivery and HR-style questions
+   35: ## B. PHP fundamentals (how it really works)
+   63: ## C. Laravel (how it really works)
+   99: ## D. MySQL, indexes and performance
+  123: ## E. BI, reporting and data questions
+  145: ## F. Design patterns (with simple examples)
+  165: ## G. System design (railway-style scenarios)
+  185: ## H. Web fundamentals ("how things work")
+  203: ## I. QA, testing, CI/CD (the heart of this JD)
+  231: ## J. Docker and environments
+  247: ## K. Security (very important for government systems)
+  271: ## L. Performance and scaling
+  287: ## M. Cross-check scenarios (practice out loud)
+  300: ## N. Team lead and delivery questions
+  316: ## O. Rapid-fire (short answers)
+  336: ## P. Questions you should ask them
+  346: ## Q. Your honest-gap answers (memorize)
+  353: ## Study plan (7 days)
+--- marker prefixes --- [["",20],["Q",124]]
+--- first 12 non-empty lines ---
+   # Interview Prep: Senior Software Engineer, IT Operations (PITB / Pakistan Railways)
+   Easy-wording Q&A with cross-questions, scenarios and quick checks. Answers are written in first person so you can say them natural
+   ## 0. What this job is really testing
+   The JD is short, but it hides three big tests:
+   1. **Delivery owner:** "all development targets", "deadlines not compromised". They want someone who plans, tracks and finishes wo
+   2. **Quality owner:** "Quality Assurance", "free from bugs and error". They want testing, code review, CI checks and safe releases
+   3. **Government-scale system:** a PITB and Pakistan Railways digital transformation program for 3 years. Think many users at the s
+   The JD does not name the stack. Ask early: "Which stack is the program using?" Your lists suggest PHP, Laravel and MySQL, so this 
+   **Honest gaps to prepare for:** formal testing habits (PHPUnit/Pest), named BI tools (Power BI, Metabase etc.), and anything Railw
+   ## A. Role, delivery and HR-style questions
+   **Q1. Tell me about yourself.** A: I am a Senior Laravel and backend engineer with 5+ years of PHP experience across CWS, ESparks,
+   **Q2. Why this role?** A: It is a large, long program where software quality and on-time delivery matter for real citizens. I like
+
+================ Level-wise Interview Q&A (Roman Urdu) Junior, Mid, 4-Year, Senior.md (515 lines) ================
+--- headings (32) ---
+    1: # Level-wise Interview Q&A (Roman Urdu): Junior, Mid, 4-Year, Senior
+    5: ## Is doc ko kaise use karein
+   18: # Level 1: Junior (foundations, har kisi ko aani chahiyein)
+   22: ## PHP aur Laravel basics
+   46: ## MySQL basics
+   66: ## Web, Git aur tools
+   82: ## Testing, Docker aur security basics
+  111: ## Soft skills
+  117: ## Coding tasks (junior level)
+  159: # Level 2: Mid (taqreeban 3 saal): features khud banayein aur common traps se bachein
+  161: ## Laravel aur PHP practice mein
+  191: ## Database
+  223: ## Design patterns
+  235: ## APIs aur integration
+  243: ## QA aur CI/CD (mid level)
+  259: ## Operations aur monitoring (mid level)
+  269: ## Security, performance aur Redis (mid level)
+  291: ## Coding tasks (mid level)
+  301: # Level 3: 4 saal (aap ka target): is job ke liye sab se zyada important sawal
+  305: ## Delivery aur ownership
+  323: ## Is program ke system designs
+  339: ## Database aur Laravel depth (4-year must)
+  353: ## QA, security, operations aur BI (4-year must)
+  375: ## Tricky aur behavioral sawal (4-year must)
+  401: ## Scenario practice (bol kar jawab dein)
+  418: # Level 4: Senior (5+ saal): stretch questions
+  422: ## Architecture aur trade-offs
+  440: ## Scale aur data
+  456: ## Leadership aur governance
+  478: # Do-star (should-prepare) sawal: kahan milenge
+  495: ## 3 din hain to yeh top 30 karein
+  508: ## Aakhri hidayat
+--- marker prefixes --- [["Q",157],["C",8],["",27]]
+--- first 12 non-empty lines ---
+   # Level-wise Interview Q&A (Roman Urdu): Junior, Mid, 4-Year, Senior
+   PITB / Pakistan Railways Senior Software Engineer (IT Operations) ke liye. Har level ke sawal poore jawab ke saath hain, sirf numb
+   ## Is doc ko kaise use karein
+   | Level | Interviewer ki umeed | Answer ki depth |
+   | --- | --- | --- |
+   | Junior (0 se 2 saal) | Basics aati hon aur simple code likh sakein | Definition plus ek chhoti example |
+   | Mid (taqreeban 3 saal) | Features khud banayein aur common traps jaanein | Kaise kaam karta hai plus ek gotcha jo aap ne dekha h
+   | 4 saal (aap ka level) | Ek module own karein, design karein, quality bachayein, team ki madad karein | Kaise, kyun, trade-off au
+   | Senior (5+ saal) | Kai modules ka outcome own karein, uncertainty mein decision, mentoring, incidents | Trade-offs, numbers, fai
+   **Aap ke liye tarteeb:** Job ka title Senior hai, to 4 saal ke bawajood senior-style sawal (ownership, design, quality, delivery) 
+   **Honest note:** jo experience aap ne asal mein kiya, wohi batayen, phir dikhayen ke bari scale par aap kaise sochte. Jo cheez kab
+   # Level 1: Junior (foundations, har kisi ko aani chahiyein)
+
+================ Question Priority Map by Level (Junior, Mid, 4-Year, Senior) for the PITB ITOPS Job.md (114 lines) ================
+--- headings (10) ---
+    1: # Question Priority Map by Level: Junior, Mid (3 years), 4 Years, Senior (5+)
+    5: ## 1. What each level is expected to show
+   16: ## 2. Junior level: foundations everyone must know cold
+   32: ## 3. Mid level (about 3 years): build features alone and avoid common traps
+   47: ## 4. 4-year level (your target): the questions that matter most for this job
+   66: ## 5. Senior level (5+ years): stretch questions for the senior-style rounds
+   81: ## 6. If you only have 3 days: the top 30
+   94: ## 7. Which questions come in which round
+  103: ## 8. Lower priority for this job (skim only)
+  107: ## 9. How to use this map
+--- marker prefixes --- [["",15]]
+--- first 12 non-empty lines ---
+   # Question Priority Map by Level: Junior, Mid (3 years), 4 Years, Senior (5+)
+   For the PITB / Pakistan Railways Senior Software Engineer, IT Operations job. Question numbers match the English guide and the Rom
+   ## 1. What each level is expected to show
+   | Level | Interviewer expects | Answer depth |
+   | --- | --- | --- |
+   | Junior (0 to 2 years) | Knows the basics and can write simple code | Definition plus one small example |
+   | Mid (about 3 years) | Builds features alone, knows the common traps | How it works plus one gotcha you have hit |
+   | 4 years (your level) | Owns a module, designs, protects quality, helps the team | How, why, the trade-off, and a real story |
+   | Senior (5+ years) | Owns outcomes across modules, decides under uncertainty, mentors, handles incidents | Trade-offs, numbers, f
+   **Where you will be judged:** the job title is Senior, so even with 4 years you will get senior-style questions (ownership, design
+   ## 2. Junior level: foundations everyone must know cold
+   If you miss any of these, nothing else helps. Answer each in under a minute.
+
+================ Roman Urdu v2 (Modern Dev Style).md (770 lines) ================
+--- headings (40) ---
+    1: # Interview Prep: Roman Urdu v2 (Modern Developer Style)
+    5: ## Is version mein style kaisa hai
+   13: ## 0. Yeh role asal mein kya test kar raha hai
+   22: ## A. Role, delivery aur HR questions
+   48: ## B. PHP fundamentals
+   66: ## C. Laravel
+   88: ## D. MySQL, indexes aur performance
+  108: ## E. BI, reporting aur data
+  126: ## F. Design patterns aur principles
+  142: ## G. Is program ke liye System design
+  172: ## H. Web fundamentals aur integration
+  186: ## I. QA, testing aur CI/CD (is JD ka dil)
+  206: ## J. Docker, environments aur operations
+  224: ## K. Security
+  240: ## L. Performance aur scaling
+  250: ## M. Cross-check scenarios (bol kar practice karein)
+  265: ## N. Team lead aur delivery
+  279: ## O. Rapid-fire
+  297: ## P. Aap ko un se kaun se sawal poochne chahiyein
+  307: ## Q. Honest gaps ke answers (yaad kar lein)
+  315: ## R. Mock interview ka order (30 minute)
+  327: # Part 2: Database, Big Data, Data Security, Scopes, Scenarios, Tricky aur Concept questions
+  331: ## S. MySQL deep dive (database questions)
+  390: ## T. Big data aur data at scale
+  418: ## U. Data security aur privacy
+  448: ## V. Laravel scopes aur Eloquent questions
+  476: ## W. Scenario-based questions (database aur data)
+  491: ## X. Tricky aur "lines ke beech" wale questions
+  523: ## Y. Concepts ki cheat sheet (ek line mein)
+  547: # Part 3: Baqi topics (Git, Linux/Servers, Networking, Redis, APIs, Testing, Agile, Behavioral, Live Coding, C
+  551: ## Z1. Git aur team collaboration
+  565: ## Z2. Linux, Nginx aur server operations
+  585: ## Z3. Networking aur infrastructure basics (fiber backbone wala pehlu)
+  601: ## Z4. Redis aur caching practice mein
+  613: ## Z5. API design aur documentation
+  627: ## Z6. Testing practice mein (PHPUnit aur Pest)
+  658: ## Z7. Agile, project aur requirement management
+  676: ## Z8. Behavioral questions (STAR method)
+  701: ## Z9. Live coding aur logic tasks (paper par practice)
+  753: ## Z10. Cloud, availability aur monitoring
+--- marker prefixes --- [["",48],["Q",249],["C",8]]
+--- first 12 non-empty lines ---
+   # Interview Prep: Roman Urdu v2 (Modern Developer Style)
+   Yeh PITB / Pakistan Railways ITOPS guide ka dobara likha hua Roman Urdu version hai, us style mein jis mein Pakistani developers a
+   ## Is version mein style kaisa hai
+   - **Tech words English mein hi:** production, staging, deploy, rollback, bottleneck, root cause, trade-off, edge case, scale, late
+   - **Verbs ka pattern:** English word + karna, lagana, chalana. Jaise "deploy karta hoon", "index laga deta hoon", "worker chala de
+   - **Chhote, bole jaane wale jumle:** "Main sab se pehle check karta hoon...", "Simple si baat hai...", "Trade-off yeh hai...".
+   - **Structure:** pehle masla, phir wajah, phir fix, phir apni example. Yeh pattern lagbhag har answer par chalta hai.
+   - Practice ke liye Roman Urdu mein samjhein, lekin final answer interview mein English mein bolne ki practice karein.
+   ## 0. Yeh role asal mein kya test kar raha hai
+   1. **Delivery owner:** targets aur deadlines poore karna, 3 saal ke program mein, bahut se stakeholders ke saath.
+   2. **Quality owner:** aisa system jise hazaron staff aur lakhon passengers use karte hain, usay bugs se door rakhna.
+   3. **Operations mindset:** title mein IT Operations hai, to uptime, monitoring, support aur incidents par sawal aayenge, sirf codi
+
+================ Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel.md (439 lines) ================
+--- headings (21) ---
+    1: # Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel
+    5: # Scenario 1: API production mein slow, locally theek, logs mein koi error nahi, DB CPU high
+   53: # Scenario 2: Soft deletes kuch tables mein, kuch mein nahi; ab historical reporting mein deleted records bhi 
+   91: # Scenario 3: Queue worker ek hi job kai baar chala raha hai, duplicate payments
+  140: # Scenario 4: 50 million rows ki table ka column type badalna, downtime allowed nahi
+  197: # Scenario 5: Slow aur kabhi kabhi fail hone wali third-party API, users ko random delays
+  264: # Laravel Data (Spatie): arrays ki jagah typed DTOs
+  268: ## Kya hai aur kyun
+  304: ## Kya milta hai
+  313: ## Honest notes (interview mein)
+  330: # Docker: image chhoti aur CI tez (Laravel version)
+  334: ## Wajahein jo image ko moti banati hain
+  341: ## Multi-stage Dockerfile (PHP-FPM, Laravel)
+  344: # syntax=docker/dockerfile:1
+  346: # 1) Composer dependencies (sirf production)
+  355: # 2) Frontend build (Node sirf build ke liye, final image mein nahi)
+  363: # 3) Runtime (chhoti image: sirf PHP-FPM aur zaroori extensions)
+  401: ## Jo cheezein runtime par chhoti ya theek honi chahiyein
+  410: ## Build tez karne ke tareeqe (CI)
+  420: ## Alpine vs Debian-slim
+  424: ## Docker ke interview sawal
+--- marker prefixes --- [["Q",5],["",34],["D",6]]
+--- first 12 non-empty lines ---
+   # Senior Laravel Production Scenarios (Part 1) + Laravel Data + Docker for Laravel
+   Questions English mein (jaise interview mein), answers Roman Urdu dev-style mein. Yeh asli production masail par hain, to har answ
+   # Scenario 1: API production mein slow, locally theek, logs mein koi error nahi, DB CPU high
+   **Q1. How do you systematically debug and fix this without downtime?**
+   **Pehle yeh samjhein ke locally kyun theek chalta hai:** local mein data chhota hota hai (hazaron rows, production mein karoron), 
+   **Step 1: Scope confirm karo.** Kaun se endpoints slow hain (sab ya kuch), kab se (abhi ek deploy hua? koi naya feature? data ek l
+   **Step 2: DB mein dekho kaun si queries CPU kha rahi hain.** Andaza nahi, data se:
+   ```sql
+   -- sab se zyada waqt lene wali queries (performance_schema)
+   SELECT DIGEST_TEXT, COUNT_STAR,
+   ROUND(SUM_TIMER_WAIT/1e12, 1) AS total_s,
+   ROUND(AVG_TIMER_WAIT/1e9, 1)  AS avg_ms,
+
+================ Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers).md (137 lines) ================
+--- headings (9) ---
+    1: # Senior PHP/Laravel Interview: 5 Server Questions + Top 25 (Roman Urdu Answers)
+    7: # Part 1: 5 server sawal (senior level)
+    9: ## Poora raasta ek nazar mein
+   48: # Part 2: Top 25 PHP & Laravel questions (jawab ke saath)
+   50: ## PHP Core aur OOP
+   62: ## Laravel Framework
+   84: ## Database aur performance optimization
+  108: ## Architecture, security aur scalability
+  125: # Senior developer tip: jawab kaise banayein
+--- marker prefixes --- [["S",5],["Q",25],["",10]]
+--- first 12 non-empty lines ---
+   # Senior PHP/Laravel Interview: 5 Server Questions + Top 25 (Roman Urdu Answers)
+   Aap ki baat bilkul sahi hai: yeh sawal junior aur senior dono roles mein puchhe jate hain. Farq depth ka hai. Junior se definition
+   **Senior answer ka formula:** concept ek line mein, phir number ya example, phir failure mode (kab toot'ta hai), phir fix. Isi pat
+   # Part 1: 5 server sawal (senior level)
+   ## Poora raasta ek nazar mein
+   ```
+   Client -> DNS -> TCP/TLS -> (CDN / load balancer) -> Nginx
+   -> FastCGI (unix socket ya 127.0.0.1:9000) -> PHP-FPM master
+   -> idle FPM worker -> public/index.php -> Laravel -> response
+   -> wapas FPM -> Nginx -> client
+   ```
+   **S1. \[Senior\] Aap ka server request ko Laravel ke index file tak pohanchne se pehle kaise process karta hai?** Answer: Pehle cl
+
+================ Senior PHP Laravel Interview 5 Server Questions + Top 25 (Roman Urdu Answers-2.md (1061 lines) ================
+--- headings (78) ---
+    1: # Senior PHP/Laravel Interview: 5 Server Questions + Top 25 (Roman Urdu Answers)
+    7: # Part 1: 5 server sawal (senior level)
+    9: ## Poora raasta ek nazar mein
+   48: # Part 2: Top 25 PHP & Laravel questions (jawab ke saath)
+   50: ## PHP Core aur OOP
+   62: ## Laravel Framework
+   84: ## Database aur performance optimization
+  108: ## Architecture, security aur scalability
+  125: # Senior developer tip: jawab kaise banayein
+  138: # Part 3: Deep dives (andar se kaise kaam karta hai)
+  142: ## Deep dive 1: `chunk()`, `chunkById()`, `lazy()`, `cursor()` andar se
+  144: ### `chunk(1000)`: offset wali pagination
+  166: ### `chunkById(1000)`: keyset wali pagination
+  176: ### `lazy(1000)` aur `lazyById(1000)`
+  188: ### `cursor()`: ek query, ek ek row
+  200: ### Comparison
+  214: ## Deep dive 2: Load balancer kaise banate hain
+  216: ### Concept
+  220: ### Nginx se load balancer (open source)
+  269: ### App ko LB ke peeche chalane ke liye zaroori cheezein
+  279: ### Zero-downtime deploy ka flow
+  283: ### Test kaise karte hain
+  287: ## Deep dive 3: Interface asal mein kya hai (sirf blueprint nahi)
+  297: ### Misaal: GPS pings ka store (MySQL ya MongoDB)
+  331: ### Laravel khud isi pe bana hai
+  340: ## Deep dive 4: Facade asal mein kya hai (static class nahi)
+  348: ### Andar kya hota hai
+  366: ### Is design se kya milta hai
+  372: ### Custom facade banana
+  391: ### Facade vs helper vs dependency injection
+  403: ## Deep dive 5: Service Container: sirf class resolve karna nahi
+  407: ### Auto-wiring (reflection)
+  420: ### `bind` vs `singleton` vs `scoped` vs `instance`
+  439: ### Contextual binding: jahan jahan alag cheez
+  453: ### Tagging: ek interface ki kai implementations ek saath
+  463: ### Extend: decorator laganha
+  471: ### Runtime parameters aur method injection
+  480: ### Container aur testing
+  489: ## Deep dive 6: Subqueries: MySQL aur Laravel mein kaise likhein aur kyun
+  493: ### Types aur examples (trains, pings, tickets)
+   ... +38 more headings
+--- marker prefixes --- [["S",5],["Q",25],["",44]]
+--- first 12 non-empty lines ---
+   # Senior PHP/Laravel Interview: 5 Server Questions + Top 25 (Roman Urdu Answers)
+   Aap ki baat bilkul sahi hai: yeh sawal junior aur senior dono roles mein puchhe jate hain. Farq depth ka hai. Junior se definition
+   **Senior answer ka formula:** concept ek line mein, phir number ya example, phir failure mode (kab toot'ta hai), phir fix. Isi pat
+   # Part 1: 5 server sawal (senior level)
+   ## Poora raasta ek nazar mein
+   ```
+   Client -> DNS -> TCP/TLS -> (CDN / load balancer) -> Nginx
+   -> FastCGI (unix socket ya 127.0.0.1:9000) -> PHP-FPM master
+   -> idle FPM worker -> public/index.php -> Laravel -> response
+   -> wapas FPM -> Nginx -> client
+   ```
+   **S1. \[Senior\] Aap ka server request ko Laravel ke index file tak pohanchne se pehle kaise process karta hai?** Answer: Pehle cl

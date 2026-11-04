@@ -1,0 +1,3 @@
+ru2ur: 13084
+ur2ru: 12956
+techTerms: 501

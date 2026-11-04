@@ -26,19 +26,25 @@ import {
   saveKeys,
   setServerUrl,
   serverUrl,
+  loadPuterSDK,
   type ProviderId,
 } from '../lib/ai'
 import { flush, pendingCount, pullBank } from '../lib/sync'
 import { glossList } from '../lib/text'
 import { Chip, Chips, Empty, Md, Sheet, toast } from '../components/ui'
-import { listVoices, pickVoice, ttsAvailable, chunkText, whisperAvailable } from '../lib/speech'
+import {
+  listVoices, pickVoice, ttsAvailable, chunkText, whisperAvailable,
+  voiceQualityLabel, previewVoice, stopSpeaking,
+} from '../lib/speech'
 import { LANGS, LANG_NAME, type Lang } from '../lib/types'
 import { planMyDay, COMPANY_PROFILES } from '../lib/features'
 import { RULES_VERSION } from '../lib/lang'
 import { canInstall, isStandalone, promptInstall } from '../lib/install'
 import { beginGoogleSignIn, signOut, signInMethod, googleSignedIn } from '../lib/auth'
+import { communitySummary, refreshQuestionStats } from '../lib/community'
 
 export default function Progress() {
+  const { settings } = useSettings()
   const sum = useLiveQuery(progressSummary, [], null)
   const techs = useLiveQuery(techProgress, [], [])
   const [sheet, setSheet] = useState('')
@@ -112,6 +118,11 @@ export default function Progress() {
               : 'Tailor AI to the company'}
           </span>
         </button>
+        <button className="tile" onClick={() => setSheet('insights')}>
+          <span className="ic">📊</span>
+          <b>Community insights</b>
+          <span className="tiny muted">What's actually asked</span>
+        </button>
       </div>
 
       {sheet === 'today' && <DueToday onClose={() => setSheet('')} />}
@@ -123,6 +134,7 @@ export default function Progress() {
       {sheet === 'backup' && <BackupSheet onClose={() => setSheet('')} />}
       {sheet === 'about' && <AboutSheet onClose={() => setSheet('')} />}
       {sheet === 'company' && <CompanySheet onClose={() => setSheet('')} />}
+      {sheet === 'insights' && <InsightsSheet onClose={() => setSheet('')} />}
     </div>
   )
 }
@@ -281,6 +293,7 @@ function AudioSheet({ onClose }: { onClose: () => void }) {
   const au = settings.au
   const [test, setTest] = useState('')
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [previewing, setPreviewing] = useState('')
   useEffect(() => {
     if (!ttsAvailable()) return
     setVoices(listVoices())
@@ -291,6 +304,20 @@ function AudioSheet({ onClose }: { onClose: () => void }) {
   const urVoices = voices.filter((v) => /^(ur|hi)/i.test(v.lang))
   const enVoices = voices.filter((v) => /^en/i.test(v.lang))
   const hiVoices = voices.filter((v) => /^hi/i.test(v.lang))
+  // Roman Urdu can use any voice — show en + ur + hi
+  const ruVoices = voices
+
+  const doPreview = (voiceURI: string, lang: Lang) => {
+    setPreviewing(voiceURI)
+    void previewVoice(voiceURI, lang, au.rate, au.pitch, au.volume).finally(() => setPreviewing(''))
+  }
+
+  const sampleText: Record<Lang, string> = {
+    en: 'The queue worker processes background jobs in Laravel.',
+    ur: 'لاراول میں کوئو ورکر بیک گراؤنڈ جابز پروسیس کرتا ہے۔',
+    ru: 'Laravel mein queue worker background jobs process karta hai.',
+    hi: 'लारावेल में क्यू वर्कर बैकग्राउंड जॉब्स प्रोसेस करता है।',
+  }
 
   return (
     <Sheet title="Language & audio" onClose={onClose}>
@@ -315,15 +342,42 @@ function AudioSheet({ onClose }: { onClose: () => void }) {
           </select>
         </label>
 
-        <label className="fld">
-          Speed — {au.rate.toFixed(2)}×
-          <input type="range" min={0.6} max={1.4} step={0.05} value={au.rate} onChange={(e) => setAudio({ rate: Number(e.target.value) })} />
-        </label>
+        <div className="audio-controls">
+          <label className="fld">
+            <span className="small">Speed — {au.rate.toFixed(2)}×</span>
+            <input type="range" min={0.6} max={1.4} step={0.05} value={au.rate} onChange={(e) => setAudio({ rate: Number(e.target.value) })} />
+          </label>
+          <label className="fld">
+            <span className="small">Pitch — {au.pitch.toFixed(2)}</span>
+            <input type="range" min={0.5} max={2.0} step={0.05} value={au.pitch} onChange={(e) => setAudio({ pitch: Number(e.target.value) })} />
+            <span className="tiny muted">Higher = sharper, lower = deeper</span>
+          </label>
+          <label className="fld">
+            <span className="small">Volume — {Math.round(au.volume * 100)}%</span>
+            <input type="range" min={0} max={1} step={0.05} value={au.volume} onChange={(e) => setAudio({ volume: Number(e.target.value) })} />
+          </label>
+        </div>
 
         <label className="row">
           <input type="checkbox" checked={au.splitEn} onChange={(e) => setAudio({ splitEn: e.target.checked })} style={{ width: 'auto' }} />
-          <span className="small">Speak English tech words with the English voice inside Urdu/Hindi speech</span>
+          <span className="small">Speak English tech words with the English voice inside Urdu/Hindi</span>
         </label>
+
+        {/* Roman Urdu transliteration option */}
+        <div className="card" style={{ padding: 10, borderColor: 'var(--brand-soft)' }}>
+          <label className="row">
+            <input
+              type="checkbox"
+              checked={au.ruToUrdu}
+              onChange={(e) => setAudio({ ruToUrdu: e.target.checked })}
+              style={{ width: 'auto' }}
+            />
+            <span className="small">
+              <b>Transliterate Roman Urdu to Urdu script</b> — makes the voice pronounce words the Urdu way
+              instead of the English way. Recommended.
+            </span>
+          </label>
+        </div>
 
         {!ttsAvailable() ? (
           <div className="card small" style={{ borderColor: 'var(--warn)' }}>
@@ -331,40 +385,81 @@ function AudioSheet({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <>
-            <label className="fld">
-              English voice
-              <select value={au.voiceEn} onChange={(e) => setAudio({ voiceEn: e.target.value })}>
-                <option value="">Automatic (best available)</option>
-                {enVoices.map((v) => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="fld">
-              Urdu voice
-              <select value={au.voiceUr} onChange={(e) => setAudio({ voiceUr: e.target.value })}>
-                <option value="">Automatic</option>
-                {urVoices.map((v) => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang})
-                  </option>
-                ))}
-              </select>
-              {!urVoices.length && <span className="tiny muted">No Urdu or Hindi voice installed. Urdu is read with a Hindi voice, keeping the nukta letters.</span>}
-            </label>
-            <label className="fld">
-              Hindi voice
-              <select value={au.voiceHi} onChange={(e) => setAudio({ voiceHi: e.target.value })}>
-                <option value="">Automatic</option>
-                {hiVoices.map((v) => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang})
-                  </option>
-                ))}
-              </select>
-            </label>
+            {/* Voice picker with quality badges and preview */}
+            <div className="voice-section">
+              <b className="small">Voices ({voices.length} available)</b>
+
+              <label className="fld">
+                <span className="small">English voice</span>
+                <VoiceSelect
+                  voices={enVoices}
+                  value={au.voiceEn}
+                  current={settings.lang === 'en' ? sampleText.en : ''}
+                  previewing={previewing}
+                  onPreview={(uri) => doPreview(uri, 'en')}
+                  onChange={(v) => setAudio({ voiceEn: v })}
+                  rate={au.rate}
+                  pitch={au.pitch}
+                />
+              </label>
+
+              <label className="fld">
+                <span className="small">Urdu voice</span>
+                <VoiceSelect
+                  voices={urVoices}
+                  value={au.voiceUr}
+                  current={settings.lang === 'ur' ? sampleText.ur : ''}
+                  previewing={previewing}
+                  onPreview={(uri) => doPreview(uri, 'ur')}
+                  onChange={(v) => setAudio({ voiceUr: v })}
+                  rate={au.rate}
+                  pitch={au.pitch}
+                />
+                {!urVoices.length && (
+                  <span className="tiny muted">
+                    No Urdu voice found. Urdu will use a Hindi voice (keeps nukta letters).
+                    On Android: Settings → Languages → Add Urdu. On desktop Chrome: install
+                    Urdu from chrome://settings/languages.
+                  </span>
+                )}
+              </label>
+
+              <label className="fld">
+                <span className="small">Hindi voice</span>
+                <VoiceSelect
+                  voices={hiVoices}
+                  value={au.voiceHi}
+                  current={settings.lang === 'hi' ? sampleText.hi : ''}
+                  previewing={previewing}
+                  onPreview={(uri) => doPreview(uri, 'hi')}
+                  onChange={(v) => setAudio({ voiceHi: v })}
+                  rate={au.rate}
+                  pitch={au.pitch}
+                />
+              </label>
+
+              <label className="fld">
+                <span className="small">
+                  Roman Urdu voice {au.ruToUrdu && <span className="muted">(uses Urdu voice when transliterating)</span>}
+                </span>
+                <VoiceSelect
+                  voices={ruVoices}
+                  value={au.voiceRu}
+                  current={sampleText.ru}
+                  previewing={previewing}
+                  onPreview={(uri) => doPreview(uri, au.ruToUrdu ? 'ur' : 'ru')}
+                  onChange={(v) => setAudio({ voiceRu: v })}
+                  rate={au.rate}
+                  pitch={au.pitch}
+                />
+                <span className="tiny muted">
+                  {au.ruToUrdu
+                    ? 'Roman Urdu is transliterated to Urdu script before speaking — pick an Urdu or Hindi voice.'
+                    : 'Pick any voice. Hindi (hi-IN) sounds closest to Urdu pronunciation for Roman Urdu text.'}
+                </span>
+              </label>
+            </div>
+
             <div className="row">
               <input
                 className="grow"
@@ -382,17 +477,71 @@ function AudioSheet({ onClose }: { onClose: () => void }) {
               >
                 🔊 Test
               </button>
+              <button
+                className="btn ghost"
+                onClick={() => stopSpeaking()}
+                title="Stop speaking"
+              >
+                ⏹
+              </button>
             </div>
           </>
         )}
 
         <div className="card small muted">
-          Audio uses the voices installed on this device, so quality varies. A server with neural voices
-          (MMS-TTS / Chatterbox) is planned; until then, the 260-term dictionary makes English tech words
-          sound right inside Urdu and Hindi.
+          <b>Tips for better Urdu audio:</b>
+          <ul style={{ margin: '6px 0', paddingLeft: '1.2em', lineHeight: 1.6 }}>
+            <li>Google Chrome and Edge have the best neural voices — install Urdu from browser language settings.</li>
+            <li>On Android: Settings → System → Languages → add Urdu. Then more voices appear here.</li>
+            <li>Enable "Transliterate Roman Urdu" above for natural-sounding Roman Urdu playback.</li>
+            <li>Adjust pitch lower (0.8–0.9) for a calmer tone, higher (1.1–1.2) for energetic delivery.</li>
+          </ul>
         </div>
       </div>
     </Sheet>
+  )
+}
+
+/** Voice selector dropdown with quality badge and preview button. */
+function VoiceSelect({
+  voices,
+  value,
+  current,
+  previewing,
+  onPreview,
+  onChange,
+}: {
+  voices: SpeechSynthesisVoice[]
+  value: string
+  current: string
+  previewing: string
+  onPreview: (voiceURI: string) => void
+  onChange: (voiceURI: string) => void
+  rate?: number
+  pitch?: number
+}) {
+  return (
+    <div className="voice-pick">
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Automatic (best available)</option>
+        {voices.map((v) => (
+          <option key={v.voiceURI} value={v.voiceURI}>
+            {v.name} ({v.lang}) — {voiceQualityLabel(v)}
+          </option>
+        ))}
+      </select>
+      <button
+        className="btn sm voice-preview-btn"
+        disabled={!!previewing}
+        onClick={() => {
+          const v = value || (voices.length ? voices[0].voiceURI : '')
+          if (v) onPreview(v)
+        }}
+        title="Preview this voice"
+      >
+        {previewing ? '🔊…' : '🔊'}
+      </button>
+    </div>
   )
 }
 
@@ -508,6 +657,38 @@ function AiConnect({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         )}
+
+        {/* Free AI via Puter — no key, no sign-up */}
+        <div className="card stack-sm" style={{ borderColor: 'var(--brand-soft)' }}>
+          <div className="spread">
+            <b className="small">🆓 Free AI — no key needed</b>
+            {st.puterOk && <span className="badge ok">Ready</span>}
+          </div>
+          <p className="tiny muted" style={{ margin: 0 }}>
+            Use Puter's free AI with zero setup. Loads a script, works in the browser, no API key required.
+          </p>
+          <button
+            className="btn"
+            disabled={busy === 'puter'}
+            onClick={async () => {
+              setBusy('puter')
+              try {
+                const ok = await loadPuterSDK()
+                if (ok) {
+                  saveKeys({ ...keyState(), prov: 'puter', puterOk: true })
+                  refresh()
+                  toast('✅ Free AI is on. No key needed.')
+                } else {
+                  toast('Could not load. Check your internet connection.')
+                }
+              } finally {
+                setBusy('')
+              }
+            }}
+          >
+            {busy === 'puter' ? 'Loading…' : st.puterOk ? '✓ Using free AI' : 'Enable free AI'}
+          </button>
+        </div>
 
         <div className="card small">
           <b>Where do the keys live?</b>
@@ -945,6 +1126,137 @@ function CompanySheet({ onClose }: { onClose: () => void }) {
             </p>
           </div>
         )}
+      </div>
+    </Sheet>
+  )
+}
+
+/** Community insights — which questions are most likely to be asked, by exp level. */
+function InsightsSheet({ onClose }: { onClose: () => void }) {
+  type Summary = Awaited<ReturnType<typeof communitySummary>>
+  const [summary, setSummary] = useState<Summary | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [questions, setQuestions] = useState<{ code: string; q: string; p: string; count: number }[]>([])
+
+  const load = async () => {
+    const s = await communitySummary()
+    setSummary(s)
+    if (s) {
+      const top = await Promise.all(
+        s.topQuestions.slice(0, 20).map(async (t) => {
+          const q = await db.questions.get(t.code)
+          return q ? { code: t.code, q: q.q, p: q.p, count: t.count } : null
+        }),
+      )
+      setQuestions(top.filter(Boolean) as { code: string; q: string; p: string; count: number }[])
+    }
+  }
+
+  useEffect(() => { void load() }, [])
+
+  const doRefresh = async () => {
+    setRefreshing(true)
+    try {
+      const n = await refreshQuestionStats()
+      if (n) toast(`${n} question stats refreshed.`)
+      await load()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  if (!summary) return <Sheet title="Community insights" onClose={onClose}><p className="center muted">Loading…</p></Sheet>
+
+  const expBands = [1, 2, 3, 4, 5, 6] as const
+  const maxExp = Math.max(...expBands.map((e) => summary.byExp[e] || 0), 1)
+
+  return (
+    <Sheet title="Community insights" onClose={onClose}>
+      <div className="stack">
+        <p className="small muted">
+          Real data from users who marked questions as <b>actually asked</b> in their interviews.
+          This helps you prioritise — by experience level and category.
+        </p>
+
+        <button className="btn sm" disabled={refreshing} onClick={() => void doRefresh()}>
+          {refreshing ? 'Refreshing…' : '🔄 Refresh from server'}
+        </button>
+
+        {/* Overall stats */}
+        <div className="grid2">
+          <div className="card" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--brand)' }}>{summary.totalAsks}</div>
+            <div className="tiny muted">total "asked" votes</div>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--brand)' }}>{summary.questionsTracked}</div>
+            <div className="tiny muted">questions tracked</div>
+          </div>
+        </div>
+
+        {/* By experience band */}
+        <div className="card">
+          <b className="small">Questions asked by experience level</b>
+          <div className="stack-sm" style={{ marginTop: 8 }}>
+            {expBands.map((yr) => {
+              const count = summary.byExp[yr] || 0
+              const pct = Math.round((count / maxExp) * 100)
+              return (
+                <div key={yr}>
+                  <div className="spread small">
+                    <span>{yr} yr{yr > 1 ? 's' : ''}</span>
+                    <span className="muted">{count}</span>
+                  </div>
+                  <div className="bar"><i style={{ width: `${pct}%` }} /></div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Top categories */}
+        {!!summary.topCategories.length && (
+          <div className="card">
+            <b className="small">Categories with most confirmed questions</b>
+            <div className="stack-sm" style={{ marginTop: 6 }}>
+              {summary.topCategories.map((c) => (
+                <div key={c.name} className="spread small">
+                  <span>{c.name}</span>
+                  <span className="badge hl">{c.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Top questions */}
+        {!!questions.length && (
+          <div className="card">
+            <b className="small">Most confirmed questions</b>
+            <div className="stack-sm" style={{ marginTop: 8 }}>
+              {questions.map((q, i) => (
+                <div key={q.code} className="spread">
+                  <span className="small">
+                    {i + 1}. {q.q.slice(0, 80)}{q.q.length > 80 ? '…' : ''}
+                  </span>
+                  <span className="badge ok">{q.count}✓</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {summary.totalAsks === 0 && (
+          <div className="card small" style={{ borderColor: 'var(--warn)' }}>
+            No community votes yet. Be the first — tap <b>🗳 Asked?</b> on any question card
+            to confirm it was asked in your interview.
+          </div>
+        )}
+
+        <p className="tiny muted" style={{ margin: 0 }}>
+          Votes are anonymous to other users. Only aggregated counts are shared.
+          Sign in to participate — your vote syncs when online.
+        </p>
       </div>
     </Sheet>
   )

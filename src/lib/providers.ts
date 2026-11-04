@@ -13,6 +13,7 @@ import {
   baseFor,
   keyFor,
   keyState,
+  saveKeys,
   serverConfigured,
   serverUrl,
   setServerUrl,
@@ -289,7 +290,11 @@ function extraHeaders(p: ProviderId): Record<string, string> {
   return {}
 }
 
-/** Send a chat prompt through whichever provider is configured. */
+/** Send a chat prompt through whichever provider is configured.
+ *
+ *  Auto-failover: if the primary provider fails with a network/provider error
+ *  (not a bad-key or bad-request), try other configured providers before giving up.
+ */
 export async function callProvider(
   input: string | ChatMessage[],
   opts: AiOptions = {},
@@ -298,10 +303,36 @@ export async function callProvider(
   const p = st.prov
   if (!aiReady()) throw new AiError('not_ready', aiWhy() || 'AI is not connected.')
 
+  try {
+    return await callOneProvider(input, opts, p)
+  } catch (e) {
+    // Only failover on provider-side errors, not user errors.
+    const err = e as AiError
+    if (err.code === 'bad_key' || err.code === 'bad_request' || err.code === 'bad_model' || err.code === 'not_ready') {
+      throw err
+    }
+    // Try other configured providers.
+    const fallbacks = availableFallbacks(p)
+    for (const fp of fallbacks) {
+      try {
+        return await callOneProvider(input, opts, fp)
+      } catch (e2) {
+        // Keep trying other providers.
+        continue
+      }
+    }
+    // All providers failed — re-throw the original error.
+    throw err
+  }
+}
+
+/** Try a single provider. Extracted so callProvider can retry with different providers. */
+async function callOneProvider(
+  input: string | ChatMessage[],
+  opts: AiOptions,
+  p: ProviderId,
+): Promise<string> {
   // Server mode: the Laravel server holds the keys and picks the model.
-  // Only route through the server when the user has explicitly chosen the
-  // 'server' provider — do NOT silently override if a direct-API provider
-  // (groq, gemini, openrouter, …) is selected, even if a serverUrl exists.
   if (p === 'server') {
     return serverCall('/ai/text', { messages: toMsgs(input), model: opts.model }, opts)
   }
@@ -315,10 +346,98 @@ export async function callProvider(
     return typeof out === 'string' ? out : ''
   }
 
+  if (p === 'puter') {
+    return puterCall(msgs, opts)
+  }
+
+  const st = keyState()
   const model = opts.model || st.models[p] || PROVIDERS[p].model || ''
   if (p === 'gemini') return geminiCall(baseFor(p), keyFor(p), model, msgs, opts)
   if (p === 'anthropic') return anthropicCall(baseFor(p), keyFor(p), model, msgs, opts)
   return openAiStyle(baseFor(p), keyFor(p), model, msgs, opts, extraHeaders(p))
+}
+
+/** List providers that are configured and usable, excluding the primary. */
+function availableFallbacks(primary: ProviderId): ProviderId[] {
+  const st = keyState()
+  const order: ProviderId[] = ['groq', 'gemini', 'openrouter', 'puter', 'mistral', 'xai', 'fireworks', 'openai', 'anthropic', 'custom', 'server']
+  return order.filter((p) => {
+    if (p === primary) return false
+    if (p === 'server') return serverConfigured()
+    if (p === 'puter') return !!st.puterOk
+    if (p === 'claude') return !!claudeRuntime()
+    if (PROVIDERS[p].needsKey) return !!keyFor(p)
+    // custom works with no key (local Ollama etc.)
+    return p === 'custom'
+  })
+}
+
+/* --------------------------- Puter SDK ----------------------------- */
+
+let puterLoading: Promise<boolean> | null = null
+
+/** Dynamically load the Puter SDK. Returns true when available. */
+export function loadPuterSDK(): Promise<boolean> {
+  if (puterLoading) return puterLoading
+  puterLoading = new Promise<boolean>((resolve) => {
+    // Already loaded?
+    const w = window as unknown as { puter?: any }
+    if (w.puter?.ai?.chat) {
+      const st = keyState()
+      if (!st.puterOk) saveKeys({ ...st, puterOk: true })
+      resolve(true)
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://js.puter.com/v2/'
+    script.async = true
+    script.onload = () => {
+      const pw = window as unknown as { puter?: any }
+      if (pw.puter?.ai?.chat) {
+        const st = keyState()
+        if (!st.puterOk) saveKeys({ ...st, puterOk: true })
+        resolve(true)
+      } else {
+        resolve(false)
+      }
+    }
+    script.onerror = () => resolve(false)
+    document.head.appendChild(script)
+  })
+  return puterLoading
+}
+
+/** Call Puter's free AI. No key required — the SDK handles auth. */
+async function puterCall(msgs: ChatMessage[], opts: AiOptions): Promise<string> {
+  const w = window as unknown as { puter?: any }
+  if (!w.puter?.ai?.chat) {
+    // Try loading on the fly.
+    const ok = await loadPuterSDK()
+    if (!ok) throw new AiError('not_ready', 'Puter SDK could not load. Check your internet connection.')
+  }
+  const puter = (window as unknown as { puter: any }).puter
+  const prompt = msgs.map((m) => `${m.role}: ${m.content}`).join('\n\n')
+  try {
+    const resp = await puter.ai.chat(prompt, { stream: !!opts.onText })
+    if (opts.onText && typeof resp !== 'string') {
+      // Streaming response — collect chunks.
+      let full = ''
+      for await (const chunk of resp) {
+        const delta = chunk?.text ?? chunk?.content ?? ''
+        if (delta) {
+          full += delta
+          opts.onText(delta, full)
+        }
+      }
+      return full
+    }
+    // Non-streaming — resp may be a string or an object with .message.
+    const text = typeof resp === 'string' ? resp : (resp?.message ?? resp?.text ?? '')
+    opts.onText?.(text, text)
+    return text
+  } catch (e) {
+    throw new AiError('provider_down', `Puter request failed: ${(e as Error).message}`)
+  }
 }
 
 /** Ask for JSON through the Claude runtime's native json helper. */

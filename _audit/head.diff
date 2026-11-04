@@ -1,0 +1,19 @@
+--- _audit/v1.head	2026-10-21 18:31:02.867915100 +0500
++++ _audit/cur.head	2026-10-21 18:31:02.867915100 +0500
+@@ -3,6 +3,7 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
++<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>💬</text></svg>">
+ <meta name="theme-color" content="#1D5C48">
+ <title>Interview Box — Q&amp;A bank, JD prep &amp; mock interviewer</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+@@ -371,7 +372,7 @@
+ <body>
+ <header class="top"><div class="wrap">
+   <div class="logo"><span class="box" aria-hidden="true">IB</span><span>Interview Box</span></div>
+-  <div class="tr-r"><button type="button" class="langbtn" id="helpBtn" aria-label="How to use">?</button><button type="button" class="langbtn" id="langBtn" aria-label="Language and audio">EN</button><div class="ai-state" id="aiState" title="AI features use your Claude account"><span class="dot" id="aiDot"></span><span id="aiTxt">Connecting AI…</span></div></div>
++  <div class="tr-r"><button type="button" class="langbtn" id="helpBtn" aria-label="How to use">?</button><button type="button" class="langbtn" id="langBtn" aria-label="Language and audio">EN</button><div class="ai-state" id="aiState" title="AI features use your Claude account"><span class="dot" id="aiDot"></span><span id="aiTxt">Connecting AI…</span></div><div class="ai-state" id="wsState" title="Whisper offline speech-to-text" style="margin-left:8px;font-size:.9em;opacity:.8"><span id="wsDot" class="dot" style="background:#999"></span><span id="wsTxt">Whisper</span></div></div>
+ </div></header>
+ 
+ <main class="wrap">

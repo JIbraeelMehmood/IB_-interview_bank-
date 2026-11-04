@@ -19,7 +19,7 @@ export interface Filters {
   flag: '' | 'c' | 'i' | 'h'
   source: '' | 'my' | 'ai' | 'import' | 'jd'
   progress: '' | 'none' | 'weak' | 'ok' | 'solid'
-  sort: 'default' | 'important' | 'newest' | 'az'
+  sort: 'default' | 'important' | 'newest' | 'az' | 'asked'
   hiddenTechs: string[]
   customTechs: string[]
 }
@@ -141,12 +141,22 @@ function flagScore(q: Question): number {
   return (f.includes('i') ? 4 : 0) + (f.includes('c') ? 2 : 0) + (f.includes('h') ? 1 : 0)
 }
 
-/** Load everything, then filter in memory. The bank is 1,950 rows, so this
- *  is far faster than 1,950 queries and works offline. */
+/** Load everything, then filter in memory. The bank is 2,140 rows, so this
+ *  is far faster than 2,140 queries and works offline. */
 export async function loadLibrary(f: Filters): Promise<Ranked[]> {
-  const [questions, ratings] = await Promise.all([db.questions.toArray(), db.ratings.toArray()])
+  const [questions, ratings, stats] = await Promise.all([
+    db.questions.toArray(),
+    db.ratings.toArray(),
+    db.questionStats.toArray(),
+  ])
   const map = new Map(ratings.map((r) => [r.code, r.rating]))
-  return applyFilters(questions, f, map)
+  const statsMap = new Map(stats.map((s) => [s.code, s.askCount]))
+  const ranked = applyFilters(questions, f, map)
+
+  if (f.sort === 'asked') {
+    ranked.sort((a, b) => (statsMap.get(b.code) || 0) - (statsMap.get(a.code) || 0))
+  }
+  return ranked
 }
 
 /** Counts per tech for the chip row.

@@ -2,7 +2,7 @@
 import { db } from './db'
 import { serverUrl } from './ai'
 
-const SYNCED = ['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings'] as const
+const SYNCED = ['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings', 'communityVote'] as const
 let flushing = false
 let timer: number | null = null
 

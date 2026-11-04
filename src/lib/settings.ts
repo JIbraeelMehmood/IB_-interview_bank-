@@ -5,8 +5,9 @@ import { queue } from './sync'
 import type { AudioSettings, Lang, SpeakingState, UserSettings } from './types'
 
 export const DEFAULT_AUDIO: AudioSettings = {
-  mode: 'mix', rate: 0.95, gap: 1200, qonly: false, splitEn: false,
-  voiceEn: '', voiceUr: '', voiceHi: '', auto: true, loop: false, mem: false,
+  mode: 'mix', rate: 0.95, pitch: 1.0, volume: 1.0, gap: 1200, qonly: false, splitEn: false,
+  voiceEn: '', voiceUr: '', voiceHi: '', voiceRu: '', ruToUrdu: false,
+  auto: true, loop: false, mem: false,
   acc: 'in', sleep: 0, prefetch: true,
 }
 export const DEFAULT_SPEAKING: SpeakingState = {

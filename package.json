@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "extract": "node scripts/extract-v7.mjs",
+    "parse-md": "node scripts/parse-markdown.mjs",
     "icons": "node scripts/icons.mjs",
     "e2e": "node e2e/smoke.mjs",
     "e2e:offline": "node e2e/offline.mjs",
@@ -21,6 +22,7 @@
     "e2e:all": "node e2e/smoke.mjs && node e2e/filters.mjs && node e2e/audio.mjs && node e2e/mobile.mjs && node e2e/offline.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@tanstack/react-query": "^5.62.7",
     "dexie": "^4.0.10",
     "dexie-react-hooks": "^1.1.7",

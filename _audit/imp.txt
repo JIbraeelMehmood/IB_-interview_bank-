@@ -1,0 +1,111 @@
+
+===== import ui (L2380-2460) =====
+2380|   var st=labState(),sets={};LAB_EX.forEach(function(x){(sets[x.set]=sets[x.set]||[]).push(x)});
+2381|   var done=LAB_EX.filter(function(x){return st.done[x.id]}).length;
+2382|   $('#labSel').innerHTML='<option value="_free">🧪 Free playground</option>'+Object.keys(sets).map(function(k){return '<optgroup label="'+esc(k)+'">'+sets[k].map(function(x,i){return '<option value="'+x.id+'">'+(st.done[x.id]?'✓ ':'')+(i+1)+'. '+esc(x.t)+'</option>'}).join('')+'</optgroup>'}).join('');
+2383|   $('#labSel').value=LAB.cur?LAB.cur.id:'_free';
+2384|   $('#labDone').textContent=done+' of '+LAB_EX.length+' solved';
+2385| }
+2386| function labOpen(id){
+2387|   var st=labState();var ex=null;LAB_EX.forEach(function(x){if(x.id===id)ex=x});LAB.cur=ex;st.cur=ex?ex.id:'_free';save();
+2388|   labRenderPick();
+2389|   var bx=$('#labEx');
+2390|   if(!ex){bx.innerHTML='<h2 style="margin:0 0 4px">Free playground</h2><p class="small muted" style="margin:0">Run any SQL on the sample tables — SELECT, INSERT, UPDATE, DELETE, CREATE… Tap <b>↺ Reset data</b> to start over.</p>';$('#labSql').value=st.code._free||'SELECT * FROM employees;';}
+2391|   else{bx.innerHTML='<div class="qmeta" style="margin-bottom:6px"><span class="tag lv-'+ex.lvl+'">'+LV[ex.lvl]+'</span><span class="tag">'+esc(ex.set)+'</span>'+(st.done[ex.id]?'<span class="tag com">Solved ✓</span>':'')+'</div><h2 style="margin:0 0 6px">'+esc(ex.t)+'</h2><p style="margin:0">'+esc(ex.p)+'</p><p class="small muted hidden" id="labHint" style="margin:8px 0 0">💡 '+esc(ex.h)+'</p><div class="hidden" id="labSol" style="margin-top:8px"><pre><code>'+esc(ex.sol)+'</code></pre></div>';
+2392|     $('#labSql').value=st.code[ex.id]||'';}
+2393|   $('#labOut').innerHTML='';
+2394|   $('#labHintB').hidden=!ex;$('#labSolB').hidden=!ex;$('#labChk').hidden=!ex;
+2395| }
+2396| function labStep(d){var i=-1;LAB_EX.forEach(function(x,j){if(LAB.cur&&x.id===LAB.cur.id)i=j});var n=Math.min(LAB_EX.length-1,Math.max(0,i+d));labOpen(LAB_EX[n].id);window.scrollTo(0,0)}
+2397| function labTables(){
+2398|   var names=['employees','customers','orders','order_items','products','logins','logins_archive','subscribers','sales_targets','customer_records','daily_sales','invoices'];
+2399|   var cols={};LAB_SEED.split('\n').forEach(function(l){var m=l.match(/^CREATE TABLE (\w+)\((.*)\);$/);if(m)cols[m[1]]=m[2].split(',').map(function(c){return c.trim().split(' ')[0]})});
+2400|   $('#labTbls').innerHTML=names.map(function(n){return '<div class="labt"><button type="button" class="linkbtn" data-labins="'+n+'">'+n+'</button> <span class="small muted">('+(cols[n]||[]).map(function(c){return '<button type="button" class="colbtn" data-labins="'+c+'">'+c+'</button>'}).join(', ')+')</span> <button type="button" class="btn sm ghost" data-labprev="'+n+'">Preview</button></div>'}).join('');
+2401| }
+2402| function labInsert(t){var ta=$('#labSql'),s=ta.selectionStart||ta.value.length,e=ta.selectionEnd||s,v=ta.value;
+2403|   var pre=v.slice(0,s),needSp=pre&&!/[\s(]$/.test(pre)&&!/^[,);)]/.test(t);
+2404|   var ins=(needSp?' ':'')+t;ta.value=pre+ins+v.slice(e);var pos=pre.length+ins.length;
+2405|   if(/\(\)$/.test(t))pos-=1;
+2406|   ta.focus();try{ta.setSelectionRange(pos,pos)}catch(x){}}
+2407| function labSetup(){labTables();var st=labState();if(!LAB.curSet){LAB.curSet=1;labOpen(LAB.want||st.cur||'v1')}else if(LAB.want){labOpen(LAB.want)}LAB.want=null;
+2408|   if(!LAB.db&&!LAB.loading)setTimeout(function(){labInit().catch(function(){})},400);}
+2409| function openLab(id){LAB.want=id||'_free';go('lab')}
+2410| function labForQ(q){if(q.ex)return q.ex;var t=String(q.q||'').trim();var hit=null;LAB_EX.forEach(function(x){if(!hit&&x.q===t)hit=x.id});return hit}
+2411| $('#labSel').addEventListener('change',function(e){labOpen(e.target.value)});
+2412| $('#labPrev').addEventListener('click',function(){labStep(-1)});
+2413| $('#labNext').addEventListener('click',function(){labStep(1)});
+2414| $('#labRun').addEventListener('click',labRun);
+2415| $('#labChk').addEventListener('click',labCheck);
+2416| $('#labHintB').addEventListener('click',function(){var h=$('#labHint');if(h)h.classList.toggle('hidden')});
+2417| $('#labSolB').addEventListener('click',function(){var s=$('#labSol');if(!s)return;if(s.classList.contains('hidden')&&!confirm('Show the solution? Try the hint first if you haven\'t.'))return;s.classList.toggle('hidden')});
+2418| $('#labReset').addEventListener('click',function(){if(!LAB.SQL){toast('Nothing to reset yet');return}if(LAB.db)LAB.db.close();LAB.db=labFresh();toast('Sample data reset');$('#labOut').innerHTML=''});
+2419| $('#labClearQ').addEventListener('click',function(){$('#labSql').value='';$('#labSql').focus()});
+2420| $('#labKeys').addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(b)labInsert(b.dataset.k)});
+2421| $('#labTbls').addEventListener('click',function(e){var b=e.target.closest('[data-labins]');if(b){labInsert(b.dataset.labins);return}
+2422|   b=e.target.closest('[data-labprev]');if(b){$('#labSql').value='SELECT * FROM '+b.dataset.labprev+' LIMIT 20;';labRun();$('#labOut').scrollIntoView({block:'nearest'})}});
+2423| $('#labSql').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();labRun()}});
+2424| document.addEventListener('click',function(e){var b=e.target.closest('[data-labai]');if(b){b.disabled=true;labAsk(b.dataset.labai)}});
+2425| 
+2426| /* ---------- DOWNLOADS & OFFLINE ---------- */
+2427| var DL={run:false,timer:null,msg:''};
+2428| function dlScopes(){
+2429|   var out=[['filter','Current Library filter'],['star','Saved ★'],['weak','Marked weak'],['jd','My JD plan'],['imp','Imported from videos/articles'],['all','Everything']];
+2430|   var parts={};QS.forEach(function(q){if(q.p)parts[q.p]=(parts[q.p]||0)+1});
+2431|   Object.keys(parts).sort().forEach(function(p){out.push(['cat:'+p,p+' ('+parts[p]+')'])});
+2432|   return out;
+2433| }
+2434| function dlList(scope){
+2435|   scope=scope||$('#dlScope').value;
+2436|   if(scope==='filter')return filterQs();
+2437|   if(scope==='star')return QS.filter(function(q){return S.star[q.id]});
+2438|   if(scope==='weak')return QS.filter(function(q){return S.rate[q.id]===1});
+2439|   if(scope==='jd')return (typeof lastJd!=='undefined'&&lastJd)?jdMockSet(60):QS.filter(function(q){return q.c==='JD'});
+2440|   if(scope==='imp')return QS.filter(function(q){return q.raw&&q.raw.src});
+2441|   if(scope==='all')return QS.slice();
+2442|   if(scope.indexOf('cat:')===0){var p=scope.slice(4);return QS.filter(function(q){return q.p===p})}
+2443|   return [];
+2444| }
+2445| function dlReady(q,lang,say){if(lang==='en')return true;var T=trGet(q.id,lang);if(!T)return false;return !say||hasSpeech(T,lang)}
+2446| function dlCountUi(){
+2447|   var list=dlList(),lang=$('#dlLang').value,say=$('#dlSay').checked&&needSay(lang);
+2448|   var ready=list.filter(function(q){return dlReady(q,lang,say)}).length,need=list.length-ready;
+2449|   $('#dlSayL').hidden=lang==='en'||lang==='hi';
+2450|   $('#dlCount').textContent=list.length+' questions · '+ready+' ready offline'+(need?' · '+need+' to prepare (about '+Math.max(1,Math.ceil(need/2))+' AI calls, ~'+Math.max(1,Math.round(need*12/60))+' min)':' ✓');
+2451|   $('#dlPrep').disabled=!need||lang==='en';
+2452| }
+2453| function dlSetup(){
+2454|   var sel=$('#dlScope'),v=sel.value||'filter';
+2455|   sel.innerHTML=dlScopes().map(function(s){return '<option value="'+esc(s[0])+'">'+esc(s[1])+'</option>'}).join('');
+2456|   sel.value=v;if(sel.selectedIndex<0)sel.value='filter';
+2457|   if(!$('#dlLang').dataset.set){$('#dlLang').value=S.lang==='en'?'ur':S.lang;$('#dlLang').dataset.set=1}
+2458|   dlCountUi();dlUi();dlSavedUi();
+2459| }
+2460| function dlSavedUi(){
+
+===== my-question save form (L1075-1100) =====
+1075| /* ---------- add / edit my question ---------- */
+1076| $('#addQBtn').addEventListener('click',function(){openQForm(null)});
+1077| function openSheet(html){$('#sheetBody').innerHTML=html;$('#sheet').classList.add('on');document.body.style.overflow='hidden'}
+1078| function closeSheet(){$('#sheet').classList.remove('on');document.body.style.overflow=''}
+1079| $('#sheet').addEventListener('click',function(e){if(e.target.closest('[data-close]'))closeSheet()});
+1080| document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});
+1081| function openQForm(q){
+1082|   var o=q?q.raw:{q:'',ans:'',l:'m',p:'',t:[],f:''};
+1083|   var techOpts=TECHS.map(function(t){var on=q?q.t.indexOf(t.id)>=0:false;return '<button type="button" class="chip" data-ft="'+esc(t.id)+'" aria-pressed="'+on+'">'+esc(t.label)+'</button>'}).join('');
+1084|   openSheet('<h2>'+(q?'Edit question':'Add your question')+'</h2>'+
+1085|     '<label class="lab" for="fq">Question</label><textarea class="field" id="fq" style="min-height:70px">'+esc(o.q)+'</textarea>'+
+1086|     '<label class="lab" for="fa">Your answer</label><textarea class="field" id="fa" style="min-height:140px" placeholder="Supports **bold**, `code`, - bullets and ``` code blocks">'+esc(o.ans||'')+'</textarea>'+
+1087|     (AIOK?'<div class="row" style="margin-top:6px"><button type="button" class="btn sm" id="fDraft">AI: draft the answer</button></div>':'')+
+1088|     '<div class="row" style="margin-top:4px"><label class="lab" style="margin-right:8px">Level</label><select class="field" id="fl" style="width:auto"><option value="j">Basic</option><option value="m">Mid</option><option value="s">Senior</option></select>'+
+1089|     '<label class="small" style="margin-top:8px"><input type="checkbox" id="fi" '+(o.f&&o.f.indexOf('i')>=0?'checked':'')+'> Important</label><label class="small" style="margin-top:8px"><input type="checkbox" id="fc" '+(o.f&&o.f.indexOf('c')>=0?'checked':'')+'> Most asked</label></div>'+
+1090|     '<label class="lab" for="fp">Category</label><input class="field" id="fp" value="'+esc(o.p||'My questions')+'" list="catList"><datalist id="catList">'+PARTS_BOOK.concat(PARTS_NEW).map(function(p){return '<option value="'+esc(p)+'">'}).join('')+'</datalist>'+
+1091|     '<label class="lab">Technologies</label><div class="chips wrapit" id="ftechs">'+techOpts+'</div>'+
+1092|     '<div class="row" style="margin-top:14px"><button type="button" class="btn primary" id="fSave">Save question</button><button type="button" class="btn ghost" data-close>Cancel</button></div>');
+1093|   $('#fl').value=o.l||'m';
+1094|   $('#ftechs').addEventListener('click',function(e){var b=e.target.closest('[data-ft]');if(b)b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'))});
+1095|   var d=$('#fDraft');if(d)d.addEventListener('click',function(){
+1096|     var qq=$('#fq').value.trim();if(!qq){toast('Write the question first');return}
+1097|     d.disabled=true;d.textContent='Drafting…';
+1098|     SAMPLE(profileCtx()+'Write a strong, simple-English model interview answer (100-200 words) to this question. Use short paragraphs, "- " bullets and `code` where useful. No preamble.\n\nQUESTION: '+qq,{modelTier:'quick',cache:false,onText:function(u){$('#fa').value=u.text}})
+1099|       .catch(function(e){toast(aiErr(e))}).then(function(){d.disabled=false;d.textContent='AI: draft the answer'});
+1100|   });ok

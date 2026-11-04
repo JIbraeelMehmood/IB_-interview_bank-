@@ -361,35 +361,83 @@ function SmartReview() {
 
 /* -------------------------- D-06 CV ↔ JD --------------------------- */
 
+/** Parse a PDF file to text using pdf.js (lazy-loaded). */
+async function parsePdf(file: File): Promise<string> {
+  // Load pdf.js dynamically — only when a PDF is actually uploaded.
+  const pdfjsLib = (window as any).pdfjsLib
+  if (!pdfjsLib) {
+    await new Promise<void>((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs'
+      s.type = 'module'
+      s.onload = () => resolve()
+      s.onerror = () => reject(new Error('Could not load PDF reader. Paste your CV text instead.'))
+      document.head.appendChild(s)
+    })
+  }
+  const lib = (window as any).pdfjsLib
+  if (!lib) throw new Error('Could not load PDF reader. Paste your CV text instead.')
+  const buf = await file.arrayBuffer()
+  const doc = await lib.getDocument({ data: buf }).promise
+  const pages: string[] = []
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i)
+    const content = await page.getTextContent()
+    pages.push(content.items.map((item: any) => item.str).join(' '))
+  }
+  return pages.join('\n\n')
+}
+
 function CvMatch() {
   const { settings } = useSettings()
   const [cv, setCv] = useState('')
   const [jd, setJd] = useState('')
   const [out, setOut] = useState<any>(null)
   const [busy, setBusy] = useState(false)
+  const [parsing, setParsing] = useState(false)
 
   return (
     <div className="stack">
       <div className="card stack-sm">
         <label className="fld">
-          Paste your CV (or upload a .txt / .md)
-          <textarea value={cv} onChange={(e) => setCv(e.target.value)} style={{ minHeight: 140 }} />
+          Paste your CV (or upload .pdf, .txt, .md)
+          <textarea value={cv} onChange={(e) => setCv(e.target.value)} style={{ minHeight: 140 }} placeholder="Paste your resume or upload a file below" />
         </label>
-        <input
-          type="file"
-          accept=".txt,.md,.json"
-          onChange={async (e) => {
-            const f = e.target.files?.[0]
-            if (f) setCv(await f.text())
-          }}
-        />
+        <div className="row">
+          <input
+            type="file"
+            accept=".pdf,.txt,.md,.json,.docx"
+            disabled={parsing}
+            onChange={async (e) => {
+              const f = e.target.files?.[0]
+              if (!f) return
+              const name = f.name.toLowerCase()
+              try {
+                if (name.endsWith('.pdf')) {
+                  setParsing(true)
+                  setCv('📄 Parsing PDF…')
+                  const text = await parsePdf(f)
+                  setCv(text)
+                } else {
+                  setCv(await f.text())
+                }
+              } catch (err) {
+                toast((err as Error).message)
+                setCv('')
+              } finally {
+                setParsing(false)
+              }
+            }}
+          />
+          {parsing && <span className="tiny muted">Reading PDF…</span>}
+        </div>
         <label className="fld">
           Paste the job description
           <textarea value={jd} onChange={(e) => setJd(e.target.value)} style={{ minHeight: 120 }} />
         </label>
         <button
           className="btn primary"
-          disabled={busy || !cv.trim() || !jd.trim()}
+          disabled={busy || !cv.trim() || !jd.trim() || parsing}
           onClick={async () => {
             setBusy(true)
             try {
@@ -404,7 +452,7 @@ function CvMatch() {
           {busy ? 'Comparing…' : 'Compare'}
         </button>
         <p className="tiny muted" style={{ margin: 0 }}>
-          A PDF or DOCX is parsed on the server when one is connected; otherwise paste the text.
+          Upload a PDF resume — it's parsed in your browser, nothing is uploaded to a server.
         </p>
       </div>
       {out && (

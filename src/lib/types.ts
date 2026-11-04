@@ -289,6 +289,31 @@ export interface OutboxItem {
   tries: number
 }
 
+/** A user's community vote — "this question was actually asked to me in an interview". */
+export interface CommunityVote {
+  /** `${code}` — one vote per question per user (latest wins). */
+  code: string
+  /** Experience band the user was interviewing at (1–6). */
+  expYears: ExpYears
+  /** Optional: which company asked it. */
+  company?: string
+  /** When the interview happened (user's estimate). */
+  at: number
+  updatedAt: number
+}
+
+/** Aggregated community stats for one question, pulled from the server. */
+export interface QuestionStats {
+  code: string
+  /** How many users said this was asked in a real interview. */
+  askCount: number
+  /** Ask counts per experience band. */
+  askByExp: Record<number, number>
+  /** Most recent vote timestamp. */
+  lastAskedAt: number
+  updatedAt: number
+}
+
 export interface Story {
   id: string
   competency: string
@@ -330,6 +355,10 @@ export interface AudioSettings {
   /** en | mix | all */
   mode: 'en' | 'mix' | 'all'
   rate: number
+  /** Voice pitch 0.5–2.0 (1.0 = normal). Higher = more feminine/sharp, lower = deeper. */
+  pitch: number
+  /** Voice volume 0–1 (1.0 = full). */
+  volume: number
   /** Silence before the answer, ms. */
   gap: number
   /** Questions only (skip the explanation). */
@@ -339,6 +368,11 @@ export interface AudioSettings {
   voiceEn: string
   voiceUr: string
   voiceHi: string
+  /** Separate voice for Roman Urdu. When blank, uses voiceUr or falls back to en-IN. */
+  voiceRu: string
+  /** When true, transliterate Roman Urdu to Urdu script before speaking so it
+   *  sounds natural with an Urdu/Hindi voice instead of an English voice. */
+  ruToUrdu: boolean
   auto: boolean
   loop: boolean
   /** Repeat the key line and hook after the explanation. */

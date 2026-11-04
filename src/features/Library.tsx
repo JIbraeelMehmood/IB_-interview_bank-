@@ -362,6 +362,7 @@ export default function Library() {
               >
                 <option value="default">Most important first</option>
                 <option value="important">Importance score</option>
+                <option value="asked">Most asked (community verified)</option>
                 <option value="newest">Newest bank</option>
                 <option value="az">A–Z</option>
               </select>

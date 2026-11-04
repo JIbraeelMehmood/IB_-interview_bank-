@@ -10,7 +10,7 @@
  *  backup, matching the v7 rule.
  */
 
-import { callProvider, claudeJson } from './providers'
+import { callProvider, claudeJson, loadPuterSDK } from './providers'
 
 export type ProviderId = 'server' | 'puter' | 'claude' | 'gemini' | 'groq' | 'openrouter' | 'openai' | 'anthropic' | 'custom' | 'mistral' | 'xai' | 'fireworks'
 
@@ -296,6 +296,9 @@ export const serverConfigured = () => !!serverUrl()
 
 /** Send a prompt through whichever provider is configured. */
 export const aiText = callProvider
+
+/** Load the Puter SDK for free, keyless AI. */
+export { loadPuterSDK }
 
 /** Ask for JSON and parse it loosely (models wrap JSON in prose or fences). */
 export async function aiJson<T = unknown>(prompt: string, opts: AiOptions = {}): Promise<T> {

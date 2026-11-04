@@ -21,6 +21,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       if (!ALLOWED.has(table) || !row || typeof row !== 'object' || Array.isArray(row) || !key) continue
       const serialized = JSON.stringify(row)
       if (serialized.length > 256_000) continue
+
+      // Community votes go to a separate collection with upsert logic
+      if (table === 'communityVote') {
+        const votes = db.collection('community_votes')
+        const voteId = `${user.id}:${key}`
+        const expYears = Number(row.expYears) || 0
+        const company = row.company ? String(row.company).slice(0, 100) : null
+        if (expYears < 1 || expYears > 6) continue
+        await votes.updateOne(
+          { _id: voteId },
+          { $set: { userId: user.id, code: key, expYears, company, at: Number(row.at) || Date.now(), updatedAt: Date.now() } },
+          { upsert: true },
+        )
+        if (Number.isInteger(item.id)) acked.push(item.id)
+        continue
+      }
+
       const id = `${user.id}:${table}:${key}`
       const updatedAt = Number(row.updatedAt) || Date.now()
       const existing = await records.findOne({ _id: id, userId: user.id }, { projection: { updatedAt: 1 } })

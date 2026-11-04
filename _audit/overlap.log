@@ -1,0 +1,7 @@
+v1 bank=1950 cur bank=531
+cur records whose normalized text exists in v1: 8
+cur records with NO v1 twin: 523
+v1 normalized distinct keys: 1922
+normalized keys present in BOTH banks: 8
+id collisions cur vs v1: 0
+sample hits: q_17_o8v5, q_138_4t1p, q_10_m2g6, q_14_272d, q_15_vr0c, q_21_pbtp, q_50_gn18, q_68_ouhm
