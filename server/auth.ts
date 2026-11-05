@@ -36,16 +36,39 @@ export type ApiResponse = {
   end(): void
 }
 
+// Index setup runs once per process lifetime and is cached here.
+// Running createIndex on every request causes IndexKeySpecsConflict when the
+// existing index in Atlas was created with slightly different options (e.g.
+// missing the sparse flag).  We guard with a Promise so concurrent cold-starts
+// don't race each other.
+let _indexSetup: Promise<void> | null = null
+
+async function ensureIndexes(db: Db): Promise<void> {
+  if (_indexSetup) return _indexSetup
+  _indexSetup = (async () => {
+    const users = db.collection<User>('users')
+    const sessions = db.collection<Session>('sessions')
+    await Promise.all([
+      // Match the index that already exists in Atlas (unique, NOT sparse).
+      // If you need to change options, drop the old index in Atlas first.
+      users.createIndex({ email: 1 }, { unique: true, name: 'email_1' }),
+      users.createIndex({ googleId: 1 }, { unique: true, sparse: true, name: 'googleId_1' }),
+      sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'expiresAt_1' }),
+      sessions.createIndex({ userId: 1 }, { name: 'userId_1' }),
+    ])
+  })().catch((err) => {
+    // Reset so it retries on the next request rather than caching the failure.
+    _indexSetup = null
+    throw err
+  })
+  return _indexSetup
+}
+
 async function collections(db: Db) {
+  await ensureIndexes(db)
   const users = db.collection<User>('users')
   const sessions = db.collection<Session>('sessions')
   const aiKeys = db.collection<AiKeyRecord>('user_ai_keys')
-  await Promise.all([
-    users.createIndex({ email: 1 }, { unique: true, sparse: true }),
-    users.createIndex({ googleId: 1 }, { unique: true, sparse: true }),
-    sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-    sessions.createIndex({ userId: 1 }),
-  ])
   return { users, sessions, aiKeys }
 }
 

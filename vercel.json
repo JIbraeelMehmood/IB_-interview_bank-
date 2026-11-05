@@ -16,6 +16,7 @@
       "src": "/(assets|data|icons|audio)/(.*)",
       "dest": "/$1/$2"
     },
+    { "src": "/manifest.webmanifest", "dest": "/manifest.webmanifest" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "headers": [
