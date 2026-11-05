@@ -1,6 +1,6 @@
 import { db } from './db'
 
-export interface AccountUser { id: string; email: string; name: string }
+export interface AccountUser { id: string; email: string; name: string; picture?: string }
 
 export async function accountRequest(path: string, body?: Record<string, unknown>) {
   const res = await fetch(path, {

@@ -878,3 +878,48 @@ export function ankiAvailable(): boolean {
     (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   )
 }
+
+
+/* ─────────────────────── Session Markdown Export ───────────────────── */
+
+export interface MockTurnExport {
+  question: string
+  answer: string
+  score?: number
+  feedback?: string
+}
+
+/** Export a mock interview session as Markdown text. */
+export function exportSessionMarkdown(session: {
+  at: number
+  persona?: string
+  turns: MockTurnExport[]
+  scorecard?: { overall: number; verdict: string }
+}): string {
+  const lines: string[] = [
+    `# Mock Interview — ${new Date(session.at).toLocaleDateString()}`,
+    `**Persona:** ${session.persona || 'General'} | **Score:** ${session.scorecard?.overall ?? '—'}/10 | **Verdict:** ${session.scorecard?.verdict ?? '—'}`,
+    '',
+    '## Questions & Answers',
+  ]
+  for (const [i, t] of session.turns.entries()) {
+    lines.push(`\n### Q${i + 1}. ${t.question}`)
+    lines.push(`**Your answer:** ${t.answer || '*(no answer)*'}`)
+    if (t.score !== undefined) lines.push(`**Score:** ${t.score}/10`)
+    if (t.feedback) lines.push(`**Feedback:** ${t.feedback}`)
+  }
+  return lines.join('\n')
+}
+
+/** Trigger a browser download of text content as a file. */
+export function downloadMarkdown(content: string, filename: string): void {
+  const blob = new Blob([content], { type: 'text/markdown' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}

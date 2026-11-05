@@ -6,22 +6,27 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"
     />
-    <meta name="theme-color" content="#1D5C48" />
-    <meta name="description" content="Interview Box — 1,950 interview questions, JD prep, mock interviews, speaking coach and SQL lab. Works offline." />
+    <meta name="theme-color" content="#0a7c4e" />
+    <meta name="description" content="Interview Box — 2,140+ interview questions, JD prep, mock interviews, speaking coach and SQL lab. Works offline." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Interview Box" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Font preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- v3 fonts: Plus Jakarta Sans (display) + Inter (body) + JetBrains Mono + Noto Nastaliq Urdu -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap"
       rel="stylesheet"
     />
+
     <script>
-      // Restore the theme before first paint to avoid a flash.
+      // Restore theme before first paint — prevents flash of wrong theme.
       try {
         var t = localStorage.getItem('ibx-theme')
         if (t && t !== 'auto') document.documentElement.setAttribute('data-theme', t)

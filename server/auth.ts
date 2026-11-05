@@ -1,14 +1,27 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
-import type { Collection, Db } from 'mongodb'
+import type { Db } from 'mongodb'
 import { getDb } from './mongodb.js'
 
 const scrypt = promisify(scryptCallback)
 const COOKIE = 'ibx_session'
 const SESSION_DAYS = 30
 
-type User = { _id: string; email: string; name: string; passwordHash: string; salt: string; createdAt: number }
+type User = {
+  _id: string
+  email: string
+  name: string
+  passwordHash: string
+  salt: string
+  createdAt: number
+  /** Google OAuth subject id — present when signed in via Google. */
+  googleId?: string
+  /** Avatar URL from Google profile photo. */
+  picture?: string
+}
 type Session = { _id: string; userId: string; expiresAt: Date; createdAt: number }
+/** Per-user AI provider keys, stored server-side so they roam across devices. */
+export type AiKeyRecord = { _id: string; keys: Record<string, string>; models: Record<string, string>; base: Record<string, string>; prov: string; mt: string; updatedAt: number }
 
 export type ApiRequest = {
   method?: string
@@ -19,19 +32,21 @@ export type ApiRequest = {
 export type ApiResponse = {
   status(code: number): ApiResponse
   json(value: unknown): void
-  setHeader(name: string, value: string): void
+  setHeader(name: string, value: string | string[]): void
   end(): void
 }
 
 async function collections(db: Db) {
   const users = db.collection<User>('users')
   const sessions = db.collection<Session>('sessions')
+  const aiKeys = db.collection<AiKeyRecord>('user_ai_keys')
   await Promise.all([
-    users.createIndex({ email: 1 }, { unique: true }),
+    users.createIndex({ email: 1 }, { unique: true, sparse: true }),
+    users.createIndex({ googleId: 1 }, { unique: true, sparse: true }),
     sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     sessions.createIndex({ userId: 1 }),
   ])
-  return { users, sessions }
+  return { users, sessions, aiKeys }
 }
 
 export function emailOf(value: unknown): string {
@@ -55,11 +70,11 @@ export function cookieIsSecure(req: ApiRequest) {
 }
 
 export function setSessionCookie(res: ApiResponse, token: string, secure = true) {
-  res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(token)}; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Path=/; Max-Age=${SESSION_DAYS * 86400}`)
+  res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(token)}; HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax; Path=/; Max-Age=${SESSION_DAYS * 86400}`)
 }
 
 export function clearSessionCookie(res: ApiResponse, secure = true) {
-  res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; ${secure ? "Secure; " : ""}SameSite=Lax; Path=/; Max-Age=0`)
+  res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax; Path=/; Max-Age=0`)
 }
 
 export async function createSession(db: Db, userId: string) {
@@ -82,7 +97,7 @@ export async function currentUser(req: ApiRequest) {
   const session = await sessions.findOne({ _id: tokenHash(token), expiresAt: { $gt: new Date() } })
   if (!session) return null
   const user = await users.findOne({ _id: session.userId })
-  return user ? { id: user._id, email: user.email, name: user.name } : null
+  return user ? { id: user._id, email: user.email, name: user.name, picture: user.picture } : null
 }
 
 export async function removeSession(req: ApiRequest) {
@@ -118,6 +133,57 @@ export async function findUser(email: string) {
   const db = await getDb()
   const { users } = await collections(db)
   return users.findOne({ email })
+}
+
+/**
+ * Find a user by their Google subject id (sub).
+ * If no user exists yet for this Google account, create one (auto-register).
+ * If a user with the same email already exists (from email/password signup),
+ * link the Google id to that existing account.
+ */
+export async function upsertGoogleUser(googleId: string, email: string, name: string, picture?: string) {
+  const db = await getDb()
+  const { users } = await collections(db)
+
+  // 1. Already has a Google account — update profile photo and return.
+  const byGoogle = await users.findOneAndUpdate(
+    { googleId },
+    { $set: { name, picture } },
+    { returnDocument: 'after' },
+  )
+  if (byGoogle) return { id: byGoogle._id, email: byGoogle.email, name: byGoogle.name, picture: byGoogle.picture }
+
+  // 2. Email account exists — link the Google id to it.
+  const byEmail = await users.findOneAndUpdate(
+    { email },
+    { $set: { googleId, picture } },
+    { returnDocument: 'after' },
+  )
+  if (byEmail) return { id: byEmail._id, email: byEmail.email, name: byEmail.name, picture: byEmail.picture }
+
+  // 3. Brand-new user — create account without a password.
+  const id = randomBytes(16).toString('hex')
+  const newUser: User = { _id: id, email, name, googleId, picture, passwordHash: '', salt: '', createdAt: Date.now() }
+  await users.insertOne(newUser)
+  return { id, email, name, picture }
+}
+
+/** Save AI provider key config for a user (upsert). */
+export async function saveAiKeys(userId: string, payload: Omit<AiKeyRecord, '_id' | 'updatedAt'>) {
+  const db = await getDb()
+  const { aiKeys } = await collections(db)
+  await aiKeys.updateOne(
+    { _id: userId },
+    { $set: { ...payload, updatedAt: Date.now() } },
+    { upsert: true },
+  )
+}
+
+/** Get saved AI provider key config for a user. */
+export async function getAiKeys(userId: string): Promise<AiKeyRecord | null> {
+  const db = await getDb()
+  const { aiKeys } = await collections(db)
+  return aiKeys.findOne({ _id: userId })
 }
 
 export async function database() {

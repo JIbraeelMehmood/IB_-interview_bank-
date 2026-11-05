@@ -294,6 +294,9 @@ function extraHeaders(p: ProviderId): Record<string, string> {
  *
  *  Auto-failover: if the primary provider fails with a network/provider error
  *  (not a bad-key or bad-request), try other configured providers before giving up.
+ *  If a local free AI gateway is running (freellmpool / free-ai-gateway), it is
+ *  tried first before cloud providers when the primary is 'custom' or when the
+ *  primary provider fails.
  */
 export async function callProvider(
   input: string | ChatMessage[],
@@ -311,12 +314,22 @@ export async function callProvider(
     if (err.code === 'bad_key' || err.code === 'bad_request' || err.code === 'bad_model' || err.code === 'not_ready') {
       throw err
     }
+    // Try local gateway first if available
+    try {
+      const { gatewayUrl, gatewayModel } = await import('./freeGateway')
+      const gwUrl = gatewayUrl()
+      if (gwUrl) {
+        return await openAiStyle(gwUrl, '', gatewayModel(), toMsgs(input), opts)
+      }
+    } catch {
+      /* gateway not available — continue to cloud fallbacks */
+    }
     // Try other configured providers.
     const fallbacks = availableFallbacks(p)
     for (const fp of fallbacks) {
       try {
         return await callOneProvider(input, opts, fp)
-      } catch (e2) {
+      } catch {
         // Keep trying other providers.
         continue
       }

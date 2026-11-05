@@ -21,8 +21,11 @@ import Lab from './features/Lab'
 import Learn from './features/Learn'
 import Downloads from './features/Downloads'
 import AiStudio from './features/AiStudio'
+import AiProviders from './features/AiProviders'
 import Topics from './features/Topics'
 import Help from './features/Help'
+import { initGateway } from './lib/freeGateway'
+import { checkTtsServer } from './lib/ttsClient'
 
 export default function App() {
   const { loaded, init } = useSettings()
@@ -45,6 +48,9 @@ export default function App() {
     if (r.message) toast(r.message)
     setReady(true)
     window.setTimeout(() => void flush(), 500)
+    // Background: detect free AI gateways + TTS server availability
+    void initGateway()
+    void checkTtsServer()
   }
 
   useEffect(() => {
@@ -120,6 +126,7 @@ export default function App() {
             {!online ? <><i className="dot" /> Offline</> : aiOn ? <><i className="dot on" /> AI ready</> :
               <><i className="dot" /><Link to="/help" title={aiWhy()}>AI off</Link></>}
           </span>
+          <Link className="iconbtn" to="/ai-providers" aria-label="AI Providers" title="Connect AI providers">🔗</Link>
           <button className="iconbtn" type="button" onClick={() => void signOut()} aria-label="Sign out" title={user.email}>↪</button>
           <Link className="iconbtn" to="/help" aria-label="Help">?</Link>
         </div>
@@ -134,6 +141,7 @@ export default function App() {
             <Route path="/learn" element={<Learn />} /><Route path="/downloads" element={<Downloads />} />
             <Route path="/ai" element={<AiStudio />} /><Route path="/topics" element={<Topics />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/ai-providers" element={<AiProviders />} />
             <Route path="*" element={<div className="card center"><p>Page not found.</p><Link className="btn primary" to="/library">Back to Library</Link></div>} />
           </Routes>
         )}
