@@ -61,12 +61,14 @@ export default function App() {
       localStorage.setItem('ibx-user-cache', JSON.stringify(data.user))
       await enterApp(data.user)
     }).catch(async (error) => {
-      // Do not treat an expired/rejected server session as an offline session.
       if (!alive) return
-      if (/Request failed \(\d+\)/.test(String(error?.message || ''))) {
+      const msg = String(error?.message || '')
+      // 401/403 = session expired or invalid — force re-login, do NOT use cache.
+      if (/Request failed \((401|403)\)/.test(msg)) {
+        localStorage.removeItem('ibx-user-cache')
         setUser(null); setReady(false); return
       }
-      // A previously signed-in user can still open the PWA offline.
+      // Network errors, 500s, etc. — let a previously signed-in user continue offline.
       try {
         const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
         if (cached?.id && cached.email) {

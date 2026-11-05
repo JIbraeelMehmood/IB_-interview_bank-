@@ -19,7 +19,7 @@ export default function handler(req: ApiRequest, res: ApiResponse) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   if (!clientId) return res.status(500).json({ error: 'Google Sign-In is not configured.' })
 
-  const appUrl = process.env.APP_URL || 'http://localhost:5173'
+  const appUrl = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '')
   const redirectUri = `${appUrl}/api/auth/google-callback`
 
   // Generate a CSRF state token and store it in a short-lived HttpOnly cookie

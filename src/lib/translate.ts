@@ -42,21 +42,32 @@ async function buildPrompt(q: Question, lang: Lang): Promise<string> {
     lang === 'hi'
       ? 'Use simple everyday spoken Hindi mixed with English (Hinglish), as developers actually speak it.'
       : lang === 'ur'
-        ? 'Use natural Pakistani Urdu mixed with English, as developers actually speak it.'
-        : 'Use Roman Urdu the way it is written in Pakistani chat, one consistent spelling.'
+        ? 'Use natural modern Pakistani Urdu mixed with English, the way developers actually speak in Lahore. Use short, clear Urdu sentences — no heavy literary or government-style Urdu. Prefer: hai/hain, karta/karti, hota, chahiye, zaroor, achha, seedha, matlab, matlab yeh hai, yani, phir, lekin, agr, to, iska, warna. Prefer modern colloquial words over archaic ones.'
+        : 'Use Roman Urdu the way it is written in Pakistani WhatsApp/chat — short words, natural flow, one consistent spelling. Sound like a senior dev explaining to a colleague, not a textbook.'
+  const modernUrduVocab = (lang === 'ur' || lang === 'ru') ? `
+Preferred modern Urdu vocabulary (always use these, never their archaic/Hindi alternatives):
+- masla / mushkil (not samasya), waqt (not samay), zaroori (not aavashyak)
+- istemal karna (not prayog karna), maqsad (not uddeshya), tafseel (not vistaar)
+- sawal / jawab (not prashn/uttar), misaal (not udaharan), farq (not antar)
+- tareeqa (not vidhi), koshish (not prayas), faida / nuqsaan (not laabh/haani)
+- mehfooz (not surakshit), mumkin (not sambhav), shuru / khatam (not aarambh/samaapt)
+- tezi / speed (not gati), seedha (not siddhant), phir se (not punaravar)
+- achha (not uchit), samajhna (not samajhana), kaam karna (not karya karna)
+- batana (not prasthut karna), rakhna (not sangraheet karna)
+Everyday explanation style: use one short analogy from Pakistani daily life — a dukaan, a bank line, a school register, a courier app, a cricket over — when explaining a hard concept. Keep it under 20 words.` : ''
   return `You are translating one interview question and its answer for a senior Laravel developer in Lahore.
 
 ${rules}${spelling}
 
 Rules for this job:
-- Keep these in English exactly: technology names, product names, SQL keywords, code, commands, file names, and English words the developer would say in English (queue, deploy, cache, job, middleware, index, branch, token).
-- ${langNote}
+- Keep these in English exactly: technology names, product names, SQL keywords, code, commands, file names, and English words the developer would say in English (queue, deploy, cache, job, middleware, index, branch, token, request, response, server, database, array, loop, error, function, class, route, controller, migration, test, commit).
+- ${langNote}${modernUrduVocab}
 - Start the answer with exactly this line: ${HEAD[lang]}
 - Then 2–4 short bullets, then one worked example on a line starting with "${EXAMPLE_LINE[lang]}".
-- Under 170 words in total.
+- Under 170 words in total. Short sentences. Active voice.
 - Also give a one-sentence English line the candidate can actually say in the interview (key_en), and a short memory hook in ${lang === 'ru' ? 'Roman Urdu' : lang === 'ur' ? 'Urdu' : 'Hindi'} (hook).
-- Add spoken versions written for a voice: say_q (the question, tech words written in the ${lang === 'hi' ? 'Devanagari' : lang === 'ur' ? 'Urdu' : 'Latin'} script the way they sound), say_a, say_hook. No code, short sentences, abbreviations spelled out.
-- Before you answer, check: are all the facts from the English answer still there? Is any tech word translated that should stay English? Does it read like speech, not a textbook?
+- Add spoken versions written for a voice: say_q (the question, tech words written in the ${lang === 'hi' ? 'Devanagari' : lang === 'ur' ? 'Urdu' : 'Latin'} script the way they sound), say_a (same rules), say_hook. No markdown, no code, short sentences, abbreviations spelled out letter by letter (P H P, not PHP).
+- Before you answer, check: (1) are all the facts from the English answer still there? (2) Is any tech word translated that should stay in English? (3) Does it read like speech, not a textbook? (4) Is the Urdu natural and colloquial — not stiff or formal?
 
 Reply with JSON only:
 {"q":"...","a":"...","key_en":"...","hook":"...","say_q":"...","say_a":"...","say_hook":"..."}

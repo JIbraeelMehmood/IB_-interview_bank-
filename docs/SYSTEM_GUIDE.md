@@ -1517,3 +1517,59 @@ Everything that works on Vercel for all users
   └──────────────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────┘
   
   Total savings: ~790 MB
+
+
+
+
+
+
+
+
+
+
+
+  What was done
+  
+  1. Voice picker added to Library page
+  
+  src/features/Library.tsx — new VoiceBar component appears between the question count bar and the question list. It shows:
+  - Language chips (English / Urdu / Roman Urdu / Hindi) — tap to switch
+  - A voice dropdown that shows all available voices for that language (auto-detected from browser)
+  - A "Urdu script" checkbox when Roman Urdu is active (enables transliteration)
+  - A "⚙ More" link to the full audio settings in Progress for speed, pitch, etc.
+  
+  No need to go to Progress → Settings tile to pick a voice anymore.
+  
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  
+  2. Roman Urdu default changed to Urdu script mode
+  
+  src/lib/settings.ts — ruToUrdu default changed from false → true.
+  
+  Was: Roman Urdu was read by an English voice (sounded terrible by default) Now: Roman Urdu is always transliterated to Urdu script first, then
+  spoken by an Urdu/Hindi voice — which is how it should sound.
+  
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  
+  3. Translation quality improved — modern Pakistani Urdu
+  
+  Two files updated:
+  
+  public/data/prompts.json — the trStyle system prompt that all AI translations use now:
+  - Explicitly lists preferred modern colloquial Urdu words (masla, waqt, zaroori, istemal, seedha, achha…)
+  - Explicitly bans heavy Sanskrit/Hindi words (samasya, samay, aavashyak, prayog, laabh…)
+  - Requires short active-voice sentences, not textbook style
+  - Requires a Pakistani everyday analogy for hard concepts (dukaan, bank line, courier app, cricket)
+  
+  src/lib/translate.ts — the per-question AI prompt now includes the full preferred/banned vocabulary list, adds more English dev words to keep
+  in English (route, controller, migration, test, commit, hook, pipeline), requires active voice, and adds a 4-point self-check before the model
+  finalises its output.
+  
+  Cached translations — existing translations are already cached in IndexedDB. They will be re-translated the next time you tap "Translate now"
+  on a card, or you can clear the translation cache from Progress → Backup → Reset to get fresh translations for all questions.
+  
+  Read SYSTEM_GUIDE.md earlier — used it to confirm the voice/audio architecture, that urSpeech()/speechify() handles Urdu TTS preprocessing, and
+  that prompts.json is the right place to improve translation quality rather than hardcoded strings. Guided the decision to add VoiceBar to
+  Library rather than a separate page.
+ 
+▸ Credits: turn 9.49 •

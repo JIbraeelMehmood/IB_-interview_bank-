@@ -98,11 +98,12 @@ export function listVoices(): SpeechSynthesisVoice[] {
 const baseLang = (v: SpeechSynthesisVoice) => (v.lang || '').toLowerCase().replace('_', '-')
 
 /** Preference order for a language. Urdu falls back to Hindi.
- *  Roman Urdu prefers Hindi (closer to South Asian pronunciation) then en-IN. */
+ *  Roman Urdu prefers Urdu script voices first (sounds most natural), then
+ *  Hindi (similar phonemes), then en-IN as a last resort. */
 const PREF: Record<Lang, string[]> = {
   en: ['en-in', 'en-gb', 'en-us', 'en'],
   ur: ['ur-pk', 'ur-in', 'hi-in', 'hi-pk', 'ur', 'hi'],
-  ru: ['hi-in', 'en-in', 'en-us', 'en-gb', 'en', 'ur-pk', 'ur'],
+  ru: ['ur-pk', 'ur-in', 'hi-in', 'hi-pk', 'ur', 'hi', 'en-in', 'en-us', 'en'],
   hi: ['hi-in', 'hi-pk', 'hi'],
 }
 

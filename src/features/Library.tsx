@@ -23,7 +23,8 @@ import { generateQuestions } from '../lib/features'
 import { aiReady, aiWhy, aiConfigured } from '../lib/ai'
 import { beginGoogleSignIn } from '../lib/auth'
 import { canInstall, promptInstall } from '../lib/install'
-import { EXP_SHORT, LEVEL_NAME, type ExpYears, type Level } from '../lib/types'
+import { EXP_SHORT, LEVEL_NAME, type ExpYears, type Level, LANG_NAME, LANGS, type Lang } from '../lib/types'
+import { listVoices, ttsAvailable } from '../lib/speech'
 
 const PAGE = 30
 
@@ -452,6 +453,8 @@ export default function Library() {
         </div>
       </div>
 
+      <VoiceBar />
+
       {loading && rows.length === 0 ? (
         <Loading />
       ) : rows.length === 0 ? (
@@ -468,6 +471,91 @@ export default function Library() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Compact bar that lets users pick the TTS voice per language, right beside the
+ *  question list — no need to dig into Progress → Settings → Audio. */
+function VoiceBar() {
+  const { settings, setAudio, setLang } = useSettings()
+  const au = settings.au
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    if (!ttsAvailable()) return
+    setVoices(listVoices())
+    const t = setTimeout(() => setVoices(listVoices()), 900)
+    return () => clearTimeout(t)
+  }, [])
+
+  const urVoices = voices.filter((v) => /^(ur|hi)/i.test(v.lang))
+  const enVoices = voices.filter((v) => /^en/i.test(v.lang))
+  const hiVoices = voices.filter((v) => /^hi/i.test(v.lang))
+  const ruVoices = [...voices.filter((v) => /^(ur|hi)/i.test(v.lang)), ...voices.filter((v) => /^en/i.test(v.lang))]
+
+  const voicesForLang = (l: Lang) => {
+    if (l === 'ur') return urVoices
+    if (l === 'hi') return hiVoices
+    if (l === 'ru') return ruVoices
+    return enVoices
+  }
+  const voiceKeyForLang = (l: Lang): keyof typeof au =>
+    l === 'ur' ? 'voiceUr' : l === 'hi' ? 'voiceHi' : l === 'ru' ? 'voiceRu' : 'voiceEn'
+
+  if (!ttsAvailable()) return null
+
+  return (
+    <div className="card" style={{ padding: '8px 12px' }}>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span className="small muted" style={{ whiteSpace: 'nowrap' }}>🔊 Voice:</span>
+
+        {/* Language selector chips */}
+        <div className="row" style={{ gap: 4 }}>
+          {LANGS.map((l) => (
+            <button
+              key={l}
+              className={`btn sm${settings.lang === l ? ' primary' : ' ghost'}`}
+              onClick={() => setLang(l)}
+              style={{ minWidth: 0, padding: '2px 8px', fontSize: 12 }}
+            >
+              {LANG_NAME[l]}
+            </button>
+          ))}
+        </div>
+
+        {/* Voice dropdown for the active language */}
+        <select
+          value={au[voiceKeyForLang(settings.lang)] as string}
+          onChange={(e) => setAudio({ [voiceKeyForLang(settings.lang)]: e.target.value })}
+          style={{ flex: 1, minWidth: 0, fontSize: 12 }}
+          aria-label={`${LANG_NAME[settings.lang]} voice`}
+        >
+          <option value="">Auto (best available)</option>
+          {voicesForLang(settings.lang).map((v) => (
+            <option key={v.voiceURI} value={v.voiceURI}>
+              {v.name} ({v.lang})
+            </option>
+          ))}
+        </select>
+
+        {/* Roman Urdu transliteration toggle — only shown when ru is active */}
+        {settings.lang === 'ru' && (
+          <label className="row" style={{ gap: 4, fontSize: 12, whiteSpace: 'nowrap' }}>
+            <input
+              type="checkbox"
+              checked={au.ruToUrdu}
+              onChange={(e) => setAudio({ ruToUrdu: e.target.checked })}
+              style={{ width: 'auto' }}
+            />
+            Urdu script
+          </label>
+        )}
+
+        <Link to="/progress" className="btn sm ghost" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+          ⚙ More
+        </Link>
+      </div>
     </div>
   )
 }

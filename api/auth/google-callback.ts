@@ -36,7 +36,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-  const appUrl = process.env.APP_URL || 'http://localhost:5173'
+  const appUrl = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '')
   const redirectUri = `${appUrl}/api/auth/google-callback`
 
   if (!clientId || !clientSecret) {
@@ -119,7 +119,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     res.setHeader('Set-Cookie', [sessionCookie, clearStateCookie])
 
     // Redirect back to the app root — the React app will call /api/auth/me and log in.
-    return res.setHeader('Location', appUrl), res.status(302).end()
+    return res.setHeader('Location', appUrl + '/'), res.status(302).end()
 
   } catch (err) {
     console.error('Google callback error', err)

@@ -92,11 +92,15 @@ async function probe(baseUrl: string, timeoutMs: number): Promise<boolean> {
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), timeoutMs)
-    // Most OpenAI-compatible gateways expose GET /v1/models
+    // Most OpenAI-compatible gateways expose GET /v1/models.
+    // Use { signal } so the fetch aborts quickly rather than hanging.
+    // The ERR_CONNECTION_REFUSED / AbortError is expected when no gateway
+    // is running — swallow it silently.
     const res = await fetch(`${baseUrl}/v1/models`, { signal: ctrl.signal })
     clearTimeout(t)
     return res.status < 500
   } catch {
+    // Connection refused or timeout — gateway not running, not an error.
     return false
   }
 }

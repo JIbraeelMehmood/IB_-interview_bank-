@@ -73,7 +73,15 @@ export function QCard({
   }, [q.code, lang])
 
   // B-01 / C-01: the Listen button follows the tab you are looking at.
+  // Tapping while playing stops immediately; tapping again starts a new reading.
   const listen = async (useLang: Lang) => {
+    // If already playing, stop and return — toggle behaviour.
+    if (busy === 'listen') {
+      const { stopSpeaking } = await import('../lib/speech')
+      stopSpeaking()
+      setBusy('')
+      return
+    }
     if (busy) return
     const problem = voiceProblem()
     if (problem) {
@@ -248,8 +256,8 @@ export function QCard({
         </div>
 
         <div className="actions">
-          <button className="btn sm" onClick={() => void listen(lang)} disabled={!!busy}>
-            🎧 {busy === 'listen' ? 'Playing…' : 'Listen'}
+          <button className="btn sm" onClick={() => void listen(lang)} disabled={!!busy && busy !== 'listen'}>
+            {busy === 'listen' ? '⏹ Stop' : '🎧 Listen'}
           </button>
           <button
             className="btn sm"
