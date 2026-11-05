@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { BottomNav, ToastHost, toast } from './components/ui'
 import { useSettings } from './lib/settings'
 import { ensureSeeded } from './lib/seed'
@@ -150,6 +151,7 @@ export default function App() {
       </main>
       {player.queue.length > 0 && <PlayerBar />}
       <BottomNav dueCount={due} /><ToastHost /><UpdatePrompt />
+      <Analytics />
     </>
   )
 }
