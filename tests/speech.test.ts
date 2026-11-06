@@ -6,7 +6,7 @@
  *   4. ruNorm — expanded spelling variants from updated lexicons.json
  */
 import { describe, it, expect, beforeAll } from 'vitest'
-import { romanUrduToScript } from '../src/lib/speech'
+import { romanUrduToScript, splitLatinRuns } from '../src/lib/speech'
 import { ruNorm } from '../src/lib/lang'
 import { loadLexicons } from '../src/lib/lang'
 import { readFileSync } from 'node:fs'
@@ -161,5 +161,27 @@ describe('ruNorm — original canonical spelling rules still pass', () => {
   it('normalises bahut to bohat (Pakistani vs Indian)', async () => {
     await loadLexicons()
     expect(ruNorm('bahut acha')).toContain('bohat')
+  })
+})
+
+
+describe('mixed Urdu-English vocabulary and speech segmentation', () => {
+  it('keeps common conversational English words in Latin script', () => {
+    const result = romanUrduToScript('Aap please API check kar ke mujhe update de dein')
+    expect(result).toContain('please')
+    expect(result).toContain('API')
+    expect(result).toContain('check')
+    expect(result).toContain('update')
+    expect(result).toContain('آپ')
+    expect(result).toContain('کر')
+  })
+
+  it('does not classify sentence-initial Urdu words as English', () => {
+    expect(romanUrduToScript('Maybe Aap theek hain?')).toContain('آپ ٹھیک ہیں')
+  })
+
+  it('groups adjacent English words into one voice segment', () => {
+    const runs = splitLatinRuns('آپ API check کر کے update دے دیں')
+    expect(runs.filter((run) => run.latin).map((run) => run.text)).toEqual(['API check', 'update'])
   })
 })

@@ -8,7 +8,7 @@
 
 import type { Lang } from './types'
 
-export const RULES_VERSION = 4
+export const RULES_VERSION = 5
 
 type Pairs = [string, string][]
 

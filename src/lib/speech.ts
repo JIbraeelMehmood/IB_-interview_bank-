@@ -347,9 +347,9 @@ export async function speakSegments(
   opts.onDone?.()
 }
 
-const LATIN = /[A-Za-z][A-Za-z0-9_+#.\-/]*/
+const LATIN = /[A-Za-z][A-Za-z0-9_+#.\-/]*(?:[ \t]+[A-Za-z][A-Za-z0-9_+#.\-/]*)*/
 
-function splitLatinRuns(text: string): { text: string; latin: boolean }[] {
+export function splitLatinRuns(text: string): { text: string; latin: boolean }[] {
   const out: { text: string; latin: boolean }[] = []
   const re = new RegExp(LATIN.source, 'g')
   let last = 0
@@ -392,15 +392,40 @@ const RU_SINGLE: Record<string, string> = {
  * sentence-initial "Aap" is Urdu, while "API" is an acronym.
  */
 const RU_TECH_TERMS = new Set([
+  // Product names, programming languages, frameworks, infrastructure and acronyms.
   'api','php','sql','html','css','javascript','typescript','mysql','mongodb',
   'postgresql','redis','react','next.js','node.js','laravel','wordpress',
   'woocommerce','shopify','docker','kubernetes','vercel','github','gitlab',
   'git','linux','ubuntu','composer','npm','yarn','json','xml','http','https',
   'rest','graphql','jwt','oauth','middleware','controller','eloquent','livewire',
-  'stripe','paypal','webhook','websocket','fail','down','error','issue','code','app','run','fix','build','test','work','start','stop','update','push','pull','merge','nginx','apache','vite','vitest',
+  'stripe','paypal','webhook','websocket','nginx','apache','vite','vitest',
   'playwright','python','django','flask','fastapi','aws','azure','gcp',
-  'firebase','supabase','queue','deploy','cache','database','server','the','is','are','was','were','will','can','could','should','must','this','that','with','from','for','and','or','if','when','because','also','not','you','your','we','they','it','of','as','by','new','old','good','bad','best','first','last','now','then','there','here','please','thanks',
-  'request','response','function','class','route','migration','commit','job','index','branch','token','array','loop','developer','technical','feature','frontend','backend','project','system','website','application','mobile','desktop','browser','voice','audio','translation','question','answer','explanation','example','user','client',
+  'firebase','supabase','redis','postgres','sqlite','phpmyadmin','wordpress',
+  'queue','cache','database','server','frontend','backend','framework',
+  'request','response','function','class','route','migration','commit','job',
+  'index','branch','token','array','loop','exception','payload','endpoint',
+  'deployment','debugging','authentication','authorization','session',
+  'cookie','container','pipeline','repository','terminal','command-line',
+])
+
+// Everyday English that Pakistani developers commonly retain inside Urdu
+// sentences. This is intentionally separate from the technical allowlist:
+// ordinary words are preserved only when explicitly curated, never merely
+// because they begin with a capital letter.
+const RU_COMMON_ENGLISH = new Set([
+  'actually','basically','already','almost','always','anyway','available',
+  'awesome','bad','best','better','busy','call','change','check','clear',
+  'complete','correct','daily','default','detail','different','easy','exactly',
+  'example','explain','feature','final','fine','first','fix','free','full',
+  'good','great','important','issue','just','latest','later','less','let',
+  'link','live','main','manage','maybe','meeting','message','missing','more',
+  'much','need','new','next','normal','now','okay','old','only','option',
+  'other','overall','perfect','personally','please','possible','pretty',
+  'problem','proper','quick','ready','real','really','right','same','second',
+  'simple','small','sorry','specific','start','stop','sure','talk','team',
+  'temporary','test','thing','time','today','tomorrow','try','understand',
+  'update','use','useful','usually','valid','version','wait','want','week',
+  'welcome','work','working','wrong','yes','yesterday',
 ])
 
 // Common Pakistani Roman Urdu words need lexical spellings; character mapping
@@ -423,6 +448,37 @@ const RU_COMMON_WORDS: Record<string, string> = {
   kaam:'کام', sawal:'سوال', jawab:'جواب', tareeqa:'طریقہ',
   istemal:'استعمال', faida:'فائدہ', nuqsan:'نقصان', aaj:'آج',
   kal:'کل', abhi:'ابھی', dobara:'دوبارہ', jaldi:'جلدی', dheere:'دھیرے',
+  // High-frequency grammar and verb forms used in spoken Pakistani Roman Urdu.
+  ka:'کا', ki:'کی', ke:'کے', ko:'کو', se:'سے', par:'پر', tak:'تک',
+  kar:'کر', karke:'کر کے', karlo:'کر لو', karlein:'کر لیں', karlen:'کر لیں',
+  karunga:'کروں گا', karungi:'کروں گی', karenge:'کریں گے', karengi:'کریں گی',
+  de:'دے', den:'دیں', dein:'دیں', dedo:'دے دو', dedi:'دے دی', diya:'دیا',
+  di:'دی', dete:'دیتے', deti:'دیتی', deta:'دیتا', dena:'دینا',
+  raha:'رہا', rahi:'رہی', rahe:'رہے', rhe:'رہے', rha:'رہا', rhi:'رہی',
+  gaya:'گیا', gayi:'گئی', gaye:'گئے', gya:'گیا', gye:'گئے',
+  tha:'تھا', thi:'تھی', thay:'تھے', the:'تھے', hoga:'ہوگا', hogi:'ہوگی',
+  honge:'ہوں گے', hoon:'ہوں', hun:'ہوں', ho:'ہو', hota:'ہوتا',
+  hoti:'ہوتی', hote:'ہوتے', hona:'ہونا', hone:'ہونے',
+  mera:'میرا', meri:'میری', mere:'میرے', tera:'تیرا', tumhara:'تمہارا',
+  hamara:'ہمارا', hamari:'ہماری', unka:'ان کا', unki:'ان کی', unke:'ان کے',
+  is:'اس', us:'اس', iss:'اس', uss:'اس', isse:'اس سے', usse:'اس سے',
+  isliye:'اس لیے', is_liye:'اس لیے', andar:'اندر', bahar:'باہر',
+  pehle:'پہلے', baad:'بعد', baadmein:'بعد میں', saath:'ساتھ',
+  bina:'بغیر', agar:'اگر', warna:'ورنہ', kyunke:'کیونکہ', kyunki:'کیونکہ',
+  jab:'جب', tab:'تب', jahan:'جہاں', wahan:'وہاں', yahan:'یہاں',
+  har:'ہر', sab:'سب', kuch:'کچھ', koi:'کوئی', kisi:'کسی', tamam:'تمام',
+  zyada:'زیادہ', kam:'کم', bilkul:'بالکل', sirf:'صرف',
+  ab:'اب', phir:'پھر', dobara:'دوبارہ', foran:'فوراً', shayad:'شاید',
+  mumkin:'ممکن', maslay:'مسئلے',
+  masle:'مسئلے', sawalat:'سوالات', jawab:'جواب', jawabat:'جوابات',
+  samjha:'سمجھا', samjhein:'سمجھیں', samjho:'سمجھو', batayein:'بتائیں',
+  batao:'بتاؤ', batana:'بتانا', dekhein:'دیکھیں', dekho:'دیکھو',
+  dekhna:'دیکھنا', suno:'سنو', sunein:'سنیں', likhein:'لکھیں',
+  likho:'لکھو', parhein:'پڑھیں', parho:'پڑھو', bhejein:'بھیجیں',
+  bhejo:'بھیجو', mila:'ملا', milega:'ملے گا', milegi:'ملے گی',
+  milenge:'ملیں گے', chalta:'چلتا', chalti:'چلتی', chalega:'چلے گا',
+  ruk:'رک', ruko:'رکو', rukna:'رکنا', kholna:'کھولنا',
+  band:'بند',
 }
 
 function transliterateRomanWord(word: string): string {
@@ -458,7 +514,7 @@ export function romanUrduToScript(text: string): string {
   if (!text) return text
   return text.replace(/[A-Za-z0-9]+(?:[._+#/-][A-Za-z0-9]+)*/g, (token) => {
     const lower = token.toLowerCase()
-    if (RU_TECH_TERMS.has(lower)) return token
+    if (RU_TECH_TERMS.has(lower) || RU_COMMON_ENGLISH.has(lower)) return token
     if (/^[A-Z][A-Z0-9]*(?:[._+#/-][A-Za-z0-9]+)*$/.test(token) || /[a-z][A-Z]/.test(token)) return token
     if (RU_COMMON_WORDS[lower]) return RU_COMMON_WORDS[lower]
     return transliterateRomanWord(token)
