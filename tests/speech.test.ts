@@ -49,6 +49,20 @@ describe('romanUrduToScript — tech term preservation (critical fix)', () => {
     expect(result).toContain('Laravel')
   })
 
+  it('converts sentence-initial capitalized Roman Urdu words', () => {
+    expect(romanUrduToScript('Aap kaise hain?')).toBe('آپ کیسے ہیں?')
+    expect(romanUrduToScript('Agar API fail ho')).toBe('اگر API فیل ہو')
+    expect(romanUrduToScript('Theek hai, phir shuru karein')).toBe('ٹھیک ہے, پھر شروع کریں')
+  })
+
+  it('preserves technical identifiers while converting surrounding Urdu', () => {
+    const result = romanUrduToScript('Laravel aur PHP8.3 API ke saath kaam')
+    expect(result).toContain('Laravel')
+    expect(result).toContain('PHP8.3')
+    expect(result).toContain('API')
+    expect(result).toContain('اور')
+  })
+
   it('converts lowercase Roman Urdu words to Urdu script', () => {
     const result = romanUrduToScript('yeh masla hai')
     // Should have some Urdu script characters
