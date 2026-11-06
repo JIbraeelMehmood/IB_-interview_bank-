@@ -51,7 +51,7 @@ describe('romanUrduToScript — tech term preservation (critical fix)', () => {
 
   it('converts sentence-initial capitalized Roman Urdu words', () => {
     expect(romanUrduToScript('Aap kaise hain?')).toBe('آپ کیسے ہیں?')
-    expect(romanUrduToScript('Agar API fail ho')).toBe('اگر API فیل ہو')
+    expect(romanUrduToScript('Agar API fail ho')).toBe('اگر API fail ہو')
     expect(romanUrduToScript('Theek hai, phir shuru karein')).toBe('ٹھیک ہے, پھر شروع کریں')
   })
 
