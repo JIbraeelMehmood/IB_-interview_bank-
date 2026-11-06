@@ -205,7 +205,7 @@ function sayOne(
     }
     // Prefer local Microsoft Neural voices for Urdu/Hindi when the optional
     // localhost service is running. Browser speech remains the universal fallback.
-    if (lang === 'ur' || lang === 'hi') {
+    if ((lang === 'ur' || lang === 'hi') && !voiceName) {
       try {
         if (!serverProbe || Date.now() - serverProbeAt > 30000) {
           serverProbeAt = Date.now()
@@ -216,10 +216,12 @@ function sayOne(
             voice: defaultVoiceForLang(lang),
             engine: 'auto',
             rate: `${Math.round((rate - 1) * 100)}%`,
+            pitch: `${Math.round((pitch - 1) * 40)}Hz`,
           })
           if (audio) {
             if (stopped) { stopTts(audio); return done() }
             serverAudio = audio
+            audio.volume = volume
             audio.addEventListener('ended', done, { once: true })
             audio.addEventListener('error', done, { once: true })
             audio.addEventListener('pause', done, { once: true })
