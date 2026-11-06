@@ -69,7 +69,9 @@ import asyncio
 import io
 import logging
 import os
+import re
 import sys
+from pathlib import Path
 from typing import Optional
 
 from flask import Flask, jsonify, request, send_file
@@ -623,29 +625,37 @@ def pregenerate():
     """
     data = request.get_json(force=True, silent=True) or {}
     items = data.get("items", [])
+    if not isinstance(items, list):
+        return jsonify({"error": "items must be a list"}), 400
+
+    # Never accept a filesystem path from the request. Keep generated assets
+    # inside this service's own directory and validate every filename token.
+    out_dir = Path(__file__).resolve().parent / "generated_audio"
+    out_dir.mkdir(parents=True, exist_ok=True)
     engine = str(data.get("engine", "auto"))
-    out_dir = str(data.get("output_dir", "generated_audio"))
-    os.makedirs(out_dir, exist_ok=True)
 
     done, failed = [], []
-    for item in items[:500]:   # cap at 500 per batch
-        code  = str(item.get("code", ""))
-        text  = str(item.get("text", "")).strip()
+    for item in items[:100]:
+        if not isinstance(item, dict):
+            continue
+        code = str(item.get("code", "")).strip()
+        text = str(item.get("text", "")).strip()
         voice = str(item.get("voice", EDGE_VOICES["en"]))
-        if not code or not text:
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", code) or not text or len(text) > 8000:
+            failed.append(code or "invalid-item")
             continue
         audio, mime = generate_audio(text, voice, engine)
         if audio:
             ext = "mp3" if "mpeg" in mime else "wav"
-            path = os.path.join(out_dir, f"{code}.{ext}")
-            with open(path, "wb") as f:
+            path = out_dir / f"{code}.{ext}"
+            with path.open("wb") as f:
                 f.write(audio)
             done.append(code)
         else:
             failed.append(code)
 
     return jsonify({"done": done, "failed": failed,
-                    "output_dir": os.path.abspath(out_dir)})
+                    "output_dir": str(out_dir)})
 
 
 # ─── Entry point ─────────────────────────────────────────────────────
@@ -654,4 +664,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("TTS_PORT", 5052))
     log.info(f"Interview Box TTS Server starting on port {port}")
     log.info(f"Install more engines: pip install edge-tts gTTS kokoro piper-tts")
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    app.run(host=os.environ.get("TTS_HOST", "127.0.0.1"), port=port, debug=False, threaded=True)
