@@ -459,7 +459,7 @@ export function romanUrduToScript(text: string): string {
   return text.replace(/[A-Za-z0-9]+(?:[._+#/-][A-Za-z0-9]+)*/g, (token) => {
     const lower = token.toLowerCase()
     if (RU_TECH_TERMS.has(lower)) return token
-    if (/^[A-Z][A-Z0-9]{1,}$/.test(token) || /[a-z][A-Z]/.test(token)) return token
+    if (/^[A-Z][A-Z0-9]*(?:[._+#/-][A-Za-z0-9]+)*$/.test(token) || /[a-z][A-Z]/.test(token)) return token
     if (RU_COMMON_WORDS[lower]) return RU_COMMON_WORDS[lower]
     return transliterateRomanWord(token)
   })
