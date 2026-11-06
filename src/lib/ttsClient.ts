@@ -186,7 +186,10 @@ async function speakViaServer(text: string, opts: TtsOptions): Promise<HTMLAudio
   const blob = await res.blob()
   const url  = URL.createObjectURL(blob)
   const audio = new Audio(url)
-  audio.addEventListener('ended', () => URL.revokeObjectURL(url), { once: true })
+  const release = () => URL.revokeObjectURL(url)
+  audio.addEventListener('ended', release, { once: true })
+  audio.addEventListener('error', release, { once: true })
+  audio.addEventListener('pause', release, { once: true })
   await audio.play()
   return audio
 }
@@ -236,7 +239,13 @@ function speakViaBrowser(text: string, opts: TtsOptions): void {
 
 /** Stop any playing audio element and browser TTS. */
 export function stopTts(audio?: HTMLAudioElement | null): void {
-  if (audio) { audio.pause(); audio.currentTime = 0 }
+  if (audio) {
+    audio.pause()
+    audio.currentTime = 0
+    if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src)
+    audio.removeAttribute('src')
+    audio.load()
+  }
   if ('speechSynthesis' in window) window.speechSynthesis.cancel()
 }
 
