@@ -12,6 +12,7 @@
 import type { AudioSettings, Lang } from './types'
 import { enSay, hiSpeech, urSpeech } from './text'
 import { serverUrl } from './ai'
+import { checkTtsServer, speakWithServer, stopTts, defaultVoiceForLang } from './ttsClient'
 
 export interface SpeakSegment {
   lang: Lang
@@ -29,6 +30,9 @@ let current: SpeechSynthesisUtterance | null = null
 let broken = new Set<string>()
 let watchdog: number | null = null
 let stopped = false
+let serverAudio: HTMLAudioElement | null = null
+let serverProbe: Promise<boolean> | null = null
+let serverProbeAt = 0
 
 function loadVoices() {
   if (typeof speechSynthesis === 'undefined') return
@@ -187,7 +191,7 @@ function sayOne(
   volume: number,
   voiceName?: string,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     let settled = false
     const done = () => {
       if (settled) return
@@ -196,8 +200,40 @@ function sayOne(
         clearTimeout(watchdog)
         watchdog = null
       }
+      serverAudio = null
       resolve()
     }
+    // Prefer local Microsoft Neural voices for Urdu/Hindi when the optional
+    // localhost service is running. Browser speech remains the universal fallback.
+    if ((lang === 'ur' || lang === 'hi') && !voiceName) {
+      try {
+        if (!serverProbe || Date.now() - serverProbeAt > 30000) {
+          serverProbeAt = Date.now()
+          serverProbe = checkTtsServer()
+        }
+        if (await serverProbe && !stopped) {
+          const audio = await speakWithServer(text, {
+            voice: defaultVoiceForLang(lang),
+            engine: 'auto',
+            rate: `${Math.round((rate - 1) * 100)}%`,
+            pitch: `${Math.round((pitch - 1) * 40)}Hz`,
+          })
+          if (audio) {
+            if (stopped) { stopTts(audio); return done() }
+            serverAudio = audio
+            audio.volume = volume
+            audio.addEventListener('ended', done, { once: true })
+            audio.addEventListener('error', done, { once: true })
+            audio.addEventListener('pause', done, { once: true })
+            watchdog = window.setTimeout(done, Math.max(15000, text.length * 350))
+            return
+          }
+        }
+      } catch {
+        // Optional local TTS failed; use browser speech below.
+      }
+    }
+    if (stopped) return done()
     const u = new SpeechSynthesisUtterance(text)
     const v = pickVoice(lang, voiceName)
     if (v) {
@@ -236,6 +272,8 @@ export function stopSpeaking() {
   } catch {
     /* ignore */
   }
+  stopTts(serverAudio)
+  serverAudio = null
   current = null
 }
 
@@ -348,67 +386,85 @@ const RU_SINGLE: Record<string, string> = {
 }
 
 /**
- * Convert Roman Urdu (Latin) to Urdu script for TTS.
- *
- * Key fix: English tech terms written in ALL-CAPS or MixedCase
- * (e.g. API, Laravel, PHP, Redis, GitHub) are preserved in the original
- * Latin form rather than being transliterated character-by-character.
- * This prevents "API" from being rendered as "اے پی آئی" in a broken way
- * and instead lets the TTS voice's English phoneme rules handle them.
- *
- * Words that are entirely lowercase are treated as Roman Urdu and converted;
- * words that contain at least one uppercase letter are treated as English/tech
- * and passed through unchanged.
+ * Roman Urdu → Urdu script for Urdu-voice playback.
+ * Use lexical mappings for frequent Pakistani words and a curated English
+ * allowlist for developer vocabulary. Capitalization is not a language signal:
+ * sentence-initial "Aap" is Urdu, while "API" is an acronym.
  */
-export function romanUrduToScript(text: string): string {
-  if (!text) return text
+const RU_TECH_TERMS = new Set([
+  'api','php','sql','html','css','javascript','typescript','mysql','mongodb',
+  'postgresql','redis','react','next.js','node.js','laravel','wordpress',
+  'woocommerce','shopify','docker','kubernetes','vercel','github','gitlab',
+  'git','linux','ubuntu','composer','npm','yarn','json','xml','http','https',
+  'rest','graphql','jwt','oauth','middleware','controller','eloquent','livewire',
+  'stripe','paypal','webhook','websocket','fail','down','error','issue','code','app','run','fix','build','test','work','start','stop','update','push','pull','merge','nginx','apache','vite','vitest',
+  'playwright','python','django','flask','fastapi','aws','azure','gcp',
+  'firebase','supabase','queue','deploy','cache','database','server','the','is','are','was','were','will','can','could','should','must','this','that','with','from','for','and','or','if','when','because','also','not','you','your','we','they','it','of','as','by','new','old','good','bad','best','first','last','now','then','there','here','please','thanks',
+  'request','response','function','class','route','migration','commit','job','index','branch','token','array','loop','developer','technical','feature','frontend','backend','project','system','website','application','mobile','desktop','browser','voice','audio','translation','question','answer','explanation','example','user','client',
+])
 
-  // Split on word boundaries so we can check capitalisation per token.
-  const tokens = text.split(/(\s+)/)
-  const out: string[] = []
+// Common Pakistani Roman Urdu words need lexical spellings; character mapping
+// alone cannot produce آپ، ٹھیک، میں، ہیں, and other modern everyday forms.
+const RU_COMMON_WORDS: Record<string, string> = {
+  aap:'آپ', ap:'آپ', aur:'اور', na:'نہ', agar:'اگر', agr:'اگر', theek:'ٹھیک', thek:'ٹھیک',
+  hai:'ہے', hy:'ہے', hain:'ہیں', hen:'ہیں', ho:'ہو', hun:'ہوں',
+  mein:'میں', main:'میں', mai:'میں', hum:'ہم', ham:'ہم',
+  kya:'کیا', kia:'کیا', kyun:'کیوں', kyu:'کیوں', kaise:'کیسے',
+  kaisay:'کیسے', kese:'کیسے', acha:'اچھا', achha:'اچھا', achi:'اچھی',
+  achay:'اچھے', bohat:'بہت', bahut:'بہت', masla:'مسئلہ',
+  mushkil:'مشکل', zaroor:'ضرور', zaroori:'ضروری', shuru:'شروع',
+  khatam:'ختم', phir:'پھر', lekin:'لیکن', matlab:'مطلب', yani:'یعنی',
+  seedha:'سیدھا', samajh:'سمجھ', samajhna:'سمجھنا', karo:'کرو',
+  karein:'کریں', karen:'کریں', karna:'کرنا', karta:'کرتا',
+  karti:'کرتی', karte:'کرتے', chahiye:'چاہیے', chahye:'چاہیے',
+  mujhe:'مجھے', mujhay:'مجھے', tum:'تم', aapka:'آپ کا', apka:'آپ کا',
+  iska:'اس کا', isko:'اس کو', yeh:'یہ', ye:'یہ', woh:'وہ', wo:'وہ',
+  nahi:'نہیں', nahin:'نہیں', haan:'ہاں', ji:'جی', waqt:'وقت',
+  kaam:'کام', sawal:'سوال', jawab:'جواب', tareeqa:'طریقہ',
+  istemal:'استعمال', faida:'فائدہ', nuqsan:'نقصان', aaj:'آج',
+  kal:'کل', abhi:'ابھی', dobara:'دوبارہ', jaldi:'جلدی', dheere:'دھیرے',
+}
 
-  for (const token of tokens) {
-    // Whitespace → pass through.
-    if (/^\s+$/.test(token)) {
-      out.push(token)
-      continue
-    }
-    // Token contains at least one uppercase letter → English/tech term, keep as-is.
-    if (/[A-Z]/.test(token)) {
-      out.push(token)
-      continue
-    }
-    // Pure lowercase token → transliterate from Roman Urdu to Urdu script.
-    const lower = token.toLowerCase()
-    let converted = ''
-    let i = 0
-    while (i < lower.length) {
-      let matched = false
-      for (const [from, to] of RU_DIGRAPHS) {
-        if (lower.slice(i, i + from.length) === from) {
-          converted += to
-          i += from.length
-          matched = true
-          break
-        }
+function transliterateRomanWord(word: string): string {
+  const lower = word.toLowerCase()
+  let converted = ''
+  let i = 0
+  while (i < lower.length) {
+    let matched = false
+    for (const [from, to] of RU_DIGRAPHS) {
+      if (lower.slice(i, i + from.length) === from) {
+        converted += to
+        i += from.length
+        matched = true
+        break
       }
-      if (matched) continue
-      const ch = lower[i]
-      if (RU_SINGLE[ch] !== undefined) converted += RU_SINGLE[ch]
-      else if (/[a-z]/.test(ch)) converted += ch  // unrecognised letter → keep
-      else converted += token[i]                   // punctuation/number → keep original
-      i++
     }
-    out.push(converted)
+    if (matched) continue
+    const ch = lower[i]
+    if (RU_SINGLE[ch] !== undefined) converted += RU_SINGLE[ch]
+    else if (/[a-z]/.test(ch)) converted += ch
+    else converted += word[i]
+    i++
   }
-
-  return out.join('')
+  return converted
 }
 
 /**
- * Preview a single voice with sample text. Used by the voice picker so
- * users can hear a voice before committing to it.
+ * Convert Pakistani Roman Urdu to natural Urdu script for Urdu TTS.
+ * Preserve known developer terms and acronyms; initial capitalization alone
+ * must never classify sentence-start words such as "Aap" or "Theek" as English.
  */
+export function romanUrduToScript(text: string): string {
+  if (!text) return text
+  return text.replace(/[A-Za-z0-9]+(?:[._+#/-][A-Za-z0-9]+)*/g, (token) => {
+    const lower = token.toLowerCase()
+    if (RU_TECH_TERMS.has(lower)) return token
+    if (/^[A-Z][A-Z0-9]*(?:[._+#/-][A-Za-z0-9]+)*$/.test(token) || /[a-z][A-Z]/.test(token)) return token
+    if (RU_COMMON_WORDS[lower]) return RU_COMMON_WORDS[lower]
+    return transliterateRomanWord(token)
+  })
+}
+
 export async function previewVoice(
   voiceURI: string,
   lang: Lang,

@@ -47,12 +47,11 @@ export interface TtsServerHealth {
 
 /** Probe the TTS server and cache the result. */
 export async function checkTtsServer(): Promise<boolean> {
+  const ctrl = new AbortController()
+  const timeout = setTimeout(() => ctrl.abort(), 1500)
   try {
-    const ctrl = new AbortController()
-    const t = setTimeout(() => ctrl.abort(), 1500)
     // ERR_CONNECTION_REFUSED is expected when the local server is not running.
     const res = await fetch(`${TTS_SERVER}/health`, { signal: ctrl.signal })
-    clearTimeout(t)
     if (res.ok) {
       const data: TtsServerHealth = await res.json().catch(() => ({ ok: true }))
       _serverOk = data.ok
@@ -62,10 +61,12 @@ export async function checkTtsServer(): Promise<boolean> {
     _serverOk = false
     return false
   } catch {
-    // Server not running — expected on Vercel and most user machines.
+    // Server not running — expected on deployed/mobile clients without local TTS.
     _serverOk = false
     try { localStorage.setItem(LS_KEY_OK, '0') } catch {}
     return false
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
@@ -156,6 +157,11 @@ export async function speak(text: string, opts: TtsOptions = {}): Promise<HTMLAu
 
 // ─── Server path ───────────────────────────────────────────────────────
 
+export async function speakWithServer(text: string, opts: TtsOptions = {}): Promise<HTMLAudioElement | null> {
+  if (!ttsServerAvailable()) return null
+  return speakViaServer(text, opts)
+}
+
 async function speakViaServer(text: string, opts: TtsOptions): Promise<HTMLAudioElement> {
   const body: Record<string, string> = {
     text,
@@ -181,7 +187,10 @@ async function speakViaServer(text: string, opts: TtsOptions): Promise<HTMLAudio
   const blob = await res.blob()
   const url  = URL.createObjectURL(blob)
   const audio = new Audio(url)
-  audio.addEventListener('ended', () => URL.revokeObjectURL(url), { once: true })
+  const release = () => URL.revokeObjectURL(url)
+  audio.addEventListener('ended', release, { once: true })
+  audio.addEventListener('error', release, { once: true })
+  audio.addEventListener('pause', release, { once: true })
   await audio.play()
   return audio
 }
@@ -231,7 +240,13 @@ function speakViaBrowser(text: string, opts: TtsOptions): void {
 
 /** Stop any playing audio element and browser TTS. */
 export function stopTts(audio?: HTMLAudioElement | null): void {
-  if (audio) { audio.pause(); audio.currentTime = 0 }
+  if (audio) {
+    audio.pause()
+    audio.currentTime = 0
+    if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src)
+    audio.removeAttribute('src')
+    audio.load()
+  }
   if ('speechSynthesis' in window) window.speechSynthesis.cancel()
 }
 
