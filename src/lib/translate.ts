@@ -42,7 +42,7 @@ async function buildPrompt(q: Question, lang: Lang): Promise<string> {
     lang === 'hi'
       ? 'Use simple everyday spoken Hindi mixed with English (Hinglish), as developers actually speak it.'
       : lang === 'ur'
-        ? 'Use natural modern Pakistani Urdu mixed with English, the way developers actually speak in Lahore. Use short, clear Urdu sentences — no heavy literary or government-style Urdu. Prefer: hai/hain, karta/karti, hota, chahiye, zaroor, achha, seedha, matlab, matlab yeh hai, yani, phir, lekin, agr, to, iska, warna. Prefer modern colloquial words over archaic ones.'
+        ? 'Use natural modern Pakistani Urdu mixed with English, the way developers actually speak in Lahore. Use short, clear Urdu sentences — no heavy literary or government-style Urdu. Prefer: hai/hain, karta/karti, hota, chahiye, zaroor, achha, seedha, matlab, matlab yeh hai, yani, phir, lekin, agar, to, iska, warna. Prefer modern colloquial words over archaic ones.'
         : 'Use Roman Urdu the way it is written in Pakistani WhatsApp/chat — short words, natural flow, one consistent spelling. Sound like a senior dev explaining to a colleague, not a textbook.'
   const modernUrduVocab = (lang === 'ur' || lang === 'ru') ? `
 Preferred modern Urdu vocabulary (always use these, never their archaic/Hindi alternatives):
@@ -62,6 +62,7 @@ Everyday explanation style: use one short analogy from Pakistani daily life — 
 ${rules}${spelling}
 
 Rules for this job:
+- Write in contemporary Pakistani Urdu, not Hindi or overly classical Urdu. Do not use Devanagari, Hindi-specific vocabulary (for example samasya, samay, prayog, prashn, uttar, udaharan), or stiff government/book language. Use natural spoken Urdu with familiar English developer terminology.
 - Keep these in English exactly: technology names, product names, SQL keywords, code, commands, file names, and English words the developer would say in English (queue, deploy, cache, job, middleware, index, branch, token, request, response, server, database, array, loop, error, function, class, route, controller, migration, test, commit).
 - ${langNote}${modernUrduVocab}
 - Start the answer with exactly this line: ${HEAD[lang]}
