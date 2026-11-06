@@ -156,6 +156,11 @@ export async function speak(text: string, opts: TtsOptions = {}): Promise<HTMLAu
 
 // ─── Server path ───────────────────────────────────────────────────────
 
+export async function speakWithServer(text: string, opts: TtsOptions = {}): Promise<HTMLAudioElement | null> {
+  if (!ttsServerAvailable()) return null
+  return speakViaServer(text, opts)
+}
+
 async function speakViaServer(text: string, opts: TtsOptions): Promise<HTMLAudioElement> {
   const body: Record<string, string> = {
     text,
