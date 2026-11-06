@@ -131,6 +131,11 @@ async function translateOne(q: Question, lang: Lang, signal?: AbortSignal): Prom
   entry.a = await modern(ruNorm(norm(entry.a || '')), lang)
   entry.q = await modern(norm(entry.q || ''), lang)
   entry.hook = await modern(norm(entry.hook || ''), lang)
+  // The player reads the say* fields, so modernize those too; otherwise the
+  // visible translation and spoken translation can drift into different registers.
+  entry.sayq = await modern(ruNorm(norm(entry.sayq || '')), lang)
+  entry.say = await modern(ruNorm(norm(entry.say || '')), lang)
+  entry.sayhook = await modern(ruNorm(norm(entry.sayhook || '')), lang)
   return entry
 }
 
@@ -174,6 +179,9 @@ export async function getTranslation(code: string, lang: Lang): Promise<Translat
       a: await modern(ruNorm(norm(row.a || '')), lang),
       q: await modern(ruNorm(norm(row.q || '')), lang),
       hook: await modern(ruNorm(norm(row.hook || '')), lang),
+      sayq: await modern(ruNorm(norm(row.sayq || '')), lang),
+      say: await modern(ruNorm(norm(row.say || '')), lang),
+      sayhook: await modern(ruNorm(norm(row.sayhook || '')), lang),
       rules: RULES_VERSION,
     }
     void db.translations.put(fresh).catch(() => {})
