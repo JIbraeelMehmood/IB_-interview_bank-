@@ -2,6 +2,11 @@ import { currentUser, type ApiRequest, type ApiResponse } from '../../server/aut
 import { getDb } from '../../server/mongodb.js'
 
 const ALLOWED = new Set(['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings'])
+// Note: 'communityVote' is intentionally NOT in ALLOWED. Community votes are submitted
+// via POST /api/v1/vote and are NOT synced through this endpoint.
+// The `if (table === 'communityVote')` block below is DEAD CODE — it is never reached
+// because the ALLOWED guard above skips it first. It should be removed in a future cleanup.
+// Do not add 'communityVote' to ALLOWED here; use the dedicated /api/v1/vote endpoint.
 const keyOf = (row: any) => String(row?.code ?? row?.id ?? row?.key ?? '')
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {

@@ -55,6 +55,8 @@ Preferred modern Urdu vocabulary (always use these, never their archaic/Hindi al
 - achha (not uchit), samajhna (not samajhana), kaam karna (not karya karna)
 - batana (not prasthut karna), rakhna (not sangraheet karna)
 Everyday explanation style: use one short analogy from Pakistani daily life — a dukaan, a bank line, a school register, a courier app, a cricket over — when explaining a hard concept. Keep it under 20 words.` : ''
+  // Hard-cap the English answer sent to the AI to avoid token-limit errors.
+  const answerText = stripHtml(q.a).slice(0, MAX_INPUT_CHARS)
   return `You are translating one interview question and its answer for a senior Laravel developer in Lahore.
 
 ${rules}${spelling}
@@ -74,7 +76,7 @@ Reply with JSON only:
 
 QUESTION: ${q.q}
 
-ENGLISH ANSWER: ${stripHtml(q.a).slice(0, 6000)}`
+ENGLISH ANSWER: ${answerText}`
 }
 
 interface TrPayload {
@@ -111,6 +113,10 @@ function toEntry(code: string, lang: Lang, p: TrPayload, engine: string): Transl
     updatedAt: now,
   }
 }
+
+/** Maximum characters accepted per translation request.
+ *  Urdu/Devanagari use 3 bytes/char; this keeps us well within LLM token limits. */
+const MAX_INPUT_CHARS = 6000
 
 /** Ask the AI for one question's translation. */
 async function translateOne(q: Question, lang: Lang, signal?: AbortSignal): Promise<Translation> {
@@ -149,7 +155,7 @@ async function machineOne(q: Question, lang: Lang): Promise<Translation> {
   const { map } = await protectObject({ a: plain })
   const a = await machineTranslate(plain, lang, map)
   const entry = toEntry(q.code, lang, { a, q: q.q }, 'MyMemory')
-  entry.mt = 'Google'
+  entry.mt = 'MyMemory'  // fix: was incorrectly labelled 'Google' — the service is MyMemory
   return entry
 }
 
@@ -164,9 +170,9 @@ export async function getTranslation(code: string, lang: Lang): Promise<Translat
     const norm = (t: string) => lang === 'ur' ? normalizeUrduText(t) : t
     const fresh: Translation = {
       ...row,
-      a: await modern(norm(row.a || ''), lang),
-      q: await modern(norm(row.q || ''), lang),
-      hook: await modern(norm(row.hook || ''), lang),
+      a: await modern(ruNorm(norm(row.a || '')), lang),
+      q: await modern(ruNorm(norm(row.q || '')), lang),
+      hook: await modern(ruNorm(norm(row.hook || '')), lang),
       rules: RULES_VERSION,
     }
     void db.translations.put(fresh).catch(() => {})

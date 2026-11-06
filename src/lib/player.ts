@@ -52,11 +52,17 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     if (sleepTimer) clearTimeout(sleepTimer)
 
     const rows = await db.questions.bulkGet(codes)
+    // If caller passed pre-fetched Question objects, we can use them for display text
+    // but tr (Translation) is still loaded lazily by buildSegments at playback time.
+    // The previous code had `? undefined : undefined` — a dead branch that never
+    // supplied a cached translation. Now we always let buildSegments call
+    // getOrTranslate() so translations are fetched/cached on demand during playback.
     const items: PlayerItem[] = []
     for (let i = 0; i < codes.length; i++) {
       const q = rows[i]
       if (!q) continue
-      items.push({ code: q.code, q: q.q, tr: opts.questions?.find((x) => x.code === q.code) ? undefined : undefined })
+      // tr is intentionally omitted here; buildSegments fetches it during playback.
+      items.push({ code: q.code, q: q.q })
     }
     set({ queue: items, index: 0, label: opts.label || 'Listen', lang, prepared: false, segIndex: -1 })
     await persist(items, 0, opts.label || 'Listen')

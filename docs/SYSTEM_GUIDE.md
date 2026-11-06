@@ -1573,3 +1573,74 @@ Everything that works on Vercel for all users
   Library rather than a separate page.
  
 ▸ Credits: turn 9.49 •
+
+
+
+
+
+
+
+
+
+
+
+  What was fixed (10 issues)
+  
+  Critical — Roman Urdu TTS architecture
+  
+  src/lib/speech.ts — romanUrduToScript() The most important fix. Tech terms like API, Laravel, GitHub were being transliterated
+  character-by-character into broken Urdu script. Now: any token containing an uppercase letter is passed through unchanged. Only all-lowercase
+  tokens (actual Roman Urdu words) are transliterated.
+  
+  Voice blacklist never resets
+  
+  src/lib/speech.ts — loadVoices() The broken voice blacklist was module-level state that never cleared. One transient failure could permanently
+  disable a voice for the entire page session. Fixed: broken resets every time voiceschanged fires.
+  
+  Dead translation pre-loading code
+  
+  src/lib/player.ts — load() The ternary opts.questions?.find(...) ? undefined : undefined always evaluated to undefined — a useless expression.
+  Removed. tr is now consistently fetched lazily by buildSegments() at playback time, which is the correct pattern.
+  
+  MyMemory mislabelled as Google
+  
+  src/lib/translate.ts — machineOne() entry.mt = 'Google' was wrong — the API is MyMemory. Fixed to 'MyMemory'.
+  
+  ruNorm not applied during cache upgrades
+  
+  src/lib/translate.ts — getTranslation() Old cached Roman Urdu text was getting the modern() lexicon pass but not ruNorm() during stale-rules
+  upgrades. Fixed: ruNorm() now applied in the upgrade path.
+  
+  Input length — named constant
+  
+  src/lib/translate.ts The magic 6000 slice was renamed to MAX_INPUT_CHARS = 6000 and applied consistently.
+  
+  System prompt — Urdu/Hindi separation
+  
+  public/data/prompts.json Added an explicit Pakistani Urdu section to trStyle with a word-for-word Hindi blacklist (samasya→masla,
+  prayog→istemal, etc.) and a note about the Urdu vs Hindi distinction. Hindi output now gets an explicit note to sound like a developer in
+  Mumbai/Delhi, not like Urdu in Devanagari.
+  
+  Roman Urdu spelling normalization gaps
+  
+  public/data/lexicons.json — ruNorm table Added 30+ missing common variants: acha→achha, thek→theek, agr→agar, toh→to, zarurat→zaroorat,
+  jldi→jaldi, and many WhatsApp shorthand forms.
+  
+  Dead code documentation
+  
+  api/v1/sync.ts The communityVote branch inside the sync loop is unreachable (the ALLOWED guard skips it). Added a clear comment marking it as
+  dead code and explaining that /api/v1/vote is the correct path.
+  
+  Missing env var documentation
+  
+  .env.example Added VITE_WHISPER_URL and TTS server port documentation — both were referenced in code but undocumented.
+  
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  
+  Test results: 46 tests pass (21 new + 25 existing). The only failing suite (bank.test.ts) was already broken before any changes — it's a
+  pre-existing fake-indexeddb version mismatch with Dexie v4, unrelated to this work. TypeScript compiles clean.
+  
+  New files created:
+  - docs/ARCHITECTURE_AUDIT.md — Phase 0 deliverable with full system map
+  - tests/speech.test.ts — 21 tests covering all the speech fixes
+ 

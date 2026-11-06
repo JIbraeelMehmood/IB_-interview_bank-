@@ -33,6 +33,10 @@ let stopped = false
 function loadVoices() {
   if (typeof speechSynthesis === 'undefined') return
   voices = speechSynthesis.getVoices() || []
+  // Reset the broken-voice blacklist whenever the voice catalogue refreshes.
+  // Previously, a transient failure could permanently blacklist a good voice
+  // for the entire page lifetime. Now it resets when voices are reloaded.
+  broken = new Set()
 }
 
 if (typeof speechSynthesis !== 'undefined') {
@@ -343,31 +347,62 @@ const RU_SINGLE: Record<string, string> = {
   '6': '۶', '7': '۷', '8': '۸', '9': '۹',
 }
 
-/** Convert Roman Urdu (Latin) to Urdu script for TTS. Character-level. */
+/**
+ * Convert Roman Urdu (Latin) to Urdu script for TTS.
+ *
+ * Key fix: English tech terms written in ALL-CAPS or MixedCase
+ * (e.g. API, Laravel, PHP, Redis, GitHub) are preserved in the original
+ * Latin form rather than being transliterated character-by-character.
+ * This prevents "API" from being rendered as "اے پی آئی" in a broken way
+ * and instead lets the TTS voice's English phoneme rules handle them.
+ *
+ * Words that are entirely lowercase are treated as Roman Urdu and converted;
+ * words that contain at least one uppercase letter are treated as English/tech
+ * and passed through unchanged.
+ */
 export function romanUrduToScript(text: string): string {
   if (!text) return text
-  const lower = text.toLowerCase()
-  let out = ''
-  let i = 0
-  while (i < lower.length) {
-    let matched = false
-    for (const [from, to] of RU_DIGRAPHS) {
-      if (lower.slice(i, i + from.length) === from) {
-        out += to
-        i += from.length
-        matched = true
-        break
-      }
+
+  // Split on word boundaries so we can check capitalisation per token.
+  const tokens = text.split(/(\s+)/)
+  const out: string[] = []
+
+  for (const token of tokens) {
+    // Whitespace → pass through.
+    if (/^\s+$/.test(token)) {
+      out.push(token)
+      continue
     }
-    if (matched) continue
-    const ch = lower[i]
-    if (RU_SINGLE[ch] !== undefined) out += RU_SINGLE[ch]
-    else if (ch === ' ') out += ' '
-    else if (/[a-z]/.test(ch)) out += ch
-    else out += text[i]
-    i++
+    // Token contains at least one uppercase letter → English/tech term, keep as-is.
+    if (/[A-Z]/.test(token)) {
+      out.push(token)
+      continue
+    }
+    // Pure lowercase token → transliterate from Roman Urdu to Urdu script.
+    const lower = token.toLowerCase()
+    let converted = ''
+    let i = 0
+    while (i < lower.length) {
+      let matched = false
+      for (const [from, to] of RU_DIGRAPHS) {
+        if (lower.slice(i, i + from.length) === from) {
+          converted += to
+          i += from.length
+          matched = true
+          break
+        }
+      }
+      if (matched) continue
+      const ch = lower[i]
+      if (RU_SINGLE[ch] !== undefined) converted += RU_SINGLE[ch]
+      else if (/[a-z]/.test(ch)) converted += ch  // unrecognised letter → keep
+      else converted += token[i]                   // punctuation/number → keep original
+      i++
+    }
+    out.push(converted)
   }
-  return out
+
+  return out.join('')
 }
 
 /**
