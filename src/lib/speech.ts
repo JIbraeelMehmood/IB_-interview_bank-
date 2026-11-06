@@ -406,7 +406,7 @@ const RU_TECH_TERMS = new Set([
 // Common Pakistani Roman Urdu words need lexical spellings; character mapping
 // alone cannot produce آپ، ٹھیک، میں، ہیں, and other modern everyday forms.
 const RU_COMMON_WORDS: Record<string, string> = {
-  aap:'آپ', ap:'آپ', agar:'اگر', agr:'اگر', theek:'ٹھیک', thek:'ٹھیک',
+  aap:'آپ', ap:'آپ', aur:'اور', na:'نہ', agar:'اگر', agr:'اگر', theek:'ٹھیک', thek:'ٹھیک',
   hai:'ہے', hy:'ہے', hain:'ہیں', hen:'ہیں', ho:'ہو', hun:'ہوں',
   mein:'میں', main:'میں', mai:'میں', hum:'ہم', ham:'ہم',
   kya:'کیا', kia:'کیا', kyun:'کیوں', kyu:'کیوں', kaise:'کیسے',
