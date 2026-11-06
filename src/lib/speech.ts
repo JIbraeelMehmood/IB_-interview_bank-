@@ -386,17 +386,10 @@ const RU_SINGLE: Record<string, string> = {
 }
 
 /**
- * Convert Roman Urdu (Latin) to Urdu script for TTS.
- *
- * Key fix: English tech terms written in ALL-CAPS or MixedCase
- * (e.g. API, Laravel, PHP, Redis, GitHub) are preserved in the original
- * Latin form rather than being transliterated character-by-character.
- * This prevents "API" from being rendered as "اے پی آئی" in a broken way
- * and instead lets the TTS voice's English phoneme rules handle them.
- *
- * Words that are entirely lowercase are treated as Roman Urdu and converted;
- * words that contain at least one uppercase letter are treated as English/tech
- * and passed through unchanged.
+ * Roman Urdu → Urdu script for Urdu-voice playback.
+ * Use lexical mappings for frequent Pakistani words and a curated English
+ * allowlist for developer vocabulary. Capitalization is not a language signal:
+ * sentence-initial "Aap" is Urdu, while "API" is an acronym.
  */
 const RU_TECH_TERMS = new Set([
   'api','php','sql','html','css','javascript','typescript','mysql','mongodb',
@@ -406,7 +399,7 @@ const RU_TECH_TERMS = new Set([
   'rest','graphql','jwt','oauth','middleware','controller','eloquent','livewire',
   'stripe','paypal','webhook','websocket','fail','down','error','issue','code','app','run','fix','build','test','work','start','stop','update','push','pull','merge','nginx','apache','vite','vitest',
   'playwright','python','django','flask','fastapi','aws','azure','gcp',
-  'firebase','supabase','queue','deploy','cache','database','server',
+  'firebase','supabase','queue','deploy','cache','database','server','the','is','are','was','were','will','can','could','should','must','this','that','with','from','for','and','or','if','when','because','also','not','you','your','we','they','it','of','as','by','new','old','good','bad','best','first','last','now','then','there','here','please','thanks',
   'request','response','function','class','route','migration','commit','job','index','branch','token','array','loop','developer','technical','feature','frontend','backend','project','system','website','application','mobile','desktop','browser','voice','audio','translation','question','answer','explanation','example','user','client',
 ])
 
