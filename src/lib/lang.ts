@@ -1,14 +1,14 @@
 /** Language engine — a direct port of the v7 logic, so saved translations and
  *  future output behave identically.
  *
- *  Rules version 3 = "modern everyday register" (v7 direction change):
+ *  Rules version 4 = "modern Pakistani Urdu register, including spoken fields" (v7 direction change):
  *  tech terms stay English, ordinary work words may be said the Urdu/Hindi way,
  *  and Urdu/Hindi grammar and connectors are kept.
  */
 
 import type { Lang } from './types'
 
-export const RULES_VERSION = 3
+export const RULES_VERSION = 4
 
 type Pairs = [string, string][]
 
