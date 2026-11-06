@@ -347,7 +347,7 @@ export async function speakSegments(
   opts.onDone?.()
 }
 
-const LATIN = /[A-Za-z][A-Za-z0-9_+#.\-/]*/
+const LATIN = /[A-Za-z][A-Za-z0-9_+#.\-/]*(?:[ \t]+[A-Za-z][A-Za-z0-9_+#.\-/]*)*/
 
 export function splitLatinRuns(text: string): { text: string; latin: boolean }[] {
   const out: { text: string; latin: boolean }[] = []
