@@ -397,7 +397,7 @@ const RU_TECH_TERMS = new Set([
   'woocommerce','shopify','docker','kubernetes','vercel','github','gitlab',
   'git','linux','ubuntu','composer','npm','yarn','json','xml','http','https',
   'rest','graphql','jwt','oauth','middleware','controller','eloquent','livewire',
-  'stripe','paypal','webhook','websocket','nginx','apache','vite','vitest',
+  'stripe','paypal','webhook','websocket','fail','down','error','issue','code','app','run','fix','build','test','work','start','stop','update','push','pull','merge','nginx','apache','vite','vitest',
   'playwright','python','django','flask','fastapi','aws','azure','gcp',
   'firebase','supabase','queue','deploy','cache','database','server',
   'request','response','function','class','route','migration','commit',
