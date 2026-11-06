@@ -47,12 +47,11 @@ export interface TtsServerHealth {
 
 /** Probe the TTS server and cache the result. */
 export async function checkTtsServer(): Promise<boolean> {
+  const ctrl = new AbortController()
+  const timeout = setTimeout(() => ctrl.abort(), 1500)
   try {
-    const ctrl = new AbortController()
-    const t = setTimeout(() => ctrl.abort(), 1500)
     // ERR_CONNECTION_REFUSED is expected when the local server is not running.
     const res = await fetch(`${TTS_SERVER}/health`, { signal: ctrl.signal })
-    clearTimeout(t)
     if (res.ok) {
       const data: TtsServerHealth = await res.json().catch(() => ({ ok: true }))
       _serverOk = data.ok
@@ -62,10 +61,12 @@ export async function checkTtsServer(): Promise<boolean> {
     _serverOk = false
     return false
   } catch {
-    // Server not running — expected on Vercel and most user machines.
+    // Server not running — expected on deployed/mobile clients without local TTS.
     _serverOk = false
     try { localStorage.setItem(LS_KEY_OK, '0') } catch {}
     return false
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
