@@ -467,9 +467,9 @@ const RU_COMMON_WORDS: Record<string, string> = {
   bina:'بغیر', agar:'اگر', warna:'ورنہ', kyunke:'کیونکہ', kyunki:'کیونکہ',
   jab:'جب', tab:'تب', jahan:'جہاں', wahan:'وہاں', yahan:'یہاں',
   har:'ہر', sab:'سب', kuch:'کچھ', koi:'کوئی', kisi:'کسی', tamam:'تمام',
-  zyada:'زیادہ', kam:'کم', bohat:'بہت', bilkul:'بالکل', sirf:'صرف',
+  zyada:'زیادہ', kam:'کم', bilkul:'بالکل', sirf:'صرف',
   ab:'اب', phir:'پھر', dobara:'دوبارہ', foran:'فوراً', shayad:'شاید',
-  mumkin:'ممکن', zaroorat:'ضرورت', zaroori:'ضروری', maslay:'مسئلے',
+  mumkin:'ممکن', maslay:'مسئلے',
   masle:'مسئلے', sawalat:'سوالات', jawab:'جواب', jawabat:'جوابات',
   samjha:'سمجھا', samjhein:'سمجھیں', samjho:'سمجھو', batayein:'بتائیں',
   batao:'بتاؤ', batana:'بتانا', dekhein:'دیکھیں', dekho:'دیکھو',
@@ -477,8 +477,8 @@ const RU_COMMON_WORDS: Record<string, string> = {
   likho:'لکھو', parhein:'پڑھیں', parho:'پڑھو', bhejein:'بھیجیں',
   bhejo:'بھیجو', mila:'ملا', milega:'ملے گا', milegi:'ملے گی',
   milenge:'ملیں گے', chalta:'چلتا', chalti:'چلتی', chalega:'چلے گا',
-  ruk:'رک', ruko:'رکو', rukna:'رکنا', kholo:'کھولو', kholna:'کھولنا',
-  band:'بند', kholo:'کھولو', shuru:'شروع', khatam:'ختم',
+  ruk:'رک', ruko:'رکو', rukna:'رکنا', kholna:'کھولنا',
+  band:'بند',
 }
 
 function transliterateRomanWord(word: string): string {
