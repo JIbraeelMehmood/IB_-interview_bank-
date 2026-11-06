@@ -32,6 +32,7 @@ let watchdog: number | null = null
 let stopped = false
 let serverAudio: HTMLAudioElement | null = null
 let serverProbe: Promise<boolean> | null = null
+let serverProbeAt = 0
 
 function loadVoices() {
   if (typeof speechSynthesis === 'undefined') return
@@ -206,7 +207,10 @@ function sayOne(
     // localhost service is running. Browser speech remains the universal fallback.
     if (lang === 'ur' || lang === 'hi') {
       try {
-        serverProbe ??= checkTtsServer()
+        if (!serverProbe || Date.now() - serverProbeAt > 30000) {
+          serverProbeAt = Date.now()
+          serverProbe = checkTtsServer()
+        }
         if (await serverProbe && !stopped) {
           const audio = await speakWithServer(text, {
             voice: defaultVoiceForLang(lang),
@@ -214,6 +218,7 @@ function sayOne(
             rate: `${Math.round((rate - 1) * 100)}%`,
           })
           if (audio) {
+            if (stopped) { stopTts(audio); return done() }
             serverAudio = audio
             audio.addEventListener('ended', done, { once: true })
             audio.addEventListener('error', done, { once: true })
