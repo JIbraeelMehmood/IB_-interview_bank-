@@ -405,7 +405,7 @@ const RU_TECH_TERMS = new Set([
   'stripe','paypal','webhook','websocket','fail','down','error','issue','code','app','run','fix','build','test','work','start','stop','update','push','pull','merge','nginx','apache','vite','vitest',
   'playwright','python','django','flask','fastapi','aws','azure','gcp',
   'firebase','supabase','queue','deploy','cache','database','server',
-  'request','response','function','class','route','migration','commit',
+  'request','response','function','class','route','migration','commit','job','index','branch','token','array','loop','developer','technical','feature','frontend','backend','project','system','website','application','mobile','desktop','browser','voice','audio','translation','question','answer','explanation','example','user','client',
 ])
 
 // Common Pakistani Roman Urdu words need lexical spellings; character mapping
