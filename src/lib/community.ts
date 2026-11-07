@@ -116,3 +116,34 @@ export async function communitySummary() {
     questionsTracked: allStats.length,
   }
 }
+
+
+export interface QuestionQualityReview {
+  code: string
+  category: string
+  expYears: ExpYears
+  categoryCorrect: boolean
+  experienceCorrect: boolean
+  total: number
+  categoryOk: number
+  experienceOk: number
+}
+
+/** Submit whether this question belongs in its displayed category and experience band. */
+export async function reviewQuestionQuality(
+  code: string,
+  category: string,
+  expYears: ExpYears,
+  categoryCorrect: boolean,
+  experienceCorrect: boolean,
+): Promise<{ total: number; categoryOk: number; experienceOk: number }> {
+  const res = await fetch('/api/v1/quality-vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ code, category, expYears, categoryCorrect, experienceCorrect }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || 'Could not save your review. Please sign in and try again.')
+  return data.stats
+}
