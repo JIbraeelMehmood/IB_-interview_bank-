@@ -1,47 +1,164 @@
 import { currentUser, type ApiRequest, type ApiResponse } from '../../server/auth.js'
 import { getDb } from '../../server/mongodb.js'
 
-/** One authenticated quality review per user and question. */
+/** One authenticated quality review per user and question. Public GET returns anonymized aggregates only. */
 export default async function handler(req: ApiRequest, res: ApiResponse) {
-  if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   try {
     const code = String(req.method === 'GET' ? req.query?.code || '' : req.body?.code || '').trim()
-    if (!code) return res.status(400).json({ error: 'Question code is required.' })
+    const codes = req.method === 'GET'
+      ? [...new Set(String(req.query?.codes || '').split(',').map((value) => value.trim()).filter(Boolean))].slice(0, 100)
+      : []
+    if (req.method === 'GET' ? (!code && !codes.length) : (!code || code.length > 120)) {
+      return res.status(400).json({ error: 'A valid question code is required.' })
+    }
+    if (codes.some((value) => value.length > 120)) {
+      return res.status(400).json({ error: 'One or more question codes are invalid.' })
+    }
+
     const db = await getDb()
     const reviews = db.collection('question_quality_votes')
-    if (req.method === 'GET') {
-      const [total, categoryOk, experienceOk] = await Promise.all([
-        reviews.countDocuments({ code }),
-        reviews.countDocuments({ code, categoryCorrect: true }),
-        reviews.countDocuments({ code, experienceCorrect: true }),
+
+    const aggregateStats = async (questionCode: string) => {
+      const [total, categoryOk, experienceOk, categoryRows, tagRows, expRows] = await Promise.all([
+        reviews.countDocuments({ code: questionCode }),
+        reviews.countDocuments({ code: questionCode, categoryCorrect: true }),
+        reviews.countDocuments({ code: questionCode, experienceCorrect: true }),
+        reviews.aggregate([
+          { $match: { code: questionCode, suggestedCategory: { $type: 'string', $ne: '' } } },
+          { $group: { _id: '$suggestedCategory', count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+          { $limit: 10 },
+        ]).toArray(),
+        reviews.aggregate([
+          { $match: { code: questionCode, suggestedTags: { $type: 'array' } } },
+          { $unwind: '$suggestedTags' },
+          { $group: { _id: '$suggestedTags', count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+          { $limit: 20 },
+        ]).toArray(),
+        reviews.aggregate([
+          { $match: { code: questionCode, suggestedExpYears: { $type: 'array' } } },
+          { $unwind: '$suggestedExpYears' },
+          { $group: { _id: '$suggestedExpYears', count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+          { $limit: 6 },
+        ]).toArray(),
       ])
-      return res.status(200).json({ stats: { total, categoryOk, experienceOk } })
+
+      return {
+        total,
+        categoryOk,
+        experienceOk,
+        suggestedCategories: categoryRows.map((row: { _id: string; count: number }) => ({ value: row._id, count: row.count })),
+        suggestedTags: tagRows.map((row: { _id: string; count: number }) => ({ value: row._id, count: row.count })),
+        suggestedExpYears: expRows.map((row: { _id: number; count: number }) => ({ value: Number(row._id), count: row.count })),
+      }
     }
+
+    if (req.method === 'GET') {
+      if (codes.length) {
+        const [totals, categories, tags, experiences] = await reviews.aggregate([
+          { $match: { code: { $in: codes } } },
+          { $facet: {
+            totals: [
+              { $group: { _id: '$code', total: { $sum: 1 }, categoryOk: { $sum: { $cond: ['$categoryCorrect', 1, 0] } }, experienceOk: { $sum: { $cond: ['$experienceCorrect', 1, 0] } } } },
+            ],
+            categories: [
+              { $match: { suggestedCategory: { $type: 'string', $ne: '' } } },
+              { $group: { _id: { code: '$code', value: '$suggestedCategory' }, count: { $sum: 1 } } },
+              { $sort: { count: -1 } },
+            ],
+            tags: [
+              { $unwind: '$suggestedTags' },
+              { $group: { _id: { code: '$code', value: '$suggestedTags' }, count: { $sum: 1 } } },
+              { $sort: { count: -1 } },
+            ],
+            experiences: [
+              { $unwind: '$suggestedExpYears' },
+              { $group: { _id: { code: '$code', value: '$suggestedExpYears' }, count: { $sum: 1 } } },
+              { $sort: { count: -1 } },
+            ],
+          } },
+        ]).toArray().then((rows: any[]) => rows[0] || { totals: [], categories: [], tags: [], experiences: [] })
+        const statsByCode: Record<string, any> = {}
+        for (const row of totals) {
+          statsByCode[row._id] = { total: row.total, categoryOk: row.categoryOk, experienceOk: row.experienceOk, suggestedCategories: [], suggestedTags: [], suggestedExpYears: [] }
+        }
+        const ensure = (key: string) => statsByCode[key] ||= { total: 0, categoryOk: 0, experienceOk: 0, suggestedCategories: [], suggestedTags: [], suggestedExpYears: [] }
+        for (const row of categories) {
+          const target = ensure(row._id.code).suggestedCategories
+          if (target.length < 10) target.push({ value: row._id.value, count: row.count })
+        }
+        for (const row of tags) {
+          const target = ensure(row._id.code).suggestedTags
+          if (target.length < 20) target.push({ value: row._id.value, count: row.count })
+        }
+        for (const row of experiences) {
+          const target = ensure(row._id.code).suggestedExpYears
+          if (target.length < 6) target.push({ value: Number(row._id.value), count: row.count })
+        }
+        return res.status(200).json({ statsByCode })
+      }
+      return res.status(200).json({ stats: await aggregateStats(code) })
+    }
+
     const user = await currentUser(req)
     if (!user) return res.status(401).json({ error: 'Please sign in to review questions.' })
+
     const body = req.body || {}
     const categoryCorrect = body.categoryCorrect
     const experienceCorrect = body.experienceCorrect
-    const category = String(body.category || '').slice(0, 120)
-    const suggestedCategory = String(body.suggestedCategory || '').slice(0, 120)
-    const suggestedExpYears = body.suggestedExpYears ? Number(body.suggestedExpYears) : null
+    const category = String(body.category || '').trim().slice(0, 120)
+    const suggestedCategory = String(body.suggestedCategory || '').trim()
     const expYears = Number(body.expYears)
-    if (!code || typeof categoryCorrect !== 'boolean' || typeof experienceCorrect !== 'boolean' ||
+
+    const suggestedTags = Array.isArray(body.suggestedTags)
+      ? [...new Set(body.suggestedTags
+          .map((tag: unknown) => String(tag).trim().toLowerCase())
+          .filter((tag: string) => /^[a-z0-9+#.\/ -]{1,50}$/.test(tag)))].slice(0, 20)
+      : []
+
+    const suggestedExpYears = Array.isArray(body.suggestedExpYears)
+      ? [...new Set(body.suggestedExpYears
+          .map(Number)
+          .filter((year: number) => Number.isInteger(year) && year >= 1 && year <= 6))]
+      : []
+
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/.test(code) ||
+        typeof categoryCorrect !== 'boolean' || typeof experienceCorrect !== 'boolean' ||
         !category || !Number.isInteger(expYears) || expYears < 1 || expYears > 6) {
       return res.status(400).json({ error: 'Question, category, experience and both review answers are required.' })
     }
+    if (suggestedCategory.length > 120 || (Array.isArray(body.suggestedTags) && body.suggestedTags.length > 50) ||
+        (Array.isArray(body.suggestedExpYears) && body.suggestedExpYears.length > 6)) {
+      return res.status(400).json({ error: 'One or more suggestions exceed the allowed limits.' })
+    }
+
     const id = `${user.id}:${code}`
     await reviews.updateOne(
       { _id: id },
-      { $set: { userId: user.id, code, category, expYears, categoryCorrect, experienceCorrect, suggestedCategory: suggestedCategory || null, suggestedExpYears: suggestedExpYears && suggestedExpYears >= 1 && suggestedExpYears <= 6 ? suggestedExpYears : null, updatedAt: Date.now() } },
+      {
+        $set: {
+          userId: user.id,
+          code,
+          category,
+          expYears,
+          categoryCorrect,
+          experienceCorrect,
+          suggestedCategory: suggestedCategory || null,
+          suggestedTags,
+          suggestedExpYears,
+          updatedAt: Date.now(),
+        },
+      },
       { upsert: true },
     )
-    const [total, categoryOk, experienceOk] = await Promise.all([
-      reviews.countDocuments({ code }),
-      reviews.countDocuments({ code, categoryCorrect: true }),
-      reviews.countDocuments({ code, experienceCorrect: true }),
-    ])
-    return res.status(200).json({ ok: true, stats: { total, categoryOk, experienceOk } })
+
+    return res.status(200).json({ ok: true, stats: await aggregateStats(code) })
   } catch (error) {
     console.error('quality vote failed', error)
     return res.status(500).json({ error: 'Could not save question review.' })

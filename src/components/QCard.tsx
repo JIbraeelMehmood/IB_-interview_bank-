@@ -21,11 +21,13 @@ export function QCard({
   q,
   onChanged,
   selectedTechs = [],
+  communityQuality,
 }: {
   q: Question
   onChanged?: () => void
   /** Technologies currently being filtered on — shown first in the badge row. */
   selectedTechs?: string[]
+  communityQuality?: import('../lib/community').QuestionQualityStats | null
 }) {
   const { settings } = useSettings()
   const [lang, setLang] = useState<Lang>(settings.lang)
@@ -35,7 +37,7 @@ export function QCard({
   const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote' | 'quality'>('')
   const [myVote, setMyVote] = useState<ExpYears | 0>(0)
   const [askCount, setAskCount] = useState(0)
-  const [qualityStats, setQualityStats] = useState<{ total: number; categoryOk: number; experienceOk: number } | null>(null)
+  const [qualityStats, setQualityStats] = useState<import('../lib/community').QuestionQualityStats | null>(communityQuality ?? null)
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -56,11 +58,15 @@ export function QCard({
       if (live) setMyVote(vote ? vote.expYears : 0)
       const stats = await getQuestionStats(q.code)
       if (live) setAskCount(stats?.askCount || 0)
-      const quality = await getQuestionQualityStats(q.code)
-      if (live) setQualityStats(quality)
+      if (communityQuality !== undefined) {
+        if (live) setQualityStats(communityQuality)
+      } else {
+        const quality = await getQuestionQualityStats(q.code)
+        if (live) setQualityStats(quality)
+      }
     })()
     return () => { live = false }
-  }, [q.code])
+  }, [q.code, communityQuality])
 
   useEffect(() => {
     if (lang === 'en') {
@@ -311,6 +317,15 @@ export function QCard({
               Community: Category {Math.round((qualityStats.categoryOk / qualityStats.total) * 100)}% correct
               {' · '}Experience {Math.round((qualityStats.experienceOk / qualityStats.total) * 100)}% correct
               {' · '}{qualityStats.total} review{qualityStats.total === 1 ? '' : 's'}
+              {qualityStats.suggestedTags?.length ? (
+                <div>Suggested tags: {qualityStats.suggestedTags.slice(0, 6).map((item) => `${item.value} (${item.count})`).join(', ')}</div>
+              ) : null}
+              {qualityStats.suggestedExpYears?.length ? (
+                <div>Suggested experience: {qualityStats.suggestedExpYears.map((item) => `${item.value} yr (${item.count})`).join(', ')}</div>
+              ) : null}
+              {qualityStats.suggestedCategories?.length ? (
+                <div>Suggested categories: {qualityStats.suggestedCategories.slice(0, 3).map((item) => `${item.value} (${item.count})`).join(', ')}</div>
+              ) : null}
             </div>
           )}
           {ankiAvailable() && (
@@ -419,13 +434,16 @@ export function QCard({
         <QualityReviewSheet
           q={q}
           onClose={() => setOpen('')}
-          onSubmit={async (categoryCorrect, experienceCorrect) => {
+          onSubmit={async (categoryCorrect, experienceCorrect, suggestedCategory, suggestedTags, suggestedExpYears) => {
             const stats = await reviewQuestionQuality(
               q.code,
               q.p,
               q.expYears || 1,
               categoryCorrect,
               experienceCorrect,
+              suggestedCategory,
+              suggestedTags.split(',').map((tag) => tag.trim()).filter(Boolean),
+              suggestedExpYears.split(',').map((value) => Number(value.trim())).filter((value): value is ExpYears => Number.isInteger(value) && value >= 1 && value <= 6),
             )
             setQualityStats(stats)
             toast(`Review saved. ${stats.total} community review(s) recorded.`)
@@ -465,10 +483,13 @@ function QualityReviewSheet({
 }: {
   q: Question
   onClose: () => void
-  onSubmit: (categoryCorrect: boolean, experienceCorrect: boolean) => Promise<void>
+  onSubmit: (categoryCorrect: boolean, experienceCorrect: boolean, suggestedCategory: string, suggestedTags: string, suggestedExpYears: string) => Promise<void>
 }) {
   const [categoryCorrect, setCategoryCorrect] = useState<boolean | null>(null)
   const [experienceCorrect, setExperienceCorrect] = useState<boolean | null>(null)
+  const [suggestedCategory, setSuggestedCategory] = useState('')
+  const [suggestedTags, setSuggestedTags] = useState('')
+  const [suggestedExpYears, setSuggestedExpYears] = useState('')
   const [busy, setBusy] = useState(false)
   return (
     <Sheet title="Is this question classified correctly?" onClose={onClose}>
@@ -488,19 +509,36 @@ function QualityReviewSheet({
             <button className={`btn sm ${experienceCorrect === false ? 'primary' : ''}`} onClick={() => setExperienceCorrect(false)}>Incorrect</button>
           </div>
         </div>
+        <div className="card stack-sm">
+          <b className="small">Suggest the correct classification (optional)</b>
+          <label className="fld">
+            Correct category
+            <input value={suggestedCategory} onChange={(e) => setSuggestedCategory(e.target.value)} placeholder={`Current: ${q.p} — enter a correction`} maxLength={120} />
+          </label>
+          <label className="fld">
+            Correct technology tags
+            <input value={suggestedTags} onChange={(e) => setSuggestedTags(e.target.value)} placeholder={`Current: ${q.t.join(', ')} — comma-separated`} maxLength={500} />
+            <span className="tiny muted">Separate tags with commas.</span>
+          </label>
+          <label className="fld">
+            Correct experience levels
+            <input value={suggestedExpYears} onChange={(e) => setSuggestedExpYears(e.target.value)} placeholder={`Current: ${q.expYears || 'not assigned'} — e.g. 1, 2, 3`} maxLength={40} />
+            <span className="tiny muted">Enter one or more experience bands (1–6), separated by commas.</span>
+          </label>
+        </div>
         <button
           className="btn primary"
           disabled={categoryCorrect === null || experienceCorrect === null || busy}
           onClick={async () => {
             setBusy(true)
-            try { await onSubmit(categoryCorrect!, experienceCorrect!) }
+            try { await onSubmit(categoryCorrect!, experienceCorrect!, suggestedCategory, suggestedTags, suggestedExpYears) }
             catch (e) { toast((e as Error).message) }
             finally { setBusy(false) }
           }}
         >
           {busy ? 'Submitting…' : 'Submit review'}
         </button>
-        <p className="tiny muted">One review per signed-in account per question. Reviews help identify questions that need category or experience corrections.</p>
+        <p className="tiny muted">One review per signed-in account per question. Suggestions are stored and counted to help improve question categories, technology tags and experience targeting.</p>
       </div>
     </Sheet>
   )

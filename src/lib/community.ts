@@ -43,6 +43,12 @@ export async function voteQuestion(
 
 /** Remove the user's vote for a question. */
 export async function unvoteQuestion(code: string): Promise<void> {
+  if (!hasCachedAccount()) {
+    promptForSignIn()
+    throw new Error('Please sign in to remove your interview vote.')
+  }
+  // Delete locally first so the UI responds immediately. The queued operation
+  // is account-scoped and will be retried when this device is online.
   await db.communityVotes.delete(code)
   await queue('communityVoteDelete', { code, updatedAt: Date.now() })
 }
@@ -138,24 +144,42 @@ export interface QuestionQualityReview {
   expYears: ExpYears
   categoryCorrect: boolean
   experienceCorrect: boolean
+  suggestedCategory?: string
+  suggestedTags?: string[]
+  suggestedExpYears?: ExpYears[]
   total: number
   categoryOk: number
   experienceOk: number
 }
 
-/** Submit whether this question belongs in its displayed category and experience band. */
+export interface QuestionQualityStats {
+  total: number
+  categoryOk: number
+  experienceOk: number
+  suggestedCategories?: { value: string; count: number }[]
+  suggestedTags?: { value: string; count: number }[]
+  suggestedExpYears?: { value: number; count: number }[]
+}
+
+/** Submit a classification review plus optional community corrections. */
 export async function reviewQuestionQuality(
   code: string,
   category: string,
   expYears: ExpYears,
   categoryCorrect: boolean,
   experienceCorrect: boolean,
-): Promise<{ total: number; categoryOk: number; experienceOk: number }> {
+  suggestedCategory = '',
+  suggestedTags: string[] = [],
+  suggestedExpYears: ExpYears[] = [],
+): Promise<QuestionQualityStats> {
   const res = await fetch('/api/v1/quality-vote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
-    body: JSON.stringify({ code, category, expYears, categoryCorrect, experienceCorrect }),
+    body: JSON.stringify({
+      code, category, expYears, categoryCorrect, experienceCorrect,
+      suggestedCategory, suggestedTags, suggestedExpYears,
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (res.status === 401) {
@@ -166,11 +190,10 @@ export async function reviewQuestionQuality(
   return data.stats
 }
 
-
 /** Public aggregate quality-review counts; no account data is exposed. */
 export async function getQuestionQualityStats(
   code: string,
-): Promise<{ total: number; categoryOk: number; experienceOk: number } | null> {
+): Promise<QuestionQualityStats | null> {
   try {
     const res = await fetch(`/api/v1/quality-vote?code=${encodeURIComponent(code)}`, {
       credentials: 'same-origin',
@@ -180,5 +203,25 @@ export async function getQuestionQualityStats(
     return data.stats || null
   } catch {
     return null
+  }
+}
+
+
+/** Fetch quality summaries for a visible page in one request, avoiding one
+ *  network round-trip per question card. */
+export async function getQuestionQualityStatsBatch(
+  codes: string[],
+): Promise<Record<string, QuestionQualityStats>> {
+  const unique = [...new Set(codes)].filter(Boolean).slice(0, 100)
+  if (!unique.length) return {}
+  try {
+    const res = await fetch(`/api/v1/quality-vote?codes=${encodeURIComponent(unique.join(','))}`, {
+      credentials: 'same-origin',
+    })
+    if (!res.ok) return {}
+    const data = await res.json()
+    return data.statsByCode || {}
+  } catch {
+    return {}
   }
 }

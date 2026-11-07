@@ -7,19 +7,13 @@
     "dev": "vite",
     "build": "tsc -b --noCheck && vite build",
     "typecheck": "tsc -b",
-    "check": "node scripts/check.mjs",
+    "check": "npm run typecheck && npm test && npm run build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "extract": "node scripts/extract-v7.mjs",
     "parse-md": "node scripts/parse-markdown.mjs",
-    "icons": "node scripts/icons.mjs",
-    "e2e": "node e2e/smoke.mjs",
-    "e2e:offline": "node e2e/offline.mjs",
-    "e2e:mobile": "node e2e/mobile.mjs",
-    "e2e:filters": "node e2e/filters.mjs",
-    "e2e:audio": "node e2e/audio.mjs",
-    "e2e:all": "node e2e/smoke.mjs && node e2e/filters.mjs && node e2e/audio.mjs && node e2e/mobile.mjs && node e2e/offline.mjs"
+    "icons": "node scripts/icons.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
