@@ -138,24 +138,42 @@ export interface QuestionQualityReview {
   expYears: ExpYears
   categoryCorrect: boolean
   experienceCorrect: boolean
+  suggestedCategory?: string
+  suggestedTags?: string[]
+  suggestedExpYears?: ExpYears[]
   total: number
   categoryOk: number
   experienceOk: number
 }
 
-/** Submit whether this question belongs in its displayed category and experience band. */
+export interface QuestionQualityStats {
+  total: number
+  categoryOk: number
+  experienceOk: number
+  suggestedCategories?: { value: string; count: number }[]
+  suggestedTags?: { value: string; count: number }[]
+  suggestedExpYears?: { value: number; count: number }[]
+}
+
+/** Submit a classification review plus optional community corrections. */
 export async function reviewQuestionQuality(
   code: string,
   category: string,
   expYears: ExpYears,
   categoryCorrect: boolean,
   experienceCorrect: boolean,
-): Promise<{ total: number; categoryOk: number; experienceOk: number }> {
+  suggestedCategory = '',
+  suggestedTags: string[] = [],
+  suggestedExpYears: ExpYears[] = [],
+): Promise<QuestionQualityStats> {
   const res = await fetch('/api/v1/quality-vote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
-    body: JSON.stringify({ code, category, expYears, categoryCorrect, experienceCorrect }),
+    body: JSON.stringify({
+      code, category, expYears, categoryCorrect, experienceCorrect,
+      suggestedCategory, suggestedTags, suggestedExpYears,
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (res.status === 401) {
@@ -166,11 +184,10 @@ export async function reviewQuestionQuality(
   return data.stats
 }
 
-
 /** Public aggregate quality-review counts; no account data is exposed. */
 export async function getQuestionQualityStats(
   code: string,
-): Promise<{ total: number; categoryOk: number; experienceOk: number } | null> {
+): Promise<QuestionQualityStats | null> {
   try {
     const res = await fetch(`/api/v1/quality-vote?code=${encodeURIComponent(code)}`, {
       credentials: 'same-origin',
