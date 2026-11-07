@@ -96,10 +96,10 @@ export async function generateQuestions(opts: {
 
   const selectedCatalog = (opts.technologyCatalog || []).filter((tech) => technologies.includes(tech.slug))
   const categoryContext = selectedCatalog.length
-    ? selectedCatalog.map((tech) => `- ${tech.slug} = ${tech.label}; relevant terms: ${tech.keywords.join(', ')}`).join('\\n')
-    : technologies.map((slug) => `- ${slug}`).join('\\n')
+    ? selectedCatalog.map((tech) => `- ${tech.slug} = ${tech.label}; relevant terms: ${tech.keywords.join(', ')}`).join('\n')
+    : technologies.map((slug) => `- ${slug}`).join('\n')
   const scope = technologies.length
-    ? `Selected question-bank technology categories (strict scope):\\n${categoryContext}`
+    ? `Selected question-bank technology categories (strict scope):\n${categoryContext}`
     : `Selected topic: ${opts.topic}. Use the existing question-bank technology taxonomy when assigning tags.`
   const distribution = technologies.length > 1
     ? `Build coverage dynamically from the selected question-bank categories above; do not assume any specific framework or language. Cover each selected technology individually, then include questions about meaningful intersections/integration between combinations of the selected technologies. With ${count} questions, give every selected technology at least one individual question when the count allows, and use the remaining slots for the most useful cross-technology scenarios. For three or more technologies, choose realistic pairwise or multi-technology intersections rather than forcing every possible combination. Each question must list only the technologies it actually tests.`
