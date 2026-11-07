@@ -6,7 +6,8 @@ export { stripHtml }
 
 /** Raw v7 bank record as extracted from `<script id="bank">`. */
 interface RawBankQuestion {
-  id: string
+  id?: string
+  code?: string
   q: string
   a: string
   l: Level
@@ -176,7 +177,7 @@ function expYearsFor(raw: RawBankQuestion): ExpYears {
 function toQuestion(raw: RawBankQuestion, meta: BankMeta): Question {
   const plainA = stripHtml(raw.a)
   return {
-    code: raw.id,
+    code: raw.id || raw.code || `IMPORTED-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     q: raw.q,
     a: raw.a,
     l: raw.l,
