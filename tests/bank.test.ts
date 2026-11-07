@@ -108,6 +108,30 @@ describe('filtering and search', () => {
     expect(or).toHaveLength(3)
   })
 
+  it('defaults to OR so multi-tech selections include individual and intersection questions', () => {
+    const all = [
+      mk('L', ['laravel']),
+      mk('R', ['react']),
+      mk('LR', ['laravel', 'react']),
+      mk('V', ['vue']),
+    ]
+    expect(DEFAULT_FILTERS.techMode).toBe('or')
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'] }, new Map())
+    expect(rows.map((r) => r.code).sort()).toEqual(['L', 'LR', 'R'])
+  })
+
+  it('keeps a single technology filter strict', () => {
+    const all = [mk('L', ['laravel']), mk('R', ['react']), mk('LR', ['laravel', 'react']), mk('G', ['generic'])]
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel'] }, new Map())
+    expect(rows.map((r) => r.code).sort()).toEqual(['L', 'LR'])
+  })
+
+  it('combines most-important with the selected technology scope', () => {
+    const all = [mk('L1', ['laravel']), mk('L2', ['laravel'], 'i'), mk('R1', ['react'], 'i'), mk('LR', ['laravel', 'react'], 'i')]
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'], flag: 'i' }, new Map())
+    expect(rows.map((r) => r.code).sort()).toEqual(['L2', 'LR', 'R1'])
+  })
+
   it('combines technologies with a flag filter', () => {
     const all = [mk('A', ['laravel', 'react']), mk('C', ['laravel', 'react'], 'i')]
     const map = new Map<string, number>()
