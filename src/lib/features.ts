@@ -14,6 +14,7 @@ import type {
 } from './types'
 import { LANG_LABEL } from './translate'
 import { stripHtml } from './text'
+import type { BankMeta } from './seed'
 
 /** Anything that must stay in English no matter the UI language. */
 const ENGLISH_ONLY = (lang: Lang) =>
@@ -76,6 +77,7 @@ export async function generateQuestions(opts: {
   count?: number
   expYears?: number
   technologies?: string[]
+  technologyCatalog?: BankMeta['techs']
   mostImportant?: boolean
   signal?: AbortSignal
 }): Promise<{ q: string; a: string; techs: string[]; integration: boolean }[]> {
@@ -92,11 +94,15 @@ export async function generateQuestions(opts: {
       } as Record<number, string>)[opts.expYears] || `${opts.expYears} years`
     : 'a practical level appropriate to the selected role'
 
+  const selectedCatalog = (opts.technologyCatalog || []).filter((tech) => technologies.includes(tech.slug))
+  const categoryContext = selectedCatalog.length
+    ? selectedCatalog.map((tech) => `- ${tech.slug} = ${tech.label}; relevant terms: ${tech.keywords.join(', ')}`).join('\\n')
+    : technologies.map((slug) => `- ${slug}`).join('\\n')
   const scope = technologies.length
-    ? `Selected technologies (strict scope): ${technologies.join(', ')}.`
-    : `Selected topic: ${opts.topic}.`
+    ? `Selected question-bank technology categories (strict scope):\\n${categoryContext}`
+    : `Selected topic: ${opts.topic}. Use the existing question-bank technology taxonomy when assigning tags.`
   const distribution = technologies.length > 1
-    ? `Build the coverage dynamically from the selected technology list; do not assume any specific framework or language. Cover each selected technology individually, then include questions about meaningful intersections/integration between combinations of the selected technologies. With ${count} questions, give every selected technology at least one individual question when the count allows, and use the remaining slots for the most useful cross-technology scenarios. For three or more technologies, choose realistic pairwise or multi-technology intersections rather than forcing every possible combination. Each question must list only the technologies it actually tests.`
+    ? `Build coverage dynamically from the selected question-bank categories above; do not assume any specific framework or language. Cover each selected technology individually, then include questions about meaningful intersections/integration between combinations of the selected technologies. With ${count} questions, give every selected technology at least one individual question when the count allows, and use the remaining slots for the most useful cross-technology scenarios. For three or more technologies, choose realistic pairwise or multi-technology intersections rather than forcing every possible combination. Each question must list only the technologies it actually tests.`
     : technologies.length === 1
       ? `Every question must be specifically about ${technologies[0]} and its real ecosystem. Do not add unrelated technologies or generic filler.`
       : `Infer the relevant technologies from the requested topic (${opts.topic}). Keep the questions focused on that topic; do not default to Laravel or any other technology unless it is explicitly relevant.`
@@ -113,7 +119,7 @@ Hard rules:
 - Calibrate every question to the selected experience; do not return senior-level questions for a one-year candidate.
 - Avoid generic filler, vague questions, duplicates, and questions listed below.
 - Each answer should be focused and technically accurate (3–6 sentences).
-- Return accurate technology tags for each question. Use only these selected slugs when a technology filter is active: ${technologies.join(', ') || 'infer tags from the topic'}.
+- Return accurate technology tags for each question. Use only these selected canonical category slugs when a technology filter is active: ${technologies.join(', ') || 'infer tags from the topic taxonomy'}. Do not create new category names or aliases.
 - Set integration=true only when the question requires the technologies to work together.
 - Return valid JSON only.
 
