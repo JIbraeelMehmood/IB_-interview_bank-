@@ -85,17 +85,36 @@ export function applyFilters(
   // as well as the text.
   const custom = new Set(f.customTechs)
 
-  // A framework interview is not limited to framework-branded questions.
-  // Laravel roles commonly include the surrounding backend and deployment
-  // stack, so include these adjacent topics when Laravel is selected. Keep
-  // this curated and directional: selecting Docker alone must not pull in
-  // every Laravel question.
-  const relatedTechs: Record<string, string[]> = {
-    laravel: [
-      'php', 'sql', 'api', 'security', 'redis', 'queues', 'docker',
-      'aws', 'linux', 'cicd', 'testing', 'git', 'web', 'architecture',
-      'performance', 'sysdesign', 'ecommerce',
-    ],
+  // Build a one-hop technology relationship graph from the question bank itself.
+  // This works for every technology, not only Laravel: if questions commonly
+  // combine two technologies (for example Laravel/PHP or Docker/AWS), selecting
+  // either technology can include the directly related topic questions.
+  // We deliberately do not traverse transitively, which would make broad stacks
+  // (for example JavaScript -> React -> Node -> AWS) expand without control.
+  const relatedByTech = new Map<string, Set<string>>()
+  if (want.length) {
+    const cooccurrence = new Map<string, Map<string, number>>()
+    const totals = new Map<string, number>()
+    for (const q of questions) {
+      const tags = [...new Set(q.t.filter((tag) => !custom.has(tag)))]
+      for (const tag of tags) {
+        totals.set(tag, (totals.get(tag) || 0) + 1)
+        if (!cooccurrence.has(tag)) cooccurrence.set(tag, new Map())
+        const related = cooccurrence.get(tag)!
+        for (const other of tags) {
+          if (other !== tag) related.set(other, (related.get(other) || 0) + 1)
+        }
+      }
+    }
+    for (const [slug, related] of cooccurrence) {
+      const threshold = Math.max(2, Math.ceil((totals.get(slug) || 0) * 0.03))
+      relatedByTech.set(
+        slug,
+        new Set([...related.entries()]
+          .filter(([, count]) => count >= threshold)
+          .map(([other]) => other)),
+      )
+    }
   }
 
   const hasTech = (q: Question, slug: string) => {
@@ -103,8 +122,8 @@ export function applyFilters(
       if (q.t.includes(slug)) return true
       return matchesSearch({ ...q, search: q.search || '' }, slug)
     }
-    const accepted = [slug, ...(relatedTechs[slug] || [])]
-    return accepted.some((tech) => q.t.includes(tech))
+    const accepted = relatedByTech.get(slug)
+    return q.t.includes(slug) || Boolean(accepted && q.t.some((tag) => accepted.has(tag)))
   }
 
   let out = questions.filter((q) => {
@@ -188,15 +207,6 @@ export async function techCounts(f: Filters): Promise<{ slug: string; label: str
   const [rows, meta] = await Promise.all([loadLibrary(base), bankMeta()])
   const counts = new Map<string, number>()
   for (const q of rows) for (const t of q.t) counts.set(t, (counts.get(t) || 0) + 1)
-
-  // The Laravel chip count must match the expanded Laravel-related result set,
-  // not just records carrying the literal "laravel" tag.
-  const laravelRelated = new Set([
-    'laravel', 'php', 'sql', 'api', 'security', 'redis', 'queues', 'docker',
-    'aws', 'linux', 'cicd', 'testing', 'git', 'web', 'architecture',
-    'performance', 'sysdesign', 'ecommerce',
-  ])
-  counts.set('laravel', rows.filter((q) => q.t.some((tag) => laravelRelated.has(tag))).length)
 
   if (f.techMode === 'and' && f.techs.length > 1) {
     for (const slug of f.techs) {
