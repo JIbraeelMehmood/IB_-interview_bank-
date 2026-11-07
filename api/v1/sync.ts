@@ -24,9 +24,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       // Vote removal is a first-class sync operation so it works offline too.
       // Scope deletion to the authenticated user; never accept a userId from the client.
       if (table === 'communityVoteDelete') {
+        const deletedAt = Number(row.updatedAt) || Date.now()
         await db.collection('community_votes').deleteOne({
           _id: `${user.id}:${key}`,
           userId: user.id,
+          // A delayed offline deletion must not erase a newer vote for the
+          // same question that was submitted after the deletion was queued.
+          updatedAt: { $lte: deletedAt },
         })
         if (Number.isInteger(item.id)) acked.push(item.id)
         continue
