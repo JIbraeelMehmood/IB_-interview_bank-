@@ -84,12 +84,27 @@ export function applyFilters(
   // A custom tech has no keywords, so match it against the question's own tags
   // as well as the text.
   const custom = new Set(f.customTechs)
+
+  // A framework interview is not limited to framework-branded questions.
+  // Laravel roles commonly include the surrounding backend and deployment
+  // stack, so include these adjacent topics when Laravel is selected. Keep
+  // this curated and directional: selecting Docker alone must not pull in
+  // every Laravel question.
+  const relatedTechs: Record<string, string[]> = {
+    laravel: [
+      'php', 'sql', 'api', 'security', 'redis', 'queues', 'docker',
+      'aws', 'linux', 'cicd', 'testing', 'git', 'web', 'architecture',
+      'performance', 'sysdesign', 'ecommerce',
+    ],
+  }
+
   const hasTech = (q: Question, slug: string) => {
     if (custom.has(slug)) {
       if (q.t.includes(slug)) return true
       return matchesSearch({ ...q, search: q.search || '' }, slug)
     }
-    return q.t.includes(slug)
+    const accepted = [slug, ...(relatedTechs[slug] || [])]
+    return accepted.some((tech) => q.t.includes(tech))
   }
 
   let out = questions.filter((q) => {
