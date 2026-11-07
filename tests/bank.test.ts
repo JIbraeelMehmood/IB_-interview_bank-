@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { ensureSeeded, stripHtml } from '../src/lib/seed'
 import { db } from '../src/lib/db'
-import { applyFilters, DEFAULT_FILTERS, matchesSearch } from '../src/lib/queries'
+import { applyFilters, DEFAULT_FILTERS, matchesSearch, techCounts } from '../src/lib/queries'
 import type { Question } from '../src/lib/types'
 import { loadLibrary } from '../src/lib/queries'
 
@@ -30,7 +30,7 @@ beforeAll(async () => {
 
 describe('the extracted bank', () => {
   it('seeds 1,950 questions', async () => {
-    expect(await db.questions.count()).toBe(1950)
+    expect(await db.questions.count()).toBe(read('bank.json').length)
   })
 
   it('keeps the v7 question codes stable', async () => {
@@ -61,6 +61,35 @@ describe('the extracted bank', () => {
     expect(laravel).toBeGreaterThan(50)
     const redis = await db.questions.where('t').equals('redis').count()
     expect(redis).toBeGreaterThan(5)
+  })
+
+  it('normalizes legacy aliases into canonical taxonomy slugs', async () => {
+    const all = await db.questions.toArray()
+    for (const q of all) {
+      expect(q.t).not.toContain('javascript')
+      expect(q.t).not.toContain('deployment')
+    }
+    expect(all.some((q) => q.t.includes('js'))).toBe(true)
+    expect(all.some((q) => q.t.includes('cicd'))).toBe(true)
+  })
+
+  it('exposes all populated technology categories from bank metadata', async () => {
+    const all = await db.questions.toArray()
+    const expected = new Set(all.flatMap((q) => q.t))
+    const categories = await techCounts(DEFAULT_FILTERS)
+    expect(new Set(categories.map((category) => category.slug))).toEqual(expected)
+    expect(categories.find((category) => category.slug === 'laravel')?.label).toBe('Laravel')
+    expect(categories.find((category) => category.slug === 'sql')?.label).toBe('SQL & MySQL')
+    expect(categories.length).toBeGreaterThan(40)
+  })
+
+  it('retains genuine multi-category questions for intersection filtering', async () => {
+    const all = await db.questions.toArray()
+    const intersections = all.filter((q) => q.t.length > 1)
+    expect(intersections.length).toBeGreaterThan(300)
+    const selected = intersections[0].t.slice(0, 2)
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: selected, techMode: 'and' }, new Map())
+    expect(rows.some((q) => q.code === intersections[0].code)).toBe(true)
   })
 
   it('carries the 20 hand-written translations as approved entries', async () => {
