@@ -232,9 +232,25 @@ export async function importBackup(text: string): Promise<ImportResult> {
 
 /** Wipe user data but keep the built-in bank. */
 export async function resetProgress(): Promise<void> {
+  // Reset the server copy first for signed-in accounts. If the session has
+  // expired or the network is unavailable, leave local data untouched rather
+  // than allowing the next sync to restore the supposedly deleted progress.
+  const accountId = localStorage.getItem('ibx-active-account')
+  if (accountId && accountId !== 'guest') {
+    const response = await fetch('/api/v1/reset-progress', {
+      method: 'POST',
+      credentials: 'same-origin',
+    })
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(result.error || 'Could not reset your synced progress. Please try again.')
+    }
+  }
+
   await db.transaction(
     'rw',
     [
+      db.questions,
       db.ratings,
       db.reviews,
       db.answers,
@@ -246,7 +262,6 @@ export async function resetProgress(): Promise<void> {
       db.translations,
       db.audio,
       db.outbox,
-      db.questions,
     ],
     async () => {
       await db.ratings.clear()
