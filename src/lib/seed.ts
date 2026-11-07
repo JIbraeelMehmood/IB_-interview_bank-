@@ -29,7 +29,7 @@ export interface BankMeta {
 
 const SEED_FLAG = 'bankSeededAt'
 /** Bump when the seed logic changes so existing installs re-seed. */
-const SEED_VERSION = 4
+const SEED_VERSION = 5
 
 let cache: { bank: RawBankQuestion[]; meta: BankMeta } | null = null
 
@@ -50,7 +50,9 @@ async function loadBank(): Promise<{ bank: RawBankQuestion[]; meta: BankMeta }> 
 /** Merge a question's own tags with keyword matches from BASE_TECHS, as v7 did. */
 function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
   const own = new Set((q.t || []).map((t) => t.toLowerCase()))
-  const hay = (q.q + ' ' + stripHtml(q.a) + ' ' + (q.p || '') + ' ' + (q.c || '')).toLowerCase()
+  // Classify from the question and its headings, not the answer. Answers often
+  // mention adjacent tools and were causing unrelated technologies to be tagged.
+  const hay = (q.q + ' ' + (q.p || '') + ' ' + (q.c || '')).toLowerCase()
   for (const tech of meta.techs) {
     if (own.has(tech.slug)) continue
     for (const kw of tech.keywords) {
