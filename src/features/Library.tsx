@@ -119,7 +119,7 @@ export default function Library() {
           l: f.expYears && f.expYears <= 2 ? 'j' : f.expYears && f.expYears <= 4 ? 'm' : 's',
           p: f.part || f.techs.join(' + ') || 'AI generated',
           c: m.integration ? 'AI integration question' : 'AI generated',
-          f: '',
+          f: f.flag === 'i' ? 'i' : '',
           t: m.techs,
           s: 'ai',
           expYears: f.expYears || undefined,
