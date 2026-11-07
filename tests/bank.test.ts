@@ -39,6 +39,8 @@ describe('the extracted bank', () => {
     expect(cb!.q).toBeTruthy()
     const n = await db.questions.get('N-1')
     expect(n).toBeTruthy()
+    // Markdown-imported rows use `code` rather than `id` in the source JSON.
+    expect(await db.questions.get('MD-1')).toBeTruthy()
   })
 
   it('has no duplicate codes', async () => {
