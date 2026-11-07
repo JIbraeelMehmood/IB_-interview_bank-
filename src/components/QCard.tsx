@@ -35,7 +35,7 @@ export function QCard({
   const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote' | 'quality'>('')
   const [myVote, setMyVote] = useState<ExpYears | 0>(0)
   const [askCount, setAskCount] = useState(0)
-  const [qualityStats, setQualityStats] = useState<{ total: number; categoryOk: number; experienceOk: number } | null>(null)
+  const [qualityStats, setQualityStats] = useState<{ total: number; categoryOk: number; experienceOk: number; suggestedCategories?: { value: string; count: number }[]; suggestedTags?: { value: string; count: number }[]; suggestedExpYears?: { value: number; count: number }[] } | null>(null)
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -311,6 +311,15 @@ export function QCard({
               Community: Category {Math.round((qualityStats.categoryOk / qualityStats.total) * 100)}% correct
               {' · '}Experience {Math.round((qualityStats.experienceOk / qualityStats.total) * 100)}% correct
               {' · '}{qualityStats.total} review{qualityStats.total === 1 ? '' : 's'}
+              {qualityStats.suggestedTags?.length ? (
+                <div>Suggested tags: {qualityStats.suggestedTags.slice(0, 6).map((item) => `${item.value} (${item.count})`).join(', ')}</div>
+              ) : null}
+              {qualityStats.suggestedExpYears?.length ? (
+                <div>Suggested experience: {qualityStats.suggestedExpYears.map((item) => `${item.value} yr (${item.count})`).join(', ')}</div>
+              ) : null}
+              {qualityStats.suggestedCategories?.length ? (
+                <div>Suggested categories: {qualityStats.suggestedCategories.slice(0, 3).map((item) => `${item.value} (${item.count})`).join(', ')}</div>
+              ) : null}
             </div>
           )}
           {ankiAvailable() && (
@@ -473,8 +482,8 @@ function QualityReviewSheet({
   const [categoryCorrect, setCategoryCorrect] = useState<boolean | null>(null)
   const [experienceCorrect, setExperienceCorrect] = useState<boolean | null>(null)
   const [suggestedCategory, setSuggestedCategory] = useState('')
-  const [suggestedTags, setSuggestedTags] = useState(q.t.join(', '))
-  const [suggestedExpYears, setSuggestedExpYears] = useState(q.expYears ? String(q.expYears) : '')
+  const [suggestedTags, setSuggestedTags] = useState('')
+  const [suggestedExpYears, setSuggestedExpYears] = useState('')
   const [busy, setBusy] = useState(false)
   return (
     <Sheet title="Is this question classified correctly?" onClose={onClose}>
@@ -498,16 +507,16 @@ function QualityReviewSheet({
           <b className="small">Suggest the correct classification (optional)</b>
           <label className="fld">
             Correct category
-            <input value={suggestedCategory} onChange={(e) => setSuggestedCategory(e.target.value)} placeholder="e.g. Backend Development" maxLength={120} />
+            <input value={suggestedCategory} onChange={(e) => setSuggestedCategory(e.target.value)} placeholder={`Current: ${q.p} — enter a correction`} maxLength={120} />
           </label>
           <label className="fld">
             Correct technology tags
-            <input value={suggestedTags} onChange={(e) => setSuggestedTags(e.target.value)} placeholder="Laravel, PHP, MySQL, Docker, AWS" maxLength={500} />
+            <input value={suggestedTags} onChange={(e) => setSuggestedTags(e.target.value)} placeholder={`Current: ${q.t.join(', ')} — comma-separated`} maxLength={500} />
             <span className="tiny muted">Separate tags with commas.</span>
           </label>
           <label className="fld">
             Correct experience levels
-            <input value={suggestedExpYears} onChange={(e) => setSuggestedExpYears(e.target.value)} placeholder="1, 2, 3" maxLength={40} />
+            <input value={suggestedExpYears} onChange={(e) => setSuggestedExpYears(e.target.value)} placeholder={`Current: ${q.expYears || 'not assigned'} — e.g. 1, 2, 3`} maxLength={40} />
             <span className="tiny muted">Enter one or more experience bands (1–6), separated by commas.</span>
           </label>
         </div>
