@@ -131,7 +131,7 @@ export function applyFilters(
   } else if (f.sort === 'az') {
     out = out.sort((a, b) => a.q.localeCompare(b.q))
   } else if (f.sort === 'newest') {
-    out = out.sort((a, b) => (a.s === 'n' ? 1 : 0) - (b.s === 'n' ? 1 : 0))
+    out = out.sort((a, b) => (b.s === 'n' ? 1 : 0) - (a.s === 'n' ? 1 : 0) || b.code.localeCompare(a.code))
   } else {
     out = out.sort((a, b) => flagScore(b) - flagScore(a) || selectedTechCoverage(b) - selectedTechCoverage(a) || a.code.localeCompare(b.code))
   }
