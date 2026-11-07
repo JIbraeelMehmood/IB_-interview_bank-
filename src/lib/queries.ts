@@ -3,6 +3,7 @@
  *  library is fully usable offline. */
 
 import { db } from './db'
+import { bankMeta } from './seed'
 import type { ExpYears, Level, Question } from './types'
 
 export interface Filters {
@@ -167,9 +168,9 @@ export async function loadLibrary(f: Filters): Promise<Ranked[]> {
  *  each chip shows "if I add this, how many do I get" rather than collapsing to
  *  the already-selected ones. The default OR mode keeps individual and integration
  *  questions together; users can still explicitly choose Match all. */
-export async function techCounts(f: Filters): Promise<{ slug: string; n: number }[]> {
+export async function techCounts(f: Filters): Promise<{ slug: string; label: string; n: number }[]> {
   const base: Filters = { ...f, techs: [], techMode: 'or' }
-  const rows = await loadLibrary(base)
+  const [rows, meta] = await Promise.all([loadLibrary(base), bankMeta()])
   const counts = new Map<string, number>()
   for (const q of rows) for (const t of q.t) counts.set(t, (counts.get(t) || 0) + 1)
 
@@ -179,7 +180,17 @@ export async function techCounts(f: Filters): Promise<{ slug: string; n: number 
       counts.set(slug, narrowed.length)
     }
   }
-  return [...counts.entries()].map(([slug, n]) => ({ slug, n })).sort((a, b) => b.n - a.n)
+
+  // Render every populated category from the question-bank taxonomy, using
+  // its human-readable label. Preserve user-defined tags where they exist.
+  const known = new Set(meta.techs.map((tech) => tech.slug))
+  const catalog = meta.techs
+    .map((tech) => ({ slug: tech.slug, label: tech.label, n: counts.get(tech.slug) || 0 }))
+    .filter((tech) => tech.n > 0)
+  const custom = [...counts.entries()]
+    .filter(([slug, n]) => n > 0 && !known.has(slug) && f.customTechs.includes(slug))
+    .map(([slug, n]) => ({ slug, label: slug, n }))
+  return [...catalog, ...custom].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label))
 }
 
 /** Counts per part, for the category select. */
