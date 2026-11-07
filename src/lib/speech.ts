@@ -416,7 +416,7 @@ const RU_COMMON_ENGLISH = new Set([
   'actually','basically','already','almost','always','anyway','available',
   'awesome','bad','best','better','busy','call','change','check','clear',
   'complete','correct','daily','default','detail','different','easy','exactly',
-  'example','explain','feature','final','fine','first','fix','free','full',
+  'example','explain','feature','fail','final','fine','first','fix','free','full',
   'good','great','important','issue','just','latest','later','less','let',
   'link','live','main','manage','maybe','meeting','message','missing','more',
   'much','need','new','next','normal','now','okay','old','only','option',
