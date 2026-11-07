@@ -19,7 +19,7 @@
  * so they work offline.
  */
 import { useState, useEffect } from 'react'
-import { accountRequest } from '../lib/account'
+import { accountRequest, promptForSignIn } from '../lib/account'
 import { keyState, saveKeys, PROVIDERS, type ProviderId, type KeyState } from '../lib/ai'
 import { beginGoogleSignIn } from '../lib/auth'
 import { gatewayStatus, detectGateway, gatewayReady } from '../lib/freeGateway'
@@ -100,7 +100,9 @@ export default function AiProviders() {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (e) {
-      setError((e as Error).message || 'Could not save to server.')
+      const message = (e as Error).message || 'Could not save to server.'
+      setError(message)
+      if (/not signed in|request failed \\(401\\)/i.test(message)) promptForSignIn()
     } finally {
       setSaving(false)
     }
