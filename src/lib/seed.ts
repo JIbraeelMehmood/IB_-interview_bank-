@@ -17,6 +17,8 @@ interface RawBankQuestion {
   t?: string[]
   s?: string
   ex?: string
+  /** Optional curator-assigned experience band; takes precedence over heuristics. */
+  expYears?: number
   tr?: Record<string, { q?: string; a?: string; hook?: string; key?: string }>
 }
 
@@ -142,6 +144,12 @@ function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
  *   s (Senior) → band 5 default; band 6 for lead/staff/architecture topics
  */
 function expYearsFor(raw: RawBankQuestion): ExpYears {
+  // Preserve explicit editorial / AI-assigned experience labels. Previously these
+  // were silently discarded and every record was reclassified from broad text heuristics.
+  if (Number.isInteger(raw.expYears) && raw.expYears! >= 1 && raw.expYears! <= 6) {
+    return raw.expYears as ExpYears
+  }
+
   const hay = `${raw.q} ${raw.p} ${raw.c}`.toLowerCase()
 
   if (raw.l === 'j') {
