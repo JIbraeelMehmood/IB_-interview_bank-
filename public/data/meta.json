@@ -49,7 +49,8 @@
     "Webhooks",
     "WooCommerce",
     "WordPress",
-    "Your Story, HR & Leadership"
+    "Your Story, HR & Leadership",
+    "Research additions"
   ],
   "chapters": [
     "A Few General Programming/JavaScript Notes",
@@ -391,7 +392,21 @@
         "usememo",
         "redux",
         "zustand",
-        "tanstack"
+        "tanstack",
+        "rules of hooks",
+        "custom hook",
+        "custom hooks",
+        "hook rules",
+        "usecallback",
+        "useref",
+        "usecontext",
+        "usereducer",
+        "usetransition",
+        "usedeferredvalue",
+        "useactionstate",
+        "useoptimistic",
+        "useformstatus",
+        "usesyncexternalstore"
       ]
     },
     {
@@ -677,6 +692,27 @@
         "woocommerce",
         "woo",
         "hpos"
+      ]
+    },
+    {
+      "slug": "codeigniter",
+      "label": "CodeIgniter",
+      "keywords": [
+        "codeigniter",
+        "ci3",
+        "ci4",
+        "codeigniter 3",
+        "codeigniter 4"
+      ]
+    },
+    {
+      "slug": "laminas",
+      "label": "Zend Framework / Laminas",
+      "keywords": [
+        "laminas",
+        "zend framework",
+        "zend mvc",
+        "zend"
       ]
     },
     {
