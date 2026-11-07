@@ -35,7 +35,8 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
-  const [user, setUser] = useState<AccountUser | null>(null)
+  const [sessionExpiredAccount, setSessionExpiredAccount] = useState<string | null>(null)
+  const [user, setUser) = useState<AccountUser | null>(null)
   const [due, setDue] = useState(0)
   const [online, setOnline] = useState(navigator.onLine)
   const location = useLocation()
@@ -74,6 +75,22 @@ export default function App() {
     let alive = true
     void accountRequest('/api/auth/me').then(async data => {
       if (!alive) return
+      const activeAccount = localStorage.getItem('ibx-active-account')
+      const pendingChanges = await db.outbox.count()
+      // Never wipe an account's unsynced offline work just because a different
+      // session was returned (for example, after a Google account switch).
+      if (activeAccount && activeAccount !== 'guest' && activeAccount !== data.user.id && pendingChanges > 0) {
+        try { await accountRequest('/api/auth/logout', {}) } catch { /* Keep the old workspace protected below. */ }
+        const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+        setUser(cached?.id === activeAccount ? cached : null)
+        await init()
+        try { await ensureSeeded() } catch { /* Existing local data remains available. */ }
+        setReady(true)
+        setSessionExpiredAccount(activeAccount)
+        setAuthOpen(true)
+        toast('Sign in to the same account to sync your pending progress before switching accounts.')
+        return
+      }
       await activateAccount(data.user.id)
       localStorage.setItem('ibx-user-cache', JSON.stringify(data.user))
       await enterApp(data.user)
@@ -82,6 +99,21 @@ export default function App() {
       const msg = String(error?.message || '')
       // A missing or expired session is normal: public browsing uses guest mode.
       if (/Request failed \((401|403)\)/.test(msg)) {
+        const activeAccount = localStorage.getItem('ibx-active-account')
+        const pendingChanges = await db.outbox.count()
+        if (activeAccount && activeAccount !== 'guest' && pendingChanges > 0) {
+          // The server session expired while local changes were still pending.
+          // Keep this workspace intact and require re-authentication to the same account.
+          const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+          setUser(cached?.id === activeAccount ? cached : null)
+          await init()
+          try { await ensureSeeded() } catch { /* Preserve existing offline rows. */ }
+          setReady(true)
+          setSessionExpiredAccount(activeAccount)
+          setAuthOpen(true)
+          toast('Your session expired. Sign in to the same account to sync your saved progress.')
+          return
+        }
         localStorage.removeItem('ibx-user-cache')
         await enterGuest()
         return
@@ -125,6 +157,7 @@ export default function App() {
 
   async function signedIn(account: AccountUser) {
     await enterApp(account)
+    setSessionExpiredAccount(null)
     setAuthChecked(true)
   }
   async function signOut() {
@@ -168,7 +201,7 @@ export default function App() {
           </span>
           <button className="iconbtn" type="button" onClick={toggleTheme} aria-label="Change color theme" title={`Theme: ${settings.theme} (click to change)`}>{settings.theme === "dark" ? "☀" : settings.theme === "light" ? "◐" : "☾"}</button>
           <Link className="iconbtn" to="/ai-providers" aria-label="AI Providers" title="Connect AI providers">🔗</Link>
-          {user ? (
+          {user && !sessionExpiredAccount ? (
             <button className="iconbtn" type="button" onClick={() => void signOut()} aria-label="Sign out" title={user.email}>↪</button>
           ) : (
             <button className="btn sm" type="button" onClick={() => setAuthOpen(true)}>Sign in</button>
@@ -194,13 +227,13 @@ export default function App() {
       {player.queue.length > 0 && <PlayerBar />}
       <BottomNav dueCount={due} /><ToastHost /><UpdatePrompt />
       {authOpen && (
-        <div className="sheet-bg" onClick={(e) => { if (e.target === e.currentTarget) setAuthOpen(false) }}>
+        <div className="sheet-bg" onClick={(e) => { if (!sessionExpiredAccount && e.target === e.currentTarget) setAuthOpen(false) }}>
           <div className="sheet" role="dialog" aria-modal="true" aria-label="Sign in or create account">
             <div className="spread" style={{ marginBottom: 10 }}>
-              <h2 style={{ fontSize: '1.1rem' }}>Sign in to continue</h2>
-              <button className="btn sm ghost" onClick={() => setAuthOpen(false)} aria-label="Close sign in">✕</button>
+              <h2 style={{ fontSize: '1.1rem' }}>{sessionExpiredAccount ? 'Recover your saved progress' : 'Sign in to continue'}</h2>
+              {!sessionExpiredAccount && <button className="btn sm ghost" onClick={() => setAuthOpen(false)} aria-label="Close sign in">✕</button>}
             </div>
-            <Auth onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={() => setAuthOpen(false)} />
+            <Auth expectedAccountId={sessionExpiredAccount || undefined} onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={sessionExpiredAccount ? undefined : () => setAuthOpen(false)} />
           </div>
         </div>
       )}
