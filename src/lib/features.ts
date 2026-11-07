@@ -80,7 +80,7 @@ export async function generateQuestions(opts: {
   signal?: AbortSignal
 }): Promise<{ q: string; a: string; techs: string[]; integration: boolean }[]> {
   const count = opts.count || 8
-  const technologies = [...new Set((opts.technologies?.length ? opts.technologies : opts.topic.split(/\s*\+\s*/)).map((t) => t.toLowerCase().trim()).filter(Boolean))]
+  const technologies = [...new Set((opts.technologies || []).map((t) => t.toLowerCase().trim()).filter(Boolean))]
   const expContext = opts.expYears
     ? ({
         1: 'around 1 year: fundamentals, basic syntax, simple CRUD, common implementation tasks and beginner debugging; no senior architecture questions',
@@ -106,12 +106,12 @@ Experience target: ${expContext}.
 ${opts.mostImportant ? 'Prioritize high-value, commonly asked interview fundamentals and practical questions. Avoid obscure trivia.' : 'Cover a balanced mix of core concepts and practical implementation scenarios.'}
 
 Hard rules:
-- Do not include technologies outside the selected list.
+- When technologies are selected, do not include technologies outside that list. When no technology filter is selected, infer relevant technology tags from the requested topic.
 - For multiple technologies, integration questions must actually involve at least two selected technologies.
 - Calibrate every question to the selected experience; do not return senior-level questions for a one-year candidate.
 - Avoid generic filler, vague questions, duplicates, and questions listed below.
 - Each answer should be focused and technically accurate (3–6 sentences).
-- Return technology tags for each question using only these exact slugs: ${technologies.join(', ')}.
+- Return accurate technology tags for each question. Use only these selected slugs when a technology filter is active: ${technologies.join(', ') || 'infer tags from the topic'}.
 - Set integration=true only when the question requires the technologies to work together.
 - Return valid JSON only.
 
@@ -124,14 +124,14 @@ JSON schema: {"items":[{"q":"...","a":"...","techs":["laravel"],"integration":fa
     task: 'quick',
     signal: opts.signal,
   })
-  const allowed = new Set(technologies)
+  const allowed = technologies.length ? new Set(technologies) : null
   const seen = new Set(opts.existing.map((q) => q.trim().toLowerCase()))
   return (data.items || [])
     .filter((i) => i.q?.trim() && i.a?.trim())
     .map((i) => ({
       q: i.q.trim(),
       a: i.a.trim(),
-      techs: [...new Set((i.techs || []).map((t) => t.toLowerCase()).filter((t) => allowed.has(t)))],
+      techs: [...new Set((i.techs || []).map((t) => t.toLowerCase()).filter((t) => !allowed || allowed.has(t)))],
       integration: !!i.integration,
     }))
     .filter((i) => i.techs.length > 0 && (!i.integration || i.techs.length > 1))
