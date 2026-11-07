@@ -158,7 +158,11 @@ export async function reviewQuestionQuality(
     body: JSON.stringify({ code, category, expYears, categoryCorrect, experienceCorrect }),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Could not save your review. Please sign in and try again.')
+  if (res.status === 401) {
+    promptForSignIn()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+  if (!res.ok) throw new Error(data.error || 'Could not save your review.')
   return data.stats
 }
 
