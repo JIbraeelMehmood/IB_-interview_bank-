@@ -131,7 +131,10 @@ export default function App() {
     if (online) await flush()
     try { await accountRequest('/api/auth/logout', {}) } catch { /* local sign-out still proceeds */ }
     localStorage.removeItem('ibx-user-cache')
-    setUser(null); setReady(true); setDue(0); setAuthOpen(false)
+    // Move to an isolated guest workspace so the next visitor cannot see this account's local data.
+    await enterGuest()
+    setDue(0)
+    setAuthOpen(false)
   }
 
   if (!authChecked || !ready || !loaded) return <p className="center muted" style={{ padding: 40 }}>Loading Interview Box…</p>
