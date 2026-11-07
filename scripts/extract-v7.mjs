@@ -96,14 +96,42 @@ const bank = JSON.parse(bankMatch[1])
 const techs = evaluate('BASE_TECHS', html)
 const parts = [...new Set(bank.map((q) => q.p))].sort()
 const chapters = [...new Set(bank.map((q) => q.c))].sort()
-const techList = techs.map(([slug, label, keywords]) => ({ slug, label, keywords }))
+const researchPath = path.join(outDir, 'research-questions.json')
+if (!fs.existsSync(researchPath)) {
+  throw new Error('public/data/research-questions.json is required; refusing to overwrite the extended taxonomy without it.')
+}
+const researchQuestions = JSON.parse(fs.readFileSync(researchPath, 'utf8'))
+
+// Keep manually curated taxonomy extensions when the legacy v7 bank is re-extracted.
+const techMap = new Map(techs.map(([slug, label, keywords]) => [slug, { slug, label, keywords: [...keywords] }]))
+const addKeywords = (slug, keywords) => {
+  const tech = techMap.get(slug)
+  if (!tech) throw new Error(`Cannot extend missing technology taxonomy: ${slug}`)
+  tech.keywords = [...new Set([...tech.keywords, ...keywords])]
+}
+addKeywords('react', [
+  'rules of hooks', 'custom hook', 'custom hooks', 'hook rules', 'usecallback',
+  'useref', 'usecontext', 'usereducer', 'usetransition', 'usedeferredvalue',
+  'useactionstate', 'useoptimistic', 'useformstatus', 'usesyncexternalstore',
+])
+techMap.set('codeigniter', {
+  slug: 'codeigniter', label: 'CodeIgniter',
+  keywords: ['codeigniter', 'ci3', 'ci4', 'codeigniter 3', 'codeigniter 4'],
+})
+techMap.set('laminas', {
+  slug: 'laminas', label: 'Zend Framework / Laminas',
+  keywords: ['laminas', 'zend framework', 'zend mvc', 'zend'],
+})
+const techList = [...techMap.values()]
+const allParts = [...new Set([...bank.map((q) => q.p), ...researchQuestions.map((q) => q.p)])].sort()
+const allChapters = [...new Set([...bank.map((q) => q.c), ...researchQuestions.map((q) => q.c)])].sort()
 
 const assets = {
   'meta.json': {
-    parts,
-    chapters,
+    parts: allParts,
+    chapters: allChapters,
     techs: techList,
-    count: bank.length,
+    count: bank.length + researchQuestions.length,
     builtAt: new Date().toISOString().slice(0, 10),
   },
   'lexicons.json': {
@@ -149,7 +177,7 @@ write('bank.json', bank)
 for (const [name, value] of Object.entries(assets)) write(name, value)
 
 console.log(`\nExtracted from ${src}`)
-console.log(`  bank: ${bank.length} questions, ${parts.length} parts, ${chapters.length} chapters, ${techList.length} techs`)
+console.log(`  bank: ${bank.length + researchQuestions.length} questions (${bank.length} legacy + ${researchQuestions.length} curated), ${allParts.length} parts, ${allChapters.length} chapters, ${techList.length} techs`)
 const lex = assets['lexicons.json']
 console.log(`  lexicon: ur ${lex.ur.length}, hi ${lex.hi.length}, ru ${lex.ru.length}, ruNorm ${lex.ruNorm.length}`)
 console.log(`  dictionary: ${assets['dictionary.json'].length} terms`)

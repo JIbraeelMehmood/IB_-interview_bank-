@@ -70,8 +70,14 @@ export interface Question {
   c: string
   /** Flags string, e.g. "ci". */
   f: Flags | ''
-  /** Tech tags (merged at seed time with keyword matches). */
+  /** Technology tags; reviewed additions use primaryTech + relatedTechs. */
   t: string[]
+  primaryTech?: string
+  relatedTechs?: string[]
+  questionType?: string
+  relatedTopics?: string[]
+  reviewStatus?: 'source-backed-draft' | 'needs-review'
+  sourceRefs?: string[]
   s: Source
   /** Optional SQL Lab exercise id (e.g. "v3"). */
   ex?: string

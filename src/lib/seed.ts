@@ -18,6 +18,12 @@ interface RawBankQuestion {
   s?: string
   ex?: string
   tr?: Record<string, { q?: string; a?: string; hook?: string; key?: string }>
+  primaryTech?: string
+  relatedTechs?: string[]
+  questionType?: string
+  relatedTopics?: string[]
+  reviewStatus?: 'source-backed-draft' | 'needs-review'
+  sourceRefs?: string[]
 }
 
 export interface BankMeta {
@@ -30,20 +36,24 @@ export interface BankMeta {
 
 const SEED_FLAG = 'bankSeededAt'
 /** Bump when the seed logic changes so existing installs re-seed. */
-const SEED_VERSION = 6
+const SEED_VERSION = 7
 
 let cache: { bank: RawBankQuestion[]; meta: BankMeta } | null = null
 
 async function loadBank(): Promise<{ bank: RawBankQuestion[]; meta: BankMeta }> {
   if (cache) return cache
-  const [bank, meta] = await Promise.all([
+  const [bank, research, meta] = await Promise.all([
     fetch('/data/bank.json').then((r) => {
       if (!r.ok) throw new Error('bank.json missing — run scripts/extract-v7.mjs')
       return r.json()
     }),
+    fetch('/data/research-questions.json').then((r) => {
+      if (!r.ok) throw new Error('research-questions.json missing')
+      return r.json()
+    }),
     fetch('/data/meta.json').then((r) => r.json()),
   ])
-  cache = { bank, meta }
+  cache = { bank: [...bank, ...research], meta }
   return cache
 }
 
@@ -100,31 +110,33 @@ function matchesTechKeyword(haystack: string, keyword: string): boolean {
  * parts: those frequently mention adjacent technologies and pollute filters.
  */
 function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
+  // Research additions carry a manually reviewed primary technology and
+  // explicitly justified cross-technology links. Never infer extra tags for them.
+  if (q.primaryTech) {
+    const primary = canonicalTechSlug(q.primaryTech, meta)
+    const related = (q.relatedTechs || []).map((tag) => canonicalTechSlug(tag, meta))
+    return [...new Set([primary, ...related])]
+  }
+
   const own = new Set((q.t || []).map((tag) => canonicalTechSlug(tag, meta)))
   const questionText = q.q || ''
-  const chapterText = q.c || ''
+  const part = normalizeTechText(q.p || '')
 
   for (const tech of meta.techs) {
     if (own.has(tech.slug)) continue
-    const part = normalizeTechText(q.p || '')
-    if (part && (part === normalizeTechText(tech.slug) || part === normalizeTechText(tech.label))) {
+    // A part label may identify a technology only when it is an exact
+    // canonical label/slug. Broad chapter names are intentionally excluded:
+    // they describe a section, not necessarily the subject of every question.
+    const chapter = normalizeTechText(q.c || '')
+    const exactChapter = chapter === normalizeTechText(tech.slug) || chapter === normalizeTechText(tech.label) ||
+      tech.keywords.some((keyword) => !keyword.endsWith('*') && chapter === normalizeTechText(keyword))
+    if ((part && (part === normalizeTechText(tech.slug) || part === normalizeTechText(tech.label))) || exactChapter) {
       own.add(tech.slug)
       continue
     }
 
     for (const keyword of tech.keywords) {
-      const normalizedKeyword = normalizeTechText(keyword.replace(/\*$/, ''))
-      // These terms are too generic to establish SQL, CI/CD, Docker or API
-      // relevance on their own; chapter names or specific terms still match.
-      const ambiguous: Record<string, string[]> = {
-        sql: ['database', 'databases', 'index', 'indexes', 'indexing', 'join', 'joins', 'query', 'queries', 'transaction', 'transactions', 'eloquent'],
-        cicd: ['ci', 'monitoring', 'observability'],
-        docker: ['kubernetes', 'k8s', 'helm'],
-        api: ['integration', 'integrations'],
-      }
-      const isAmbiguous = ambiguous[tech.slug]?.includes(normalizedKeyword) || false
-      if (isAmbiguous && !matchesTechKeyword(chapterText, keyword)) continue
-      if (matchesTechKeyword(questionText, keyword) || matchesTechKeyword(chapterText, keyword)) {
+      if (matchesTechKeyword(questionText, keyword)) {
         own.add(tech.slug)
         break
       }
@@ -187,6 +199,12 @@ function toQuestion(raw: RawBankQuestion, meta: BankMeta): Question {
     c: raw.c,
     f: (raw.f || '') as Flags | '',
     t: techsFor(raw, meta),
+    primaryTech: raw.primaryTech ? canonicalTechSlug(raw.primaryTech, meta) : undefined,
+    relatedTechs: raw.relatedTechs?.map((tag) => canonicalTechSlug(tag, meta)),
+    questionType: raw.questionType,
+    relatedTopics: raw.relatedTopics,
+    reviewStatus: raw.reviewStatus,
+    sourceRefs: raw.sourceRefs,
     s: (raw.s || 'b') as Source,
     ex: raw.ex,
     tr: raw.tr,
