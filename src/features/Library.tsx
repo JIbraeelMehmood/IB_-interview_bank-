@@ -16,6 +16,7 @@ import {
   type Ranked,
 } from '../lib/queries'
 import { QCard } from '../components/QCard'
+import { getQuestionQualityStatsBatch, type QuestionQualityStats } from '../lib/community'
 import { Chips, Chip, Empty, Loading, toast } from '../components/ui'
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
@@ -58,6 +59,7 @@ export default function Library() {
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   const [genBusy, setGenBusy] = useState(false)
+  const [qualityByCode, setQualityByCode] = useState<Record<string, QuestionQualityStats>>({})
 
   const run = useCallback(async (next: Filters) => {
     setLoading(true)
@@ -77,6 +79,21 @@ export default function Library() {
   const parts = useLiveQuery(async () => partCounts(f), [f], [])
   const expCounts = useLiveQuery(async () => expYearsCounts(f), [f], [])
   const unrated = useLiveQuery(() => db.ratings.count(), [], 0)
+
+  // Load community quality evidence once for the visible page instead of firing
+  // a separate API request from every question card.
+  useEffect(() => {
+    let active = true
+    const codes = rows.slice(0, shown).map((question) => question.code)
+    if (!codes.length) {
+      setQualityByCode({})
+      return
+    }
+    void getQuestionQualityStatsBatch(codes).then((stats) => {
+      if (active) setQualityByCode(stats)
+    })
+    return () => { active = false }
+  }, [rows, shown])
 
   const patch = (p: Partial<Filters>) => setF((cur) => ({ ...cur, ...p }))
 
@@ -466,7 +483,7 @@ export default function Library() {
       ) : (
         <div className="stack">
           {rows.slice(0, shown).map((q) => (
-            <QCard key={q.code} q={q} selectedTechs={f.techs} onChanged={() => void run(f)} />
+            <QCard key={q.code} q={q} selectedTechs={f.techs} communityQuality={qualityByCode[q.code] ?? null} onChanged={() => void run(f)} />
           ))}
           {shown < rows.length && (
             <button className="btn block" onClick={() => setShown((n) => n + PAGE)}>
