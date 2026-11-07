@@ -32,7 +32,7 @@ export interface BankMeta {
 
 const SEED_FLAG = 'bankSeededAt'
 /** Bump when the seed logic changes so existing installs re-seed. */
-const SEED_VERSION = 7
+const SEED_VERSION = 8
 
 let cache: { bank: RawBankQuestion[]; meta: BankMeta } | null = null
 
@@ -153,9 +153,11 @@ function expYearsFor(raw: RawBankQuestion): ExpYears {
   const hay = `${raw.q} ${raw.p} ${raw.c}`.toLowerCase()
 
   if (raw.l === 'j') {
-    // The 1-year filter includes basic concepts and straightforward junior
-    // implementation tasks, not definitions only.
-    return 1
+    // Split foundational questions from practical junior implementation work.
+    // Explicit bank assignments always take precedence above this heuristic.
+    const appliedJuniorSignals =
+      /implement|build|configure|debug|troubleshoot|integrat|middleware|validation|crud|authentication|authorization|deploy|queue|job|cache|testing|write a query|optimi[sz]e|production/.test(hay)
+    return appliedJuniorSignals ? 2 : 1
   }
 
   if (raw.l === 'm') {
