@@ -76,7 +76,7 @@ export interface Question {
   relatedTechs?: string[]
   questionType?: string
   relatedTopics?: string[]
-  reviewStatus?: 'human-reviewed' | 'needs-review'
+  reviewStatus?: 'source-backed-draft' | 'needs-review'
   sourceRefs?: string[]
   s: Source
   /** Optional SQL Lab exercise id (e.g. "v3"). */
