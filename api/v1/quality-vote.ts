@@ -12,7 +12,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const categoryCorrect = body.categoryCorrect
     const experienceCorrect = body.experienceCorrect
     const category = String(body.category || '').slice(0, 120)
-    const expYears = Number(body.expYears)
+    const suggestedCategory = String(body.suggestedCategory || '').slice(0, 120)\n    const suggestedExpYears = body.suggestedExpYears ? Number(body.suggestedExpYears) : null\n    const expYears = Number(body.expYears)
     if (!code || typeof categoryCorrect !== 'boolean' || typeof experienceCorrect !== 'boolean' ||
         !category || !Number.isInteger(expYears) || expYears < 1 || expYears > 6) {
       return res.status(400).json({ error: 'Question, category, experience and both review answers are required.' })
@@ -22,7 +22,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const id = `${user.id}:${code}`
     await reviews.updateOne(
       { _id: id },
-      { $set: { userId: user.id, code, category, expYears, categoryCorrect, experienceCorrect, updatedAt: Date.now() } },
+      { $set: { userId: user.id, code, category, expYears, categoryCorrect, experienceCorrect, suggestedCategory: suggestedCategory || null, suggestedExpYears: suggestedExpYears && suggestedExpYears >= 1 && suggestedExpYears <= 6 ? suggestedExpYears : null, updatedAt: Date.now() } },
       { upsert: true },
     )
     const [total, categoryOk, experienceOk] = await Promise.all([
