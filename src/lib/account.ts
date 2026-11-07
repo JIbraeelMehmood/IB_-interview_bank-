@@ -18,10 +18,12 @@ export async function accountRequest(path: string, body?: Record<string, unknown
 export async function activateAccount(userId: string) {
   const previous = localStorage.getItem('ibx-active-account')
   if (previous && previous !== userId) {
-    const tables = [db.ratings, db.reviews, db.answers, db.explains,
+    const privateTables = [db.ratings, db.reviews, db.answers, db.explains,
       db.mocks, db.jds, db.stories, db.imports, db.outbox, db.settings]
-    await db.transaction('rw', tables, async () => {
-      await Promise.all(tables.map((t) => t.clear()))
+    // Include questions in the Dexie transaction scope, but only delete
+    // account-created/imported questions; keep the shared built-in bank.
+    await db.transaction('rw', [...privateTables, db.questions], async () => {
+      await Promise.all(privateTables.map((table) => table.clear()))
       await db.questions.where('s').notEqual('b').delete()
     })
   }
