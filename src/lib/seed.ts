@@ -22,7 +22,7 @@ interface RawBankQuestion {
   relatedTechs?: string[]
   questionType?: string
   relatedTopics?: string[]
-  reviewStatus?: 'human-reviewed' | 'needs-review'
+  reviewStatus?: 'source-backed-draft' | 'needs-review'
   sourceRefs?: string[]
 }
 
@@ -127,7 +127,10 @@ function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
     // A part label may identify a technology only when it is an exact
     // canonical label/slug. Broad chapter names are intentionally excluded:
     // they describe a section, not necessarily the subject of every question.
-    if (part && (part === normalizeTechText(tech.slug) || part === normalizeTechText(tech.label))) {
+    const chapter = normalizeTechText(q.c || '')
+    const exactChapter = chapter === normalizeTechText(tech.slug) || chapter === normalizeTechText(tech.label) ||
+      tech.keywords.some((keyword) => !keyword.endsWith('*') && chapter === normalizeTechText(keyword))
+    if ((part && (part === normalizeTechText(tech.slug) || part === normalizeTechText(tech.label))) || exactChapter) {
       own.add(tech.slug)
       continue
     }
