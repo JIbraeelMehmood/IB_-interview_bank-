@@ -292,15 +292,15 @@ export function QCard({
             onClick={() => setOpen('vote')}
             title="Mark this question as one you were actually asked in an interview"
           >
-            <button
+            {myVote ? `✓ Asked (${myVote}yr)` : '🗳 Asked?'}
+            {askCount > 0 && <span className="n" style={{ marginLeft: 4, opacity: 0.7 }}>{askCount}</span>}
+          </button>
+          <button
             className="btn sm"
             onClick={() => setOpen('quality')}
             title="Review whether this question matches its category and experience level"
           >
             ✓ Category / level?
-          </button>
-          {myVote ? `✓ Asked (${myVote}yr)` : '🗳 Asked?'}
-            {askCount > 0 && <span className="n" style={{ marginLeft: 4, opacity: 0.7 }}>{askCount}</span>}
           </button>
           {ankiAvailable() && (
             <button
