@@ -2,7 +2,7 @@
 import { db } from './db'
 import { serverUrl } from './ai'
 
-const SYNCED = ['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings', 'communityVote'] as const
+const SYNCED = ['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings'] as const
 let flushing = false
 let timer: number | null = null
 
@@ -42,6 +42,20 @@ export async function flush(): Promise<{ sent: number; received: number }> {
     const acked: number[] = data.acked || []
     if (acked.length) await db.outbox.bulkDelete(acked)
     sent = acked.length
+    // A removed vote changes public aggregates; refresh the cached totals only
+    // after the server confirms that the queued deletion was processed.
+    if (items.some((item) => item.type === 'communityVoteDelete' && acked.includes(item.id || -1))) {
+      try {
+        const statsRes = await fetch('/api/v1/stats', { credentials: 'same-origin' })
+        if (statsRes.ok) {
+          const statsData = await statsRes.json()
+          await db.questionStats.clear()
+          if (Array.isArray(statsData.stats) && statsData.stats.length) {
+            await db.questionStats.bulkPut(statsData.stats)
+          }
+        }
+      } catch { /* Keep the previous cache if the refresh is temporarily unavailable. */ }
+    }
     if (Array.isArray(data.changes)) {
       await applyChanges(data.changes)
       received = data.changes.length
