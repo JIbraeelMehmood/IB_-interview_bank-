@@ -176,6 +176,17 @@ export default function Library() {
 
   return (
     <div className="stack">
+      <section className="library-intro" aria-labelledby="library-title">
+        <div>
+          <span className="library-eyebrow">Your preparation workspace</span>
+          <h1 className="library-title" id="library-title">Prepare with a clear plan.</h1>
+          <p className="library-subtitle">Find relevant interview questions by technology, experience and difficulty. Practise, track your progress and learn from community feedback.</p>
+        </div>
+        <div className="library-intro-side" aria-label="Question results">
+          <div className="library-stat"><strong>{loading ? '—' : rows.length.toLocaleString()}</strong><span>Matching questions</span></div>
+          <div className="library-stat"><strong>{f.techs.length || 'All'}</strong><span>Selected technologies</span></div>
+        </div>
+      </section>
       {/* H-05: AI Studio is reachable from the home tiles. */}
       <div className="grid3">
         <Link className="tile" to="/ai">
