@@ -80,11 +80,11 @@ export default function Auth({ onSignedIn, onClose, expectedAccountId }: { onSig
           Continue with Google
         </button>}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+        {!expectedAccountId && <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
           <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--line)' }} />
           <span className="muted" style={{ fontSize: 12 }}>or use email</span>
-          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--border, #ddd)' }} />
-        </div>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--line)' }} />
+        </div>}
 
         {/* ── Email/password form ── */}
         <form onSubmit={submit} style={{ display: 'grid', gap: 12 }}>
