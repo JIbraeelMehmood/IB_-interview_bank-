@@ -29,7 +29,7 @@ export interface BankMeta {
 
 const SEED_FLAG = 'bankSeededAt'
 /** Bump when the seed logic changes so existing installs re-seed. */
-const SEED_VERSION = 5
+const SEED_VERSION = 6
 
 let cache: { bank: RawBankQuestion[]; meta: BankMeta } | null = null
 
@@ -47,25 +47,81 @@ async function loadBank(): Promise<{ bank: RawBankQuestion[]; meta: BankMeta }> 
 }
 
 
-/** Merge a question's own tags with keyword matches from BASE_TECHS, as v7 did. */
+/**
+ * Normalize legacy question-bank tags into the canonical technology taxonomy
+ * from meta.json. The metadata is the source of truth; this is not a framework
+ * allow-list.
+ */
+function normalizeTechText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function canonicalTechSlug(value: string, meta: BankMeta): string {
+  const normalized = normalizeTechText(value)
+  const aliases: Record<string, string> = {
+    deployment: 'cicd',
+    javascript: 'js',
+  }
+  const alias = aliases[normalized]
+  if (alias && meta.techs.some((t) => t.slug === alias)) return alias
+
+  const exact = meta.techs.find(
+    (t) => normalizeTechText(t.slug) === normalized || normalizeTechText(t.label) === normalized,
+  )
+  if (exact) return exact.slug
+
+  const keywordMatches = meta.techs.filter((t) =>
+    t.keywords.some((keyword) => normalizeTechText(keyword.replace(/\\*$/, '')) === normalized),
+  )
+  return keywordMatches.length === 1 ? keywordMatches[0].slug : value.toLowerCase()
+}
+
+/** Match a taxonomy keyword without substring false positives. */
+function matchesTechKeyword(haystack: string, keyword: string): boolean {
+  const prefix = keyword.endsWith('*')
+  const term = normalizeTechText(prefix ? keyword.slice(0, -1) : keyword)
+  if (!term) return false
+  const text = normalizeTechText(haystack)
+  if (!prefix) return (` ${text} `).includes(` ${term} `)
+  const parts = term.split(' ')
+  const words = text.split(' ')
+  return words.some((_, index) => {
+    const candidate = words.slice(index, index + parts.length)
+    if (candidate.length !== parts.length) return false
+    return parts.slice(0, -1).every((part, i) => candidate[i] === part) &&
+      candidate[parts.length - 1].startsWith(parts[parts.length - 1])
+  })
+}
+
+/**
+ * Assign canonical technology tags using explicit source tags, the question
+ * title and its chapter. Do not classify from long answers or broad source
+ * parts: those frequently mention adjacent technologies and pollute filters.
+ */
 function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
-  const own = new Set((q.t || []).map((t) => t.toLowerCase()))
-  // Classify from the question and its headings, not the answer. Answers often
-  // mention adjacent tools and were causing unrelated technologies to be tagged.
-  const hay = (q.q + ' ' + (q.p || '') + ' ' + (q.c || '')).toLowerCase()
+  const own = new Set((q.t || []).map((tag) => canonicalTechSlug(tag, meta)))
+  const hay = `${q.q} ${q.c || ''}`
+
   for (const tech of meta.techs) {
     if (own.has(tech.slug)) continue
-    for (const kw of tech.keywords) {
-      if (!kw) continue
-      // Match whole terms/phrases so "react" does not tag "reactive".
-      // A trailing * intentionally means a word-prefix match.
-      const prefix = kw.endsWith('*')
-      const term = kw.replace(/\\*$/, '').replace(/[^a-z0-9]+/g, ' ').trim()
-      const normalizedHay = hay.replace(/[^a-z0-9]+/g, ' ').trim()
-      const matched = prefix
-        ? normalizedHay.split(' ').some((word) => word.startsWith(term))
-        : (` ${normalizedHay} `).includes(` ${term} `)
-      if (matched) {
+    const part = normalizeTechText(q.p || '')
+    if (part && (part === normalizeTechText(tech.slug) || part === normalizeTechText(tech.label))) {
+      own.add(tech.slug)
+      continue
+    }
+
+    for (const keyword of tech.keywords) {
+      const normalizedKeyword = normalizeTechText(keyword.replace(/\\*$/, ''))
+      // These terms are too generic to establish SQL, CI/CD, Docker or API
+      // relevance on their own; chapter names or specific terms still match.
+      const ambiguous: Record<string, string[]> = {
+        sql: ['database', 'databases', 'index', 'indexes', 'indexing', 'join', 'joins', 'query', 'queries', 'transaction', 'transactions', 'eloquent'],
+        cicd: ['ci', 'monitoring', 'observability'],
+        docker: ['kubernetes', 'k8s', 'helm'],
+        api: ['integration', 'integrations'],
+      }
+      if (ambiguous[tech.slug]?.includes(normalizedKeyword)) continue
+      if (matchesTechKeyword(hay, keyword)) {
         own.add(tech.slug)
         break
       }
