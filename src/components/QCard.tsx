@@ -7,7 +7,7 @@ import { getOrTranslate, getTranslation, spokenText, LANG_LABEL } from '../lib/t
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
 import { queue } from '../lib/sync'
-import { voteQuestion, hasVoted, getQuestionStats } from '../lib/community'
+import { voteQuestion, hasVoted, getQuestionStats, reviewQuestionQuality, getQuestionQualityStats } from '../lib/community'
 import { LANGS, LANG_NAME, LEVEL_NAME, EXP_SHORT, EXP_LABEL, type Lang, type Question, type Translation, type ExpYears } from '../lib/types'
 import { Md, Sheet, toast } from './ui'
 import { explain, explainKey, getRefAnswer } from '../lib/features'
@@ -31,9 +31,10 @@ export function QCard({
   const [tr, setTr] = useState<Translation | null>(null)
   const [busy, setBusy] = useState('')
   const [rate, setRate] = useState<0 | 1 | 2 | 3>(0)
-  const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote'>('')
+  const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote' | 'quality'>('')
   const [myVote, setMyVote] = useState<ExpYears | 0>(0)
   const [askCount, setAskCount] = useState(0)
+  const [qualityStats, setQualityStats] = useState<{ total: number; categoryOk: number; experienceOk: number } | null>(null)
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -54,6 +55,8 @@ export function QCard({
       if (live) setMyVote(vote ? vote.expYears : 0)
       const stats = await getQuestionStats(q.code)
       if (live) setAskCount(stats?.askCount || 0)
+      const quality = await getQuestionQualityStats(q.code)
+      if (live) setQualityStats(quality)
     })()
     return () => { live = false }
   }, [q.code])
@@ -295,6 +298,20 @@ export function QCard({
             {myVote ? `✓ Asked (${myVote}yr)` : '🗳 Asked?'}
             {askCount > 0 && <span className="n" style={{ marginLeft: 4, opacity: 0.7 }}>{askCount}</span>}
           </button>
+          <button
+            className="btn sm"
+            onClick={() => setOpen('quality')}
+            title="Review whether this question matches its category and experience level"
+          >
+            ✓ Review classification {qualityStats?.total ? `· ${qualityStats.total}` : ''}
+          </button>
+          {qualityStats && qualityStats.total > 0 && (
+            <div className="tiny muted" aria-label="Community classification review results">
+              Community: Category {Math.round((qualityStats.categoryOk / qualityStats.total) * 100)}% correct
+              {' · '}Experience {Math.round((qualityStats.experienceOk / qualityStats.total) * 100)}% correct
+              {' · '}{qualityStats.total} review{qualityStats.total === 1 ? '' : 's'}
+            </div>
+          )}
           {ankiAvailable() && (
             <button
               className="btn sm"
@@ -397,6 +414,25 @@ export function QCard({
 
       {open === 'ref' && <RefSheet q={q} onClose={() => setOpen('')} />}
 
+      {open === 'quality' && (
+        <QualityReviewSheet
+          q={q}
+          onClose={() => setOpen('')}
+          onSubmit={async (categoryCorrect, experienceCorrect) => {
+            const stats = await reviewQuestionQuality(
+              q.code,
+              q.p,
+              q.expYears || 1,
+              categoryCorrect,
+              experienceCorrect,
+            )
+            setQualityStats(stats)
+            toast(`Review saved. ${stats.total} community review(s) recorded.`)
+            setOpen('')
+          }}
+        />
+      )}
+
       {open === 'vote' && (
         <VoteSheet
           q={q}
@@ -417,6 +453,55 @@ export function QCard({
         />
       )}
     </>
+  )
+}
+
+/** Community quality review for category and experience classification. */
+function QualityReviewSheet({
+  q,
+  onClose,
+  onSubmit,
+}: {
+  q: Question
+  onClose: () => void
+  onSubmit: (categoryCorrect: boolean, experienceCorrect: boolean) => Promise<void>
+}) {
+  const [categoryCorrect, setCategoryCorrect] = useState<boolean | null>(null)
+  const [experienceCorrect, setExperienceCorrect] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+  return (
+    <Sheet title="Is this question classified correctly?" onClose={onClose}>
+      <div className="stack">
+        <p className="small">{q.q}</p>
+        <div className="card stack-sm">
+          <b className="small">Category: {q.p}</b>
+          <div className="row">
+            <button className={`btn sm ${categoryCorrect === true ? 'primary' : ''}`} onClick={() => setCategoryCorrect(true)}>Correct</button>
+            <button className={`btn sm ${categoryCorrect === false ? 'primary' : ''}`} onClick={() => setCategoryCorrect(false)}>Incorrect</button>
+          </div>
+        </div>
+        <div className="card stack-sm">
+          <b className="small">Experience: {q.expYears || 'Not assigned'} year(s)</b>
+          <div className="row">
+            <button className={`btn sm ${experienceCorrect === true ? 'primary' : ''}`} onClick={() => setExperienceCorrect(true)}>Correct</button>
+            <button className={`btn sm ${experienceCorrect === false ? 'primary' : ''}`} onClick={() => setExperienceCorrect(false)}>Incorrect</button>
+          </div>
+        </div>
+        <button
+          className="btn primary"
+          disabled={categoryCorrect === null || experienceCorrect === null || busy}
+          onClick={async () => {
+            setBusy(true)
+            try { await onSubmit(categoryCorrect!, experienceCorrect!) }
+            catch (e) { toast((e as Error).message) }
+            finally { setBusy(false) }
+          }}
+        >
+          {busy ? 'Submitting…' : 'Submit review'}
+        </button>
+        <p className="tiny muted">One review per signed-in account per question. Reviews help identify questions that need category or experience corrections.</p>
+      </div>
+    </Sheet>
   )
 }
 

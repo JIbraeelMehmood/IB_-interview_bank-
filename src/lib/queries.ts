@@ -84,12 +84,46 @@ export function applyFilters(
   // A custom tech has no keywords, so match it against the question's own tags
   // as well as the text.
   const custom = new Set(f.customTechs)
+
+  // Build a one-hop technology relationship graph from the question bank itself.
+  // This works for every technology, not only Laravel: if questions commonly
+  // combine two technologies (for example Laravel/PHP or Docker/AWS), selecting
+  // either technology can include the directly related topic questions.
+  // We deliberately do not traverse transitively, which would make broad stacks
+  // (for example JavaScript -> React -> Node -> AWS) expand without control.
+  const relatedByTech = new Map<string, Set<string>>()
+  if (want.length) {
+    const cooccurrence = new Map<string, Map<string, number>>()
+    const totals = new Map<string, number>()
+    for (const q of questions) {
+      const tags = [...new Set(q.t.filter((tag) => !custom.has(tag)))]
+      for (const tag of tags) {
+        totals.set(tag, (totals.get(tag) || 0) + 1)
+        if (!cooccurrence.has(tag)) cooccurrence.set(tag, new Map())
+        const related = cooccurrence.get(tag)!
+        for (const other of tags) {
+          if (other !== tag) related.set(other, (related.get(other) || 0) + 1)
+        }
+      }
+    }
+    for (const [slug, related] of cooccurrence) {
+      const threshold = Math.max(2, Math.ceil((totals.get(slug) || 0) * 0.03))
+      relatedByTech.set(
+        slug,
+        new Set([...related.entries()]
+          .filter(([, count]) => count >= threshold)
+          .map(([other]) => other)),
+      )
+    }
+  }
+
   const hasTech = (q: Question, slug: string) => {
     if (custom.has(slug)) {
       if (q.t.includes(slug)) return true
       return matchesSearch({ ...q, search: q.search || '' }, slug)
     }
-    return q.t.includes(slug)
+    const accepted = relatedByTech.get(slug)
+    return q.t.includes(slug) || Boolean(accepted && q.t.some((tag) => accepted.has(tag)))
   }
 
   let out = questions.filter((q) => {
@@ -102,7 +136,11 @@ export function applyFilters(
       const ok =
         f.techMode === 'or'
           ? want.some((t) => hasTech(q, t))
-          : want.every((t) => hasTech(q, t))
+          // Match all is intentionally strict: every selected canonical technology
+          // must be an explicit question tag. Related-topic expansion belongs only
+          // to the default Match any mode, otherwise a Laravel-only question can
+          // incorrectly satisfy a Laravel + React intersection.
+          : want.every((t) => (custom.has(t) ? hasTech(q, t) : q.t.includes(t)))
       if (!ok) return false
     }
 
@@ -131,7 +169,7 @@ export function applyFilters(
   } else if (f.sort === 'az') {
     out = out.sort((a, b) => a.q.localeCompare(b.q))
   } else if (f.sort === 'newest') {
-    out = out.sort((a, b) => (a.s === 'n' ? 1 : 0) - (b.s === 'n' ? 1 : 0))
+    out = out.sort((a, b) => (b.s === 'n' ? 1 : 0) - (a.s === 'n' ? 1 : 0) || b.code.localeCompare(a.code))
   } else {
     out = out.sort((a, b) => flagScore(b) - flagScore(a) || selectedTechCoverage(b) - selectedTechCoverage(a) || a.code.localeCompare(b.code))
   }
@@ -172,12 +210,20 @@ export async function techCounts(f: Filters): Promise<{ slug: string; label: str
   const base: Filters = { ...f, techs: [], techMode: 'or' }
   const [rows, meta] = await Promise.all([loadLibrary(base), bankMeta()])
   const counts = new Map<string, number>()
-  for (const q of rows) for (const t of q.t) counts.set(t, (counts.get(t) || 0) + 1)
-
-  if (f.techMode === 'and' && f.techs.length > 1) {
-    for (const slug of f.techs) {
-      const narrowed = await loadLibrary({ ...f, techs: [slug] })
-      counts.set(slug, narrowed.length)
+  // Chip counts use the same dynamic relationship logic as the results. This
+  // keeps counts useful when a technology is selected indirectly through a
+  // related stack tag, while still respecting the other active filters.
+  for (const tech of meta.techs) {
+    const matching = applyFilters(
+      rows,
+      { ...f, techs: [tech.slug], techMode: 'or' },
+      new Map(),
+    )
+    if (matching.length) counts.set(tech.slug, matching.length)
+  }
+  for (const q of rows) {
+    for (const t of q.t) {
+      if (f.customTechs.includes(t)) counts.set(t, (counts.get(t) || 0) + 1)
     }
   }
 
