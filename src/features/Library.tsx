@@ -101,7 +101,7 @@ export default function Library() {
     setGenBusy(true)
     try {
       const expLabel = f.expYears ? ` for ${f.expYears} year${f.expYears > 1 ? 's' : ''} experience (${EXP_TITLE[f.expYears]})` : ''
-      const topic = (f.part || f.techs.join(' + ') || 'senior Laravel engineering') + expLabel
+      const topic = (f.part || f.techs.join(' + ') || 'software engineering and technical interview fundamentals') + expLabel
       const made = await generateQuestions({
         topic,
         existing: rows.map((r) => r.q),
