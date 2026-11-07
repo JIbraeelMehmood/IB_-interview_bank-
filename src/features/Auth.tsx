@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { accountRequest, activateAccount, type AccountUser } from '../lib/account'
 
-export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) => Promise<void> }) {
+export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: AccountUser) => Promise<void>; onClose?: () => void }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -36,7 +36,7 @@ export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) =
   }
 
   return (
-    <main className="wrap" style={{ maxWidth: 460, paddingTop: '10vh' }}>
+    <main className={onClose ? '' : 'wrap'} style={{ maxWidth: 460, margin: '0 auto', paddingTop: onClose ? 0 : '10vh' }}>
       <section className="card" style={{ padding: 24 }}>
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <div style={{ fontSize: 34 }}>📦</div>
@@ -44,7 +44,7 @@ export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) =
           <p className="muted">
             {mode === 'signup'
               ? 'Create your account to save your progress.'
-              : 'Sign in to continue your interview preparation.'}
+              : 'Sign in to save your progress and use community features.'}
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export default function Auth({ onSignedIn }: { onSignedIn: (user: AccountUser) =
           </button>
         </p>
         <p className="muted center" style={{ fontSize: 12 }}>
-          Your progress is private to your account. The app also works offline after you sign in.
+          You can browse and practise as a guest. Sign in only when you need account-based features.
         </p>
       </section>
     </main>

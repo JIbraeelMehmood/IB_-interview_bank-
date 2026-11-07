@@ -27,11 +27,13 @@ import Topics from './features/Topics'
 import Help from './features/Help'
 import { initGateway } from './lib/freeGateway'
 import { checkTtsServer } from './lib/ttsClient'
+import { refreshQuestionStats } from './lib/community'
 
 export default function App() {
   const { loaded, init } = useSettings()
   const [ready, setReady] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
   const [user, setUser] = useState<AccountUser | null>(null)
   const [due, setDue] = useState(0)
   const [online, setOnline] = useState(navigator.onLine)
@@ -52,6 +54,19 @@ export default function App() {
     // Background: detect free AI gateways + TTS server availability
     void initGateway()
     void checkTtsServer()
+    void refreshQuestionStats()
+  }
+
+  async function enterGuest() {
+    setUser(null)
+    // Keep guest-local data isolated from a previous signed-in account.
+    await activateAccount('guest')
+    await init()
+    try { await ensureSeeded() } catch { /* Library displays seed errors */ }
+    setReady(true)
+    void initGateway()
+    void checkTtsServer()
+    void refreshQuestionStats()
   }
 
   useEffect(() => {
@@ -64,22 +79,24 @@ export default function App() {
     }).catch(async (error) => {
       if (!alive) return
       const msg = String(error?.message || '')
-      // 401/403 = session expired or invalid — force re-login, do NOT use cache.
+      // A missing or expired session is normal: public browsing uses guest mode.
       if (/Request failed \((401|403)\)/.test(msg)) {
         localStorage.removeItem('ibx-user-cache')
-        setUser(null); setReady(false); return
+        await enterGuest()
+        return
       }
-      // Network errors, 500s, etc. — let a previously signed-in user continue offline.
+      // If the auth API is temporarily unavailable, retain a previously
+      // signed-in offline workspace. New visitors still enter as guests.
       try {
         const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
         if (cached?.id && cached.email) {
           await activateAccount(cached.id)
           await enterApp(cached)
         } else {
-          setUser(null); setReady(false)
+          await enterGuest()
         }
       } catch {
-        setUser(null); setReady(false)
+        await enterGuest()
       }
     }).finally(() => { if (alive) setAuthChecked(true) })
     return () => { alive = false }
@@ -88,6 +105,8 @@ export default function App() {
   useEffect(() => { if (user) return startSync() }, [user?.id])
 
   useEffect(() => {
+    const requireAuth = () => setAuthOpen(true)
+    window.addEventListener('ibx:auth-required', requireAuth)
     const on = () => setOnline(true)
     const off = () => setOnline(false)
     window.addEventListener('online', on)
@@ -95,6 +114,7 @@ export default function App() {
     const t = window.setInterval(() => { if (user) void dueCount().then(setDue) }, 30_000)
     if (user) void dueCount().then(setDue)
     return () => {
+      window.removeEventListener('ibx:auth-required', requireAuth)
       window.removeEventListener('online', on); window.removeEventListener('offline', off)
       window.clearInterval(t)
     }
@@ -111,11 +131,10 @@ export default function App() {
     if (online) await flush()
     try { await accountRequest('/api/auth/logout', {}) } catch { /* local sign-out still proceeds */ }
     localStorage.removeItem('ibx-user-cache')
-    setUser(null); setReady(false); setDue(0)
+    setUser(null); setReady(true); setDue(0); setAuthOpen(false)
   }
 
-  if (!authChecked) return <p className="center muted" style={{ padding: 40 }}>Checking your account…</p>
-  if (!user) return <Auth onSignedIn={signedIn} />
+  if (!authChecked || !ready || !loaded) return <p className="center muted" style={{ padding: 40 }}>Loading Interview Box…</p>
 
   const aiOn = aiReady()
   return (
@@ -130,7 +149,11 @@ export default function App() {
               <><i className="dot" /><Link to="/help" title={aiWhy()}>AI off</Link></>}
           </span>
           <Link className="iconbtn" to="/ai-providers" aria-label="AI Providers" title="Connect AI providers">🔗</Link>
-          <button className="iconbtn" type="button" onClick={() => void signOut()} aria-label="Sign out" title={user.email}>↪</button>
+          {user ? (
+            <button className="iconbtn" type="button" onClick={() => void signOut()} aria-label="Sign out" title={user.email}>↪</button>
+          ) : (
+            <button className="btn sm" type="button" onClick={() => setAuthOpen(true)}>Sign in</button>
+          )}
           <Link className="iconbtn" to="/help" aria-label="Help">?</Link>
         </div>
       </header>
@@ -151,6 +174,17 @@ export default function App() {
       </main>
       {player.queue.length > 0 && <PlayerBar />}
       <BottomNav dueCount={due} /><ToastHost /><UpdatePrompt />
+      {authOpen && (
+        <div className="sheet-bg" onClick={(e) => { if (e.target === e.currentTarget) setAuthOpen(false) }}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label="Sign in or create account">
+            <div className="spread" style={{ marginBottom: 10 }}>
+              <h2 style={{ fontSize: '1.1rem' }}>Sign in to continue</h2>
+              <button className="btn sm ghost" onClick={() => setAuthOpen(false)} aria-label="Close sign in">✕</button>
+            </div>
+            <Auth onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={() => setAuthOpen(false)} />
+          </div>
+        </div>
+      )}
       <Analytics />
     </>
   )

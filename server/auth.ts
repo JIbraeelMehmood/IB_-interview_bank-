@@ -27,6 +27,8 @@ export type ApiRequest = {
   method?: string
   headers: Record<string, string | string[] | undefined>
   body?: any
+  query?: Record<string, string | string[] | undefined>
+  url?: string
   socket?: { remoteAddress?: string }
 }
 export type ApiResponse = {
@@ -46,18 +48,40 @@ let _indexSetup: Promise<void> | null = null
 async function ensureIndexes(db: Db): Promise<void> {
   if (_indexSetup) return _indexSetup
   _indexSetup = (async () => {
+    // Ensure collections exist before listIndexes (a first-time signup may be
+    // the request that creates them). Concurrent cold starts may race safely.
+    for (const name of ['users', 'sessions']) {
+      try { await db.createCollection(name) }
+      catch (error) { if ((error as { code?: number }).code !== 48) throw error }
+    }
     const users = db.collection<User>('users')
     const sessions = db.collection<Session>('sessions')
-    await Promise.all([
-      // Match the index that already exists in Atlas (unique, NOT sparse).
-      // If you need to change options, drop the old index in Atlas first.
-      users.createIndex({ email: 1 }, { unique: true, name: 'email_1' }),
-      users.createIndex({ googleId: 1 }, { unique: true, sparse: true, name: 'googleId_1' }),
-      sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'expiresAt_1' }),
-      sessions.createIndex({ userId: 1 }, { name: 'userId_1' }),
+    // Atlas may already contain indexes created with older options. Calling
+    // createIndex again with a different sparse/TTL option throws
+    // IndexOptionsConflict and blocks every login/signup request. Only create
+    // an index when its key pattern is genuinely missing.
+    const [userIndexes, sessionIndexes] = await Promise.all([
+      users.listIndexes().toArray(),
+      sessions.listIndexes().toArray(),
     ])
+    const hasKey = (indexes: Array<{ key?: Record<string, unknown> }>, field: string) =>
+      indexes.some((index) => index.key && Object.keys(index.key).length === 1 && index.key[field] === 1)
+
+    const tasks: Promise<unknown>[] = []
+    if (!hasKey(userIndexes, 'email')) {
+      tasks.push(users.createIndex({ email: 1 }, { unique: true, name: 'email_1' }))
+    }
+    if (!hasKey(userIndexes, 'googleId')) {
+      tasks.push(users.createIndex({ googleId: 1 }, { unique: true, sparse: true, name: 'googleId_1' }))
+    }
+    if (!hasKey(sessionIndexes, 'expiresAt')) {
+      tasks.push(sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'expiresAt_1' }))
+    }
+    if (!hasKey(sessionIndexes, 'userId')) {
+      tasks.push(sessions.createIndex({ userId: 1 }, { name: 'userId_1' }))
+    }
+    await Promise.all(tasks)
   })().catch((err) => {
-    // Reset so it retries on the next request rather than caching the failure.
     _indexSetup = null
     throw err
   })

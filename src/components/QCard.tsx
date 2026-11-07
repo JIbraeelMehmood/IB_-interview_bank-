@@ -15,6 +15,7 @@ import { aiReady, aiWhy } from '../lib/ai'
 import { voiceProblem, speakSegments, ttsAvailable } from '../lib/speech'
 import { bidiFix, esc, md } from '../lib/text'
 import { ankiAdd, ankiAvailable } from '../lib/backup'
+import { hasCachedAccount, promptForSignIn } from '../lib/account'
 
 export function QCard({
   q,
@@ -292,7 +293,7 @@ export function QCard({
           </button>
           <button
             className={`btn sm${myVote ? ' primary' : ''}`}
-            onClick={() => setOpen('vote')}
+            onClick={() => { if (!hasCachedAccount()) promptForSignIn(); else setOpen('vote') }}
             title="Mark this question as one you were actually asked in an interview"
           >
             {myVote ? `✓ Asked (${myVote}yr)` : '🗳 Asked?'}
@@ -300,7 +301,7 @@ export function QCard({
           </button>
           <button
             className="btn sm"
-            onClick={() => setOpen('quality')}
+            onClick={() => { if (!hasCachedAccount()) promptForSignIn(); else setOpen('quality') }}
             title="Review whether this question matches its category and experience level"
           >
             ✓ Review classification {qualityStats?.total ? `· ${qualityStats.total}` : ''}

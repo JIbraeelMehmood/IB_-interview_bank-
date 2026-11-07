@@ -8,6 +8,7 @@
 
 import { db } from './db'
 import { queue } from './sync'
+import { hasCachedAccount, promptForSignIn } from './account'
 import type { CommunityVote, ExpYears, QuestionStats } from './types'
 
 /** Submit a community vote: "this question was asked to me in a real interview". */
@@ -16,15 +17,28 @@ export async function voteQuestion(
   expYears: ExpYears,
   company?: string,
 ): Promise<void> {
-  const vote: CommunityVote = {
-    code,
-    expYears,
-    company: company?.trim() || undefined,
-    at: Date.now(),
-    updatedAt: Date.now(),
+  if (!hasCachedAccount()) {
+    promptForSignIn()
+    throw new Error('Please sign in to submit an interview vote.')
   }
-  await db.communityVotes.put(vote)
-  await queue('communityVote', vote)
+  const res = await fetch('/api/v1/vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ code, expYears, company: company?.trim() || undefined }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (res.status === 401) {
+    promptForSignIn()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+  if (!res.ok) throw new Error(data.error || 'Could not submit your vote.')
+  const stats = data.stats as QuestionStats
+  if (stats?.code) await db.questionStats.put(stats)
+  await db.communityVotes.put({
+    code, expYears, company: company?.trim() || undefined,
+    at: Date.now(), updatedAt: Date.now(),
+  })
 }
 
 /** Remove the user's vote for a question. */
@@ -144,7 +158,11 @@ export async function reviewQuestionQuality(
     body: JSON.stringify({ code, category, expYears, categoryCorrect, experienceCorrect }),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Could not save your review. Please sign in and try again.')
+  if (res.status === 401) {
+    promptForSignIn()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+  if (!res.ok) throw new Error(data.error || 'Could not save your review.')
   return data.stats
 }
 
