@@ -39,7 +39,7 @@ export async function voteQuestion(
     code, expYears, company: company?.trim() || undefined,
     at: Date.now(), updatedAt: Date.now(),
   })
-
+}
 
 /** Remove the user's vote for a question. */
 export async function unvoteQuestion(code: string): Promise<void> {
