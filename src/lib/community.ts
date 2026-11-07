@@ -199,3 +199,23 @@ export async function getQuestionQualityStats(
     return null
   }
 }
+
+
+/** Fetch quality summaries for a visible page in one request, avoiding one
+ *  network round-trip per question card. */
+export async function getQuestionQualityStatsBatch(
+  codes: string[],
+): Promise<Record<string, QuestionQualityStats>> {
+  const unique = [...new Set(codes)].filter(Boolean).slice(0, 100)
+  if (!unique.length) return {}
+  try {
+    const res = await fetch(`/api/v1/quality-vote?codes=${encodeURIComponent(unique.join(','))}`, {
+      credentials: 'same-origin',
+    })
+    if (!res.ok) return {}
+    const data = await res.json()
+    return data.statsByCode || {}
+  } catch {
+    return {}
+  }
+}
