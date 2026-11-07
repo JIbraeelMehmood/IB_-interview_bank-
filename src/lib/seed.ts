@@ -32,7 +32,7 @@ export interface BankMeta {
 
 const SEED_FLAG = 'bankSeededAt'
 /** Bump when the seed logic changes so existing installs re-seed. */
-const SEED_VERSION = 6
+const SEED_VERSION = 7
 
 let cache: { bank: RawBankQuestion[]; meta: BankMeta } | null = null
 
