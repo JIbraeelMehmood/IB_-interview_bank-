@@ -107,6 +107,8 @@ export default function Library() {
         existing: rows.map((r) => r.q),
         lang: settings.lang,
         expYears: f.expYears || undefined,
+        technologies: f.techs,
+        mostImportant: f.flag === 'i',
       })
       const now = Date.now()
       for (const [i, m] of made.entries()) {
@@ -116,12 +118,12 @@ export default function Library() {
           a: m.a,
           l: f.expYears && f.expYears <= 2 ? 'j' : f.expYears && f.expYears <= 4 ? 'm' : 's',
           p: f.part || f.techs.join(' + ') || 'AI generated',
-          c: 'AI generated',
+          c: m.integration ? 'AI integration question' : 'AI generated',
           f: '',
-          t: f.techs,
+          t: m.techs,
           s: 'ai',
           expYears: f.expYears || undefined,
-          search: `${m.q} ${m.a}`.toLowerCase(),
+          search: `${m.q} ${m.a} ${m.techs.join(' ')}`.toLowerCase(),
           updatedAt: now,
         })
       }
