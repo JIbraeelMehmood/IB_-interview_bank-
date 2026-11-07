@@ -70,7 +70,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const suggestedTags = Array.isArray(body.suggestedTags)
       ? [...new Set(body.suggestedTags
           .map((tag: unknown) => String(tag).trim().toLowerCase())
-          .filter((tag: string) => /^[a-z0-9+#.\\-/ ]{1,50}$/.test(tag)))].slice(0, 20)
+          .filter((tag: string) => /^[a-z0-9+#.\/ -]{1,50}$/.test(tag)))].slice(0, 20)
       : []
 
     const suggestedExpYears = Array.isArray(body.suggestedExpYears)
