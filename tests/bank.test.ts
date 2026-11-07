@@ -14,6 +14,7 @@ const read = (f: string) => JSON.parse(readFileSync(join(process.cwd(), 'public'
 beforeAll(async () => {
   const files: Record<string, unknown> = {
     'bank.json': read('bank.json'),
+    'research-questions.json': read('research-questions.json'),
     'meta.json': read('meta.json'),
   }
   vi.stubGlobal(
@@ -31,6 +32,23 @@ beforeAll(async () => {
 describe('the extracted bank', () => {
   it('seeds every question in the current bank', async () => {
     expect(await db.questions.count()).toBe(read('bank.json').length)
+  })
+
+  it('includes manually reviewed research additions with exact technology tags', async () => {
+    const additions = read('research-questions.json') as any[]
+    expect(additions.length).toBe(25)
+    const meta = read('meta.json') as any
+    const allowed = new Set(meta.techs.map((t: any) => t.slug))
+    for (const raw of additions) {
+      const q = await db.questions.get(raw.id)
+      expect(q).toBeTruthy()
+      expect(q!.reviewStatus).toBe('human-reviewed')
+      expect(q!.primaryTech).toBe(raw.primaryTech)
+      expect(q!.t).toEqual([raw.primaryTech, ...(raw.relatedTechs || [])])
+      expect(q!.t.every((tag) => allowed.has(tag))).toBe(true)
+      expect(q!.questionType).toBeTruthy()
+      expect(q!.sourceRefs?.length).toBeGreaterThan(0)
+    }
   })
 
   it('keeps the v7 question codes stable', async () => {
@@ -73,6 +91,9 @@ describe('the extracted bank', () => {
     }
     expect(all.some((q) => q.t.includes('js'))).toBe(true)
     expect(all.some((q) => q.t.includes('cicd'))).toBe(true)
+    expect(all.some((q) => q.code === 'RX-11' && q.t.includes('react'))).toBe(true)
+    expect(all.some((q) => q.code === 'PH-45' && q.t.includes('codeigniter'))).toBe(true)
+    expect(all.some((q) => q.code === 'PH-56' && q.t.includes('laminas'))).toBe(true)
   })
 
   it('exposes all populated technology categories from bank metadata', async () => {
