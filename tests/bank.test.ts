@@ -29,7 +29,7 @@ beforeAll(async () => {
 })
 
 describe('the extracted bank', () => {
-  it('seeds 1,950 questions', async () => {
+  it('seeds every question in the current bank', async () => {
     expect(await db.questions.count()).toBe(read('bank.json').length)
   })
 
