@@ -189,6 +189,15 @@ export async function techCounts(f: Filters): Promise<{ slug: string; label: str
   const counts = new Map<string, number>()
   for (const q of rows) for (const t of q.t) counts.set(t, (counts.get(t) || 0) + 1)
 
+  // The Laravel chip count must match the expanded Laravel-related result set,
+  // not just records carrying the literal "laravel" tag.
+  const laravelRelated = new Set([
+    'laravel', 'php', 'sql', 'api', 'security', 'redis', 'queues', 'docker',
+    'aws', 'linux', 'cicd', 'testing', 'git', 'web', 'architecture',
+    'performance', 'sysdesign', 'ecommerce',
+  ])
+  counts.set('laravel', rows.filter((q) => q.t.some((tag) => laravelRelated.has(tag))).length)
+
   if (f.techMode === 'and' && f.techs.length > 1) {
     for (const slug of f.techs) {
       const narrowed = await loadLibrary({ ...f, techs: [slug] })
