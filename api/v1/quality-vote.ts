@@ -128,7 +128,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           .filter((year: number) => Number.isInteger(year) && year >= 1 && year <= 6))]
       : []
 
-    if (typeof categoryCorrect !== 'boolean' || typeof experienceCorrect !== 'boolean' ||
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/.test(code) ||
+        typeof categoryCorrect !== 'boolean' || typeof experienceCorrect !== 'boolean' ||
         !category || !Number.isInteger(expYears) || expYears < 1 || expYears > 6) {
       return res.status(400).json({ error: 'Question, category, experience and both review answers are required.' })
     }
