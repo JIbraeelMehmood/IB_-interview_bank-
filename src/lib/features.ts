@@ -96,8 +96,10 @@ export async function generateQuestions(opts: {
     ? `Selected technologies (strict scope): ${technologies.join(', ')}.`
     : `Selected topic: ${opts.topic}.`
   const distribution = technologies.length > 1
-    ? `Distribute the questions across three areas: (1) questions about each selected technology individually, (2) questions about the other selected technologies individually, and (3) questions that genuinely test integration/intersection between selected technologies. Include meaningful integration questions, not only separate questions. Each question must list only the technologies it actually tests.`
-    : `Every question must be specifically about the selected technology/topic. Do not add unrelated generic programming or other-framework questions.`
+    ? `Build the coverage dynamically from the selected technology list; do not assume any specific framework or language. Cover each selected technology individually, then include questions about meaningful intersections/integration between combinations of the selected technologies. With ${count} questions, give every selected technology at least one individual question when the count allows, and use the remaining slots for the most useful cross-technology scenarios. For three or more technologies, choose realistic pairwise or multi-technology intersections rather than forcing every possible combination. Each question must list only the technologies it actually tests.`
+    : technologies.length === 1
+      ? `Every question must be specifically about ${technologies[0]} and its real ecosystem. Do not add unrelated technologies or generic filler.`
+      : `Infer the relevant technologies from the requested topic (${opts.topic}). Keep the questions focused on that topic; do not default to Laravel or any other technology unless it is explicitly relevant.`
 
   const prompt = `Generate ${count} NEW, high-quality technical interview questions.
 ${scope}
@@ -107,7 +109,7 @@ ${opts.mostImportant ? 'Prioritize high-value, commonly asked interview fundamen
 
 Hard rules:
 - When technologies are selected, do not include technologies outside that list. When no technology filter is selected, infer relevant technology tags from the requested topic.
-- For multiple technologies, integration questions must actually involve at least two selected technologies.
+- For multiple technologies, integration questions must actually involve at least two selected technologies; do not invent a technology outside the selected list.
 - Calibrate every question to the selected experience; do not return senior-level questions for a one-year candidate.
 - Avoid generic filler, vague questions, duplicates, and questions listed below.
 - Each answer should be focused and technically accurate (3–6 sentences).
@@ -119,7 +121,7 @@ Existing questions to avoid:
 ${opts.existing.slice(0, 60).map((q) => `- ${q}`).join('\n')}
 
 ${ENGLISH_ONLY(opts.lang)}
-JSON schema: {"items":[{"q":"...","a":"...","techs":["laravel"],"integration":false}]}`
+JSON schema: {"items":[{"q":"...","a":"...","techs":["exact-selected-technology-slug"],"integration":false}]}. Use canonical selected slugs exactly as supplied; never hardcode Laravel, React, or any other example technology.`
   const data = await aiJson<{ items?: { q: string; a: string; techs?: string[]; integration?: boolean }[] }>(prompt, {
     task: 'quick',
     signal: opts.signal,
