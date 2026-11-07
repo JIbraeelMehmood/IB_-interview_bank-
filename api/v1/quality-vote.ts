@@ -83,7 +83,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
               { $sort: { count: -1 } },
             ],
           } },
-        ]).toArray().then((rows: any[]) => rows[0] || [{}, {}, {}, {}])
+        ]).toArray().then((rows: any[]) => rows[0] || { totals: [], categories: [], tags: [], experiences: [] })
         const statsByCode: Record<string, any> = {}
         for (const row of totals) {
           statsByCode[row._id] = { total: row.total, categoryOk: row.categoryOk, experienceOk: row.experienceOk, suggestedCategories: [], suggestedTags: [], suggestedExpYears: [] }
