@@ -14,6 +14,7 @@ import type {
 } from './types'
 import { LANG_LABEL } from './translate'
 import { stripHtml } from './text'
+import type { BankMeta } from './seed'
 
 /** Anything that must stay in English no matter the UI language. */
 const ENGLISH_ONLY = (lang: Lang) =>
@@ -74,47 +75,80 @@ export async function generateQuestions(opts: {
   existing: string[]
   lang: Lang
   count?: number
-  /** Experience band 1–6 — when set, questions are targeted at that level. */
   expYears?: number
+  technologies?: string[]
+  technologyCatalog?: BankMeta['techs']
+  mostImportant?: boolean
   signal?: AbortSignal
-}): Promise<{ q: string; a: string }[]> {
+}): Promise<{ q: string; a: string; techs: string[]; integration: boolean }[]> {
   const count = opts.count || 8
-
+  const technologies = [...new Set((opts.technologies || []).map((t) => t.toLowerCase().trim()).filter(Boolean))]
   const expContext = opts.expYears
-    ? (() => {
-        const map: Record<number, string> = {
-          1: '0–1 year (fresher / intern): focus on fundamentals, basic syntax, simple CRUD, understanding not depth',
-          2: '1–2 years (junior): knows one framework, can build features independently, still supervised',
-          3: '2–3 years (junior-mid): owns modules, writes tests, has done a production deployment',
-          4: '3–4 years (mid-level): system thinking, mentors juniors, makes architecture suggestions',
-          5: '4–5 years (senior): owns projects end-to-end, designs systems, reviews others\' code, drives quality',
-          6: '5+ years (lead / staff): cross-team impact, strategic decisions, platform thinking, org-wide influence',
-        }
-        return `\n\nTarget experience level: ${map[opts.expYears] || `${opts.expYears} years`}. Calibrate difficulty, depth, and expected answer detail accordingly.`
-      })()
-    : ''
+    ? ({
+        1: 'around 1 year: fundamentals, basic syntax, simple CRUD, common implementation tasks and beginner debugging; no senior architecture questions',
+        2: 'around 2 years: junior implementation, feature ownership with guidance, API usage and practical debugging',
+        3: 'around 3 years: intermediate implementation, module ownership, testing and production troubleshooting',
+        4: 'around 4 years: mid-level design choices, performance basics and mentoring',
+        5: 'around 5 years: senior implementation, architecture, security and performance trade-offs',
+        6: '5+ years: lead/staff architecture, scalability, cross-team decisions and production strategy',
+      } as Record<number, string>)[opts.expYears] || `${opts.expYears} years`
+    : 'a practical level appropriate to the selected role'
 
-  const levelLabel = opts.expYears
-    ? opts.expYears <= 2
-      ? 'junior'
-      : opts.expYears <= 4
-      ? 'mid-level'
-      : 'senior'
-    : 'senior'
+  const selectedCatalog = (opts.technologyCatalog || []).filter((tech) => technologies.includes(tech.slug))
+  const categoryContext = selectedCatalog.length
+    ? selectedCatalog.map((tech) => `- ${tech.slug} = ${tech.label}; relevant terms: ${tech.keywords.join(', ')}`).join('\n')
+    : technologies.map((slug) => `- ${slug}`).join('\n')
+  const scope = technologies.length
+    ? `Selected question-bank technology categories (strict scope):\n${categoryContext}`
+    : `Selected topic: ${opts.topic}. Use the existing question-bank technology taxonomy when assigning tags.`
+  const distribution = technologies.length > 1
+    ? `Build coverage dynamically from the selected question-bank categories above; do not assume any specific framework or language. Cover each selected technology individually, then include questions about meaningful intersections/integration between combinations of the selected technologies. With ${count} questions, give every selected technology at least one individual question when the count allows, and use the remaining slots for the most useful cross-technology scenarios. For three or more technologies, choose realistic pairwise or multi-technology intersections rather than forcing every possible combination. Each question must list only the technologies it actually tests.`
+    : technologies.length === 1
+      ? `Every question must be specifically about ${technologies[0]} and its real ecosystem. Do not add unrelated technologies or generic filler.`
+      : `Infer the relevant technologies from the requested topic (${opts.topic}). Keep the questions focused on that topic; do not default to Laravel or any other technology unless it is explicitly relevant.`
 
-  const prompt = `Write ${count} new interview questions about "${opts.topic}", at the level of a ${levelLabel} Laravel / full-stack engineer.${expContext}
+  const prompt = `Generate ${count} NEW, high-quality technical interview questions.
+${scope}
+${distribution}
+Experience target: ${expContext}.
+${opts.mostImportant ? 'Prioritize high-value, commonly asked interview fundamentals and practical questions. Avoid obscure trivia.' : 'Cover a balanced mix of core concepts and practical implementation scenarios.'}
 
-These questions already exist, so do NOT repeat them:
-${opts.existing.slice(0, 40).map((q) => `- ${q}`).join('\n')}
+Hard rules:
+- When technologies are selected, do not include technologies outside that list. When no technology filter is selected, infer relevant technology tags from the requested topic.
+- For multiple technologies, integration questions must actually involve at least two selected technologies; do not invent a technology outside the selected list.
+- Calibrate every question to the selected experience; do not return senior-level questions for a one-year candidate.
+- Avoid generic filler, vague questions, duplicates, and questions listed below.
+- Each answer should be focused and technically accurate (3–6 sentences).
+- Return accurate technology tags for each question. Use only these selected canonical category slugs when a technology filter is active: ${technologies.join(', ') || 'infer tags from the topic taxonomy'}. Do not create new category names or aliases.
+- Set integration=true only when the question requires the technologies to work together.
+- Return valid JSON only.
 
-For each question give a focused answer (3–6 sentences) plus a one-line English sentence the candidate can say in the interview.${ENGLISH_ONLY(opts.lang)}
+Existing questions to avoid:
+${opts.existing.slice(0, 60).map((q) => `- ${q}`).join('\n')}
 
-Reply with JSON only: {"items":[{"q":"...","a":"...","key":"..."}]}`
-  const data = await aiJson<{ items?: { q: string; a: string; key?: string }[] }>(prompt, {
+${ENGLISH_ONLY(opts.lang)}
+JSON schema: {"items":[{"q":"...","a":"...","techs":["exact-selected-technology-slug"],"integration":false}]}. Use canonical selected slugs exactly as supplied; never hardcode Laravel, React, or any other example technology.`
+  const data = await aiJson<{ items?: { q: string; a: string; techs?: string[]; integration?: boolean }[] }>(prompt, {
     task: 'quick',
     signal: opts.signal,
   })
-  return (data.items || []).map((i) => ({ q: i.q, a: i.a }))
+  const allowed = technologies.length ? new Set(technologies) : null
+  const seen = new Set(opts.existing.map((q) => q.trim().toLowerCase()))
+  return (data.items || [])
+    .filter((i) => i.q?.trim() && i.a?.trim())
+    .map((i) => ({
+      q: i.q.trim(),
+      a: i.a.trim(),
+      techs: [...new Set((i.techs || []).map((t) => t.toLowerCase()).filter((t) => !allowed || allowed.has(t)))],
+      integration: !!i.integration,
+    }))
+    .filter((i) => i.techs.length > 0 && (!i.integration || i.techs.length > 1))
+    .filter((i) => {
+      const key = i.q.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
 }
 
 /* ---------------------------- JD analysis --------------------------- */

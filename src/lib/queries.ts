@@ -3,13 +3,14 @@
  *  library is fully usable offline. */
 
 import { db } from './db'
+import { bankMeta } from './seed'
 import type { ExpYears, Level, Question } from './types'
 
 export interface Filters {
   search: string
   part: string
-  /** Selected technologies. Multiple selections are combined with AND, so
-   *  Laravel + React + Most important returns questions that are all three. */
+  /** Selected technologies. OR is the default: include questions for each selected
+   *  technology plus questions tagged with multiple selected technologies (integration). */
   techs: string[]
   /** How multiple technologies combine. */
   techMode: 'and' | 'or'
@@ -28,7 +29,7 @@ export const DEFAULT_FILTERS: Filters = {
   search: '',
   part: '',
   techs: [],
-  techMode: 'and',
+  techMode: 'or',
   level: '',
   expYears: '',
   flag: '',
@@ -95,7 +96,8 @@ export function applyFilters(
     if (f.search && !matchesSearch(q, f.search)) return false
     if (f.part && q.p !== f.part) return false
 
-    // Multiple technologies: AND means "has all of them", OR means "has any".
+    // Multiple technologies: OR includes individual technology questions and
+    // multi-tag intersection questions. AND remains available as an explicit narrowing option.
     if (want.length) {
       const ok =
         f.techMode === 'or'
@@ -123,14 +125,15 @@ export function applyFilters(
   })
 
   const rate = (q: Question) => ratings.get(q.code) || 0
+  const selectedTechCoverage = (q: Question) => want.reduce((n, slug) => n + (hasTech(q, slug) ? 1 : 0), 0)
   if (f.sort === 'important') {
-    out = out.sort((a, b) => flagScore(b) - flagScore(a) || rate(b) - rate(a))
+    out = out.sort((a, b) => flagScore(b) - flagScore(a) || selectedTechCoverage(b) - selectedTechCoverage(a) || rate(b) - rate(a))
   } else if (f.sort === 'az') {
     out = out.sort((a, b) => a.q.localeCompare(b.q))
   } else if (f.sort === 'newest') {
     out = out.sort((a, b) => (a.s === 'n' ? 1 : 0) - (b.s === 'n' ? 1 : 0))
   } else {
-    out = out.sort((a, b) => flagScore(b) - flagScore(a) || a.code.localeCompare(b.code))
+    out = out.sort((a, b) => flagScore(b) - flagScore(a) || selectedTechCoverage(b) - selectedTechCoverage(a) || a.code.localeCompare(b.code))
   }
   return out.map((q) => ({ ...q, rating: rate(q) as 0 | 1 | 2 | 3 }))
 }
@@ -163,11 +166,11 @@ export async function loadLibrary(f: Filters): Promise<Ranked[]> {
  *
  *  Counts respect every *other* filter but ignore the tech selection itself, so
  *  each chip shows "if I add this, how many do I get" rather than collapsing to
- *  the already-selected ones. In AND mode the count is the size of the
- *  intersection, which is the number a person wants before tapping a chip. */
-export async function techCounts(f: Filters): Promise<{ slug: string; n: number }[]> {
+ *  the already-selected ones. The default OR mode keeps individual and integration
+ *  questions together; users can still explicitly choose Match all. */
+export async function techCounts(f: Filters): Promise<{ slug: string; label: string; n: number }[]> {
   const base: Filters = { ...f, techs: [], techMode: 'or' }
-  const rows = await loadLibrary(base)
+  const [rows, meta] = await Promise.all([loadLibrary(base), bankMeta()])
   const counts = new Map<string, number>()
   for (const q of rows) for (const t of q.t) counts.set(t, (counts.get(t) || 0) + 1)
 
@@ -177,7 +180,17 @@ export async function techCounts(f: Filters): Promise<{ slug: string; n: number 
       counts.set(slug, narrowed.length)
     }
   }
-  return [...counts.entries()].map(([slug, n]) => ({ slug, n })).sort((a, b) => b.n - a.n)
+
+  // Render every populated category from the question-bank taxonomy, using
+  // its human-readable label. Preserve user-defined tags where they exist.
+  const known = new Set(meta.techs.map((tech) => tech.slug))
+  const catalog = meta.techs
+    .map((tech) => ({ slug: tech.slug, label: tech.label, n: counts.get(tech.slug) || 0 }))
+    .filter((tech) => tech.n > 0)
+  const custom = [...counts.entries()]
+    .filter(([slug, n]) => n > 0 && !known.has(slug) && f.customTechs.includes(slug))
+    .map(([slug, n]) => ({ slug, label: slug, n }))
+  return [...catalog, ...custom].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label))
 }
 
 /** Counts per part, for the category select. */

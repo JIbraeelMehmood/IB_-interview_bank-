@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { ensureSeeded, stripHtml } from '../src/lib/seed'
 import { db } from '../src/lib/db'
-import { applyFilters, DEFAULT_FILTERS, matchesSearch } from '../src/lib/queries'
+import { applyFilters, DEFAULT_FILTERS, matchesSearch, techCounts } from '../src/lib/queries'
 import type { Question } from '../src/lib/types'
 import { loadLibrary } from '../src/lib/queries'
 
@@ -29,8 +29,8 @@ beforeAll(async () => {
 })
 
 describe('the extracted bank', () => {
-  it('seeds 1,950 questions', async () => {
-    expect(await db.questions.count()).toBe(1950)
+  it('seeds every question in the current bank', async () => {
+    expect(await db.questions.count()).toBe(read('bank.json').length)
   })
 
   it('keeps the v7 question codes stable', async () => {
@@ -39,6 +39,8 @@ describe('the extracted bank', () => {
     expect(cb!.q).toBeTruthy()
     const n = await db.questions.get('N-1')
     expect(n).toBeTruthy()
+    // Markdown-imported rows use `code` rather than `id` in the source JSON.
+    expect(await db.questions.get('MD-1')).toBeTruthy()
   })
 
   it('has no duplicate codes', async () => {
@@ -61,6 +63,35 @@ describe('the extracted bank', () => {
     expect(laravel).toBeGreaterThan(50)
     const redis = await db.questions.where('t').equals('redis').count()
     expect(redis).toBeGreaterThan(5)
+  })
+
+  it('normalizes legacy aliases into canonical taxonomy slugs', async () => {
+    const all = await db.questions.toArray()
+    for (const q of all) {
+      expect(q.t).not.toContain('javascript')
+      expect(q.t).not.toContain('deployment')
+    }
+    expect(all.some((q) => q.t.includes('js'))).toBe(true)
+    expect(all.some((q) => q.t.includes('cicd'))).toBe(true)
+  })
+
+  it('exposes all populated technology categories from bank metadata', async () => {
+    const all = await db.questions.toArray()
+    const expected = new Set(all.flatMap((q) => q.t))
+    const categories = await techCounts(DEFAULT_FILTERS)
+    expect(new Set(categories.map((category) => category.slug))).toEqual(expected)
+    expect(categories.find((category) => category.slug === 'laravel')?.label).toBe('Laravel')
+    expect(categories.find((category) => category.slug === 'sql')?.label).toBe('SQL & MySQL')
+    expect(categories.length).toBeGreaterThan(40)
+  })
+
+  it('retains genuine multi-category questions for intersection filtering', async () => {
+    const all = await db.questions.toArray()
+    const intersections = all.filter((q) => q.t.length > 1)
+    expect(intersections.length).toBeGreaterThan(300)
+    const selected = intersections[0].t.slice(0, 2)
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: selected, techMode: 'and' }, new Map())
+    expect(rows.some((q) => q.code === intersections[0].code)).toBe(true)
   })
 
   it('carries the 20 hand-written translations as approved entries', async () => {
@@ -106,6 +137,30 @@ describe('filtering and search', () => {
     expect(and.map((r) => r.code).sort()).toEqual(['A', 'C'])
     const or = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'], techMode: 'or' }, map)
     expect(or).toHaveLength(3)
+  })
+
+  it('defaults to OR so multi-tech selections include individual and intersection questions', () => {
+    const all = [
+      mk('L', ['laravel']),
+      mk('R', ['react']),
+      mk('LR', ['laravel', 'react']),
+      mk('V', ['vue']),
+    ]
+    expect(DEFAULT_FILTERS.techMode).toBe('or')
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'] }, new Map())
+    expect(rows.map((r) => r.code).sort()).toEqual(['L', 'LR', 'R'])
+  })
+
+  it('keeps a single technology filter strict', () => {
+    const all = [mk('L', ['laravel']), mk('R', ['react']), mk('LR', ['laravel', 'react']), mk('G', ['generic'])]
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel'] }, new Map())
+    expect(rows.map((r) => r.code).sort()).toEqual(['L', 'LR'])
+  })
+
+  it('combines most-important with the selected technology scope', () => {
+    const all = [mk('L1', ['laravel']), mk('L2', ['laravel'], 'i'), mk('R1', ['react'], 'i'), mk('LR', ['laravel', 'react'], 'i')]
+    const rows = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'], flag: 'i' }, new Map())
+    expect(rows.map((r) => r.code).sort()).toEqual(['L2', 'LR', 'R1'])
   })
 
   it('combines technologies with a flag filter', () => {

@@ -32,7 +32,7 @@ export const LEVEL_NAME: Record<Level, string> = { j: 'Basic', m: 'Mid', s: 'Sen
 export type ExpYears = 1 | 2 | 3 | 4 | 5 | 6
 
 export const EXP_LABEL: Record<ExpYears, string> = {
-  1: '1 yr — Fresher',
+  1: '1 yr — Entry / Junior',
   2: '2 yrs — Junior',
   3: '3 yrs — Mid',
   4: '4 yrs — Mid+',

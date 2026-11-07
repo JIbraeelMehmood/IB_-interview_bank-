@@ -20,6 +20,7 @@ import { Chips, Chip, Empty, Loading, toast } from '../components/ui'
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
 import { generateQuestions } from '../lib/features'
+import { bankMeta } from '../lib/seed'
 import { aiReady, aiWhy, aiConfigured } from '../lib/ai'
 import { beginGoogleSignIn } from '../lib/auth'
 import { canInstall, promptInstall } from '../lib/install'
@@ -30,7 +31,7 @@ const PAGE = 30
 
 /** Experience bands: what each year means in plain English. */
 const EXP_TITLE: Record<number, string> = {
-  1: 'Fresher / Intern',
+  1: 'Entry / Junior (around 1 year)',
   2: 'Junior',
   3: 'Mid-level',
   4: 'Mid+ / 4 yrs',
@@ -72,7 +73,7 @@ export default function Library() {
     void run(f)
   }, [f, run])
 
-  const techs = useLiveQuery(async () => (await techCounts(f)).slice(0, 40), [f], [])
+  const techs = useLiveQuery(async () => techCounts(f), [f], [])
   const parts = useLiveQuery(async () => partCounts(f), [f], [])
   const expCounts = useLiveQuery(async () => expYearsCounts(f), [f], [])
   const unrated = useLiveQuery(() => db.ratings.count(), [], 0)
@@ -101,12 +102,16 @@ export default function Library() {
     setGenBusy(true)
     try {
       const expLabel = f.expYears ? ` for ${f.expYears} year${f.expYears > 1 ? 's' : ''} experience (${EXP_TITLE[f.expYears]})` : ''
-      const topic = (f.part || f.techs.join(' + ') || 'senior Laravel engineering') + expLabel
+      const topic = (f.part || f.techs.join(' + ') || 'software engineering and technical interview fundamentals') + expLabel
+      const taxonomy = await bankMeta()
       const made = await generateQuestions({
         topic,
         existing: rows.map((r) => r.q),
         lang: settings.lang,
         expYears: f.expYears || undefined,
+        technologies: f.techs,
+        technologyCatalog: taxonomy.techs,
+        mostImportant: f.flag === 'i',
       })
       const now = Date.now()
       for (const [i, m] of made.entries()) {
@@ -116,12 +121,12 @@ export default function Library() {
           a: m.a,
           l: f.expYears && f.expYears <= 2 ? 'j' : f.expYears && f.expYears <= 4 ? 'm' : 's',
           p: f.part || f.techs.join(' + ') || 'AI generated',
-          c: 'AI generated',
-          f: '',
-          t: f.techs,
+          c: m.integration ? 'AI integration question' : 'AI generated',
+          f: f.flag === 'i' ? 'i' : '',
+          t: m.techs,
           s: 'ai',
           expYears: f.expYears || undefined,
-          search: `${m.q} ${m.a}`.toLowerCase(),
+          search: `${m.q} ${m.a} ${m.techs.join(' ')}`.toLowerCase(),
           updatedAt: now,
         })
       }
@@ -227,7 +232,7 @@ export default function Library() {
       <div className="row">
         <input
           type="search"
-          placeholder="Search 2,481 questions…"
+          placeholder="Search questions…"
           value={f.search}
           onChange={(e) => patch({ search: e.target.value })}
           className="grow"
@@ -381,8 +386,7 @@ export default function Library() {
         </div>
       )}
 
-      {/* Technologies: tap several. AND (the default) means "has all of these",
-          so Laravel + React + Most important gives questions that are all three. */}
+      {/* Technologies: default OR includes each selected technology and their intersections. */}
       {!!techs?.length && (
         <>
           <div className="scroll-x">
@@ -392,7 +396,7 @@ export default function Library() {
                 on={f.techs.includes(t.slug)}
                 onClick={() => setF((cur) => toggleTech(cur, t.slug))}
               >
-                {t.slug}
+                {t.label}
                 <span className="n">{t.n}</span>
               </Chip>
             ))}
