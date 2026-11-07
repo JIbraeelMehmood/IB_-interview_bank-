@@ -21,11 +21,13 @@ export function QCard({
   q,
   onChanged,
   selectedTechs = [],
+  communityQuality,
 }: {
   q: Question
   onChanged?: () => void
   /** Technologies currently being filtered on — shown first in the badge row. */
   selectedTechs?: string[]
+  communityQuality?: import('../lib/community').QuestionQualityStats | null
 }) {
   const { settings } = useSettings()
   const [lang, setLang] = useState<Lang>(settings.lang)
@@ -35,7 +37,7 @@ export function QCard({
   const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote' | 'quality'>('')
   const [myVote, setMyVote] = useState<ExpYears | 0>(0)
   const [askCount, setAskCount] = useState(0)
-  const [qualityStats, setQualityStats] = useState<{ total: number; categoryOk: number; experienceOk: number; suggestedCategories?: { value: string; count: number }[]; suggestedTags?: { value: string; count: number }[]; suggestedExpYears?: { value: number; count: number }[] } | null>(null)
+  const [qualityStats, setQualityStats] = useState<import('../lib/community').QuestionQualityStats | null>(communityQuality ?? null)
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -56,11 +58,15 @@ export function QCard({
       if (live) setMyVote(vote ? vote.expYears : 0)
       const stats = await getQuestionStats(q.code)
       if (live) setAskCount(stats?.askCount || 0)
-      const quality = await getQuestionQualityStats(q.code)
-      if (live) setQualityStats(quality)
+      if (communityQuality !== undefined) {
+        if (live) setQualityStats(communityQuality)
+      } else {
+        const quality = await getQuestionQualityStats(q.code)
+        if (live) setQualityStats(quality)
+      }
     })()
     return () => { live = false }
-  }, [q.code])
+  }, [q.code, communityQuality])
 
   useEffect(() => {
     if (lang === 'en') {
@@ -437,7 +443,7 @@ export function QCard({
               experienceCorrect,
               suggestedCategory,
               suggestedTags.split(',').map((tag) => tag.trim()).filter(Boolean),
-              suggestedExpYears.split(',').map((value) => Number(value.trim())).filter((value) => Number.isInteger(value) && value >= 1 && value <= 6),
+              suggestedExpYears.split(',').map((value) => Number(value.trim())).filter((value): value is ExpYears => Number.isInteger(value) && value >= 1 && value <= 6),
             )
             setQualityStats(stats)
             toast(`Review saved. ${stats.total} community review(s) recorded.`)
