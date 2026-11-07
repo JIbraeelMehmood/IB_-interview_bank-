@@ -14,9 +14,6 @@ export interface Backup {
   app: 'interview-box'
   /** Format version: 1 = v7, 2 = translations, 3 = complete local user data. */
   v: 1 | 2 | 3
-  /** Optional v3 data; absent in older backups. */
-  audio?: AudioAsset[]
-  communityVotes?: CommunityVote[]
   at: number
   state: Record<string, any>
   /** Present from v2. */
@@ -97,6 +94,9 @@ export function download(filename: string, content: string, mime = 'application/
 
 /** Read a backup file or pasted text. Handles both formats. */
 export async function importBackup(text: string): Promise<ImportResult> {
+  if (typeof text !== 'string' || text.length > 25 * 1024 * 1024) {
+    return { ok: false, format: 0, message: 'Backup file is too large. The maximum supported size is 25 MB.' }
+  }
   let data: any
   try {
     data = JSON.parse(text)
@@ -106,8 +106,25 @@ export async function importBackup(text: string): Promise<ImportResult> {
   if (data?.app !== 'interview-box') {
     return { ok: false, format: 0, message: 'That is not an Interview Box backup.' }
   }
+  if (!data.state || typeof data.state !== 'object' || Array.isArray(data.state)) {
+    return { ok: false, format: 0, message: 'The backup is missing its data section.' }
+  }
 
-  const s = data.state || {}
+  const s = data.state
+  const ownQuestions = s.ownQuestions || s.my || []
+  if (!Array.isArray(ownQuestions) || ownQuestions.length > 100_000 ||
+      ownQuestions.some((row: unknown) => !row || typeof row !== 'object' || Array.isArray(row))) {
+    return { ok: false, format: 0, message: 'The backup contains an invalid question list.' }
+  }
+  for (const field of ['answers', 'stories', 'mocks', 'jds', 'imports', 'explains', 'audio', 'communityVotes']) {
+    if (s[field] !== undefined && (!Array.isArray(s[field]) || s[field].length > 100_000)) {
+      return { ok: false, format: 0, message: `The backup contains an invalid ${field} list.` }
+    }
+  }
+  if (data.translations !== undefined && !Array.isArray(data.translations)) {
+    return { ok: false, format: 0, message: 'The backup contains an invalid translations list.' }
+  }
+
   const isV1 = !data.translations && !s.settings
 
   const ownQuestions = s.ownQuestions || s.my || []
