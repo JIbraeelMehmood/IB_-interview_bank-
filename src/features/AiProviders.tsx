@@ -102,7 +102,7 @@ export default function AiProviders() {
     } catch (e) {
       const message = (e as Error).message || 'Could not save to server.'
       setError(message)
-      if (/not signed in|request failed \\(401\\)/i.test(message)) promptForSignIn()
+      if (/not signed in|request failed \(401\)/i.test(message)) promptForSignIn()
     } finally {
       setSaving(false)
     }
