@@ -18,6 +18,7 @@ interface RawBankQuestion {
   s?: string
   ex?: string
   tr?: Record<string, { q?: string; a?: string; hook?: string; key?: string }>
+  src?: string
 }
 
 export interface BankMeta {
@@ -30,19 +31,27 @@ export interface BankMeta {
 
 const SEED_FLAG = 'bankSeededAt'
 /** Bump when the seed logic changes so existing installs re-seed. */
-const SEED_VERSION = 6
+const SEED_VERSION = 7
 
 let cache: { bank: RawBankQuestion[]; meta: BankMeta } | null = null
 
 async function loadBank(): Promise<{ bank: RawBankQuestion[]; meta: BankMeta }> {
   if (cache) return cache
-  const [bank, meta] = await Promise.all([
+  const [baseBank, researchBank, meta] = await Promise.all([
     fetch('/data/bank.json').then((r) => {
       if (!r.ok) throw new Error('bank.json missing — run scripts/extract-v7.mjs')
       return r.json()
     }),
+    fetch('/data/research-questions.json').then((r) => (r.ok ? r.json() : [])).catch(() => []),
     fetch('/data/meta.json').then((r) => r.json()),
   ])
+  const bank = [...baseBank, ...researchBank]
+  const codes = new Set<string>()
+  for (const question of bank) {
+    const code = question.id || question.code
+    if (!code || codes.has(code)) throw new Error(`Duplicate or missing question code: ${code || '(missing)'}`)
+    codes.add(code)
+  }
   cache = { bank, meta }
   return cache
 }
@@ -190,6 +199,7 @@ function toQuestion(raw: RawBankQuestion, meta: BankMeta): Question {
     s: (raw.s || 'b') as Source,
     ex: raw.ex,
     tr: raw.tr,
+    src: raw.src,
     expYears: expYearsFor(raw),
     search: (raw.q + ' ' + plainA + ' ' + raw.p + ' ' + raw.c).toLowerCase(),
     updatedAt: Date.now(),

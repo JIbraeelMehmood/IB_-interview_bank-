@@ -1037,8 +1037,31 @@
         "ownership",
         "code review*"
       ]
+    },
+    {
+      "slug": "codeigniter",
+      "label": "CodeIgniter",
+      "keywords": [
+        "codeigniter",
+        "code igniter",
+        "codeigniter 3",
+        "codeigniter 4",
+        "ci3",
+        "ci4"
+      ]
+    },
+    {
+      "slug": "laminas",
+      "label": "Laminas / Zend Framework",
+      "keywords": [
+        "laminas",
+        "zend framework",
+        "zend mvc",
+        "mezzio",
+        "laminas servicemanager"
+      ]
     }
   ],
-  "count": 2140,
-  "builtAt": "2026-11-04"
+  "count": 2172,
+  "builtAt": "2026-11-07"
 }

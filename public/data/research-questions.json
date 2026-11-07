@@ -1,0 +1,514 @@
+[
+  {
+    "id": "RQ-001",
+    "q": "A Laravel queue job charges a customer, but the worker crashes before saving the successful payment status. The job is retried. How would you prevent a second charge and reconcile the order?",
+    "a": "Treat queue delivery as at-least-once, not exactly-once. Create a stable idempotency key for the order/payment attempt and pass it to the gateway; enforce a unique constraint for the payment attempt locally. Persist explicit states such as pending, processing, succeeded and unknown, and never blindly retry an unknown outcome. A reconciliation job should query the provider by idempotency key or reference and repair local state. Keep external calls outside long database transactions, and test the crash window.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Payment Idempotency & Queue Failure",
+    "f": "i",
+    "t": [
+      "laravel",
+      "php",
+      "queues",
+      "ecommerce",
+      "sql",
+      "api"
+    ],
+    "s": "n",
+    "src": "Research synthesis: https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX ; https://www.linkedin.com/posts/aparna-s-17311a269_laravel-php-laraveldeveloper-activity-7508186125908406272-N7We ; https://laravel.com/docs/12.x/queues"
+  },
+  {
+    "id": "RQ-002",
+    "q": "A Laravel webhook endpoint receives the same payment event several times and occasionally receives events out of order. How would you make processing safe?",
+    "a": "Verify the provider signature against the raw request body before trusting the payload. Store each provider event ID under a unique constraint so duplicate deliveries become no-ops. Do not assume arrival order: compare provider event timestamps or fetch the canonical payment state when transitions conflict. Process expensive work asynchronously, acknowledge only after durable receipt, and make each state transition idempotent. Retain enough audit data to investigate rejected or replayed events.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Webhooks & Distributed Delivery",
+    "f": "i",
+    "t": [
+      "laravel",
+      "api",
+      "webhooks",
+      "security",
+      "sql",
+      "queues"
+    ],
+    "s": "n",
+    "src": "Research synthesis: https://www.linkedin.com/posts/aparna-s-17311a269_laravel-php-laraveldeveloper-activity-7508186125908406272-N7We ; https://laravel.com/docs/12.x/queues"
+  },
+  {
+    "id": "RQ-003",
+    "q": "You must change a column type in a Laravel application with tens of millions of MySQL rows and cannot take downtime. Describe a safe rollout plan.",
+    "a": "Avoid assuming a normal ALTER is instant; first inspect the exact MySQL version, operation, table size and locking behavior on a production-sized clone. Use an expand-and-contract rollout: add a compatible new column, deploy code that can read/write both representations, backfill in bounded idempotent batches, verify counts and values, then switch reads. Keep rollback possible until the new path is proven, and remove the old column in a later release. For some changes, evaluate gh-ost or pt-online-schema-change with replication-lag and disk monitoring.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Zero-Downtime Database Migrations",
+    "f": "i",
+    "t": [
+      "laravel",
+      "sql",
+      "cicd",
+      "performance"
+    ],
+    "s": "n",
+    "src": "Research synthesis: https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX ; MySQL online DDL documentation"
+  },
+  {
+    "id": "RQ-004",
+    "q": "A third-party shipping API becomes slow and intermittently returns 5xx responses. Your Laravel checkout requests now time out. How would you isolate the failure?",
+    "a": "Set strict connection and total timeouts so PHP-FPM workers are not held indefinitely. Retry only transient failures and only when the operation is safe to repeat, using bounded exponential backoff with jitter. Move non-critical work to queues, add a circuit breaker or provider-health gate, and use a clearly defined fallback such as a cached quote only if business rules allow it. Record provider latency, status codes and correlation IDs, and alert on error rate and p95 latency.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Resilient Third-Party Integrations",
+    "f": "i",
+    "t": [
+      "laravel",
+      "api",
+      "queues",
+      "observability",
+      "performance"
+    ],
+    "s": "n",
+    "src": "Research synthesis: https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX ; https://laravel.com/docs/12.x/queues"
+  },
+  {
+    "id": "RQ-005",
+    "q": "A Laravel queue backlog grows continuously even though workers are running. How would you find the bottleneck and recover without causing duplicate work?",
+    "a": "Compare enqueue rate, completion rate, queue age, job duration, retry count and failed-job rate by queue. Inspect worker CPU and memory, database or Redis latency, external dependencies and jobs that repeatedly time out. Scale workers only after identifying whether the bottleneck is compute, I/O or a downstream service; otherwise extra workers can amplify the incident. Separate latency-sensitive queues, tune concurrency and timeouts, and make handlers idempotent before replaying failed jobs.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Queue Operations & Observability",
+    "f": "i",
+    "t": [
+      "laravel",
+      "queues",
+      "redis",
+      "observability",
+      "performance"
+    ],
+    "s": "n",
+    "src": "https://laravel.com/docs/12.x/queues"
+  },
+  {
+    "id": "RQ-006",
+    "q": "In Laravel, when would you use ShouldBeUnique, WithoutOverlapping and a database unique constraint? Are they interchangeable?",
+    "a": "They solve related but different problems. ShouldBeUnique can prevent equivalent jobs from being dispatched while a uniqueness lock exists; WithoutOverlapping prevents concurrent execution for a key. Both depend on a functioning shared cache/lock backend and need sensible expiry and failure handling. A database unique constraint protects persisted business invariants even if jobs are duplicated, workers crash or locks expire. For payments or inventory, use the database/provider as the final correctness boundary, not a cache lock alone.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Queue Concurrency & Correctness",
+    "f": "i",
+    "t": [
+      "laravel",
+      "queues",
+      "redis",
+      "sql"
+    ],
+    "s": "n",
+    "src": "https://laravel.com/docs/12.x/queues"
+  },
+  {
+    "id": "RQ-007",
+    "q": "A Laravel API endpoint is fast locally but has high p95 latency in production. Database CPU is elevated and application logs show no obvious exception. What is your investigation sequence?",
+    "a": "Start with request traces and metrics to separate application time, database time and external-service time. Capture the actual SQL and bindings, inspect query count for N+1 behavior, run EXPLAIN on representative slow queries, and check index selectivity and lock waits. Compare production data volume and query plans with staging; inspect connection-pool saturation, cache hit rate and worker saturation. Ship one measured change at a time and compare p50/p95/p99 latency and database load.",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Production Performance Debugging",
+    "f": "i",
+    "t": [
+      "laravel",
+      "php",
+      "sql",
+      "performance",
+      "observability"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/khanzada-anees_senior-laravel-developer-interview-questions-activity-7422241847898513408-lBr8"
+  },
+  {
+    "id": "RQ-008",
+    "q": "What is the difference between a Laravel database transaction and afterCommit queue dispatch? Why does the distinction matter?",
+    "a": "A database transaction makes a set of database changes atomic; it does not roll back a message already sent to an external queue or an email already delivered. Dispatching a job before the transaction commits can let a worker read data that is not committed yet, or process work for a transaction that later rolls back. Use after-commit dispatch for jobs that depend on committed records. For stronger delivery guarantees across database and broker failures, consider an outbox pattern and an idempotent consumer.",
+    "l": "m",
+    "p": "Laravel",
+    "c": "Transactions & Event Delivery",
+    "f": "i",
+    "t": [
+      "laravel",
+      "sql",
+      "queues",
+      "architecture"
+    ],
+    "s": "n",
+    "src": "https://laravel.com/docs/12.x/queues"
+  },
+  {
+    "id": "RQ-009",
+    "q": "In PHP 8.4, what problem do property hooks solve, and what trade-offs should you consider before using them in a shared codebase?",
+    "a": "Property hooks let a property define get and set behavior directly, which can replace some repetitive getter/setter methods and keep computed or validated access close to the property declaration. They can improve readability and static-analysis support when a property has a clear invariant. They do not remove the need to understand side effects, recursion and serialization behavior. Check the project's minimum PHP version and team familiarity before adopting them in a library or application that supports older runtimes.",
+    "l": "m",
+    "p": "PHP",
+    "c": "Modern PHP Language Features",
+    "f": "i",
+    "t": [
+      "php"
+    ],
+    "s": "n",
+    "src": "https://www.php.net/releases/8.4/en.php"
+  },
+  {
+    "id": "RQ-010",
+    "q": "A long-running PHP worker gradually consumes more memory after processing thousands of jobs. How would you identify and fix the leak?",
+    "a": "Reproduce the growth with a representative workload and record memory usage per job, not just process-wide peak memory. Look for static arrays, retained object references, unclosed resources, large ORM result sets and caches that grow without bounds. Process records in chunks, release references, close streams and use bounded caches; verify that extensions and native resources are not responsible. A worker memory limit and periodic restart can contain damage, but they are not a substitute for finding the retention path.",
+    "l": "m",
+    "p": "PHP",
+    "c": "Memory Management & Long-Running Processes",
+    "f": "i",
+    "t": [
+      "php",
+      "performance"
+    ],
+    "s": "n",
+    "src": "PHP manual: https://www.php.net/manual/en/features.gc.php"
+  },
+  {
+    "id": "RQ-011",
+    "q": "Explain when PHP Fibers are useful and why they do not automatically make ordinary blocking PHP code concurrent.",
+    "a": "A Fiber is a mechanism for suspending and resuming a call stack, allowing an application or async runtime to coordinate cooperative tasks. Fibers alone do not make blocking file, database or network calls non-blocking; the libraries and event loop must cooperate. They are useful beneath async frameworks and libraries that need structured suspension without deeply nested callbacks. In an interview, distinguish the language primitive from the runtime and I/O model built around it.",
+    "l": "s",
+    "p": "PHP",
+    "c": "PHP Runtime & Concurrency",
+    "f": "i",
+    "t": [
+      "php"
+    ],
+    "s": "n",
+    "src": "PHP manual: https://www.php.net/manual/en/language.fibers.php"
+  },
+  {
+    "id": "RQ-012",
+    "q": "A React component fetches search results when the query changes. A slower response for an older query sometimes overwrites the newest results. How would you prevent this race condition?",
+    "a": "Cancel the previous request with AbortController when the query changes or the component is cleaned up. Also guard state updates with a request identity or active flag because not every asynchronous operation is cancellable. Keep loading, error and empty states explicit, and debounce user input if the API should not be called on every keystroke. Test rapid query changes and unmounting, not only the happy path.",
+    "l": "m",
+    "p": "React",
+    "c": "Effects, Fetching & Race Conditions",
+    "f": "i",
+    "t": [
+      "react",
+      "js",
+      "api",
+      "testing"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/shubham-diyundi_reactjs-reactdeveloper-frontenddeveloper-activity-7499480948355289089-DuDw ; https://react.dev/reference/react/useEffect"
+  },
+  {
+    "id": "RQ-013",
+    "q": "A React page becomes slow after adding several API-driven widgets and a large table. How would you profile and improve it without adding memoization everywhere?",
+    "a": "Use React DevTools Profiler and browser performance tools to identify whether the cost is rendering, JavaScript computation, network waterfalls or layout/paint. Reduce unnecessary state coupling, split components around independent update boundaries, and virtualize large lists when DOM size is the bottleneck. Apply memo, useMemo or useCallback only when profiling shows repeated expensive work or unstable props are causing avoidable renders. Also inspect bundle size, code splitting and duplicate API requests.",
+    "l": "s",
+    "p": "React",
+    "c": "Rendering & Frontend Performance",
+    "f": "i",
+    "t": [
+      "react",
+      "js",
+      "performance"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/himanshu-naryani-45606417b_reactjs-frontendengineering-javascript-activity-7498050646185697280-a6BZ ; https://react.dev/reference/react/hooks"
+  },
+  {
+    "id": "RQ-014",
+    "q": "When can useEffect be the wrong tool in React, and what should you use instead?",
+    "a": "Do not use an Effect just to derive one piece of state from other props or state; calculate it during render or useMemo if the calculation is genuinely expensive. Handle user actions in event handlers rather than mirroring them through an Effect. Use Effects to synchronize with external systems such as subscriptions, timers or imperative browser APIs, with cleanup where needed. This reduces unnecessary render cycles and avoids dependency-driven loops.",
+    "l": "m",
+    "p": "React",
+    "c": "Hooks & Component Lifecycle",
+    "f": "i",
+    "t": [
+      "react"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/rajkumar-d-74b09a192_frontend-reactjs-interviewexperience-activity-7456581175269253120-k-AP ; https://react.dev/reference/react/useEffect"
+  },
+  {
+    "id": "RQ-015",
+    "q": "A React component wrapped in React.memo still re-renders frequently. What causes could explain this, and how would you verify them?",
+    "a": "React.memo can skip a parent-driven render when props compare equal, but it does not block renders caused by the component's own state or consumed context changing. New object, array or function references passed as props can also defeat the default shallow comparison. Profile the component and inspect which props change before adding useMemo or useCallback. Avoid custom comparators unless their correctness and cost are understood.",
+    "l": "m",
+    "p": "React",
+    "c": "Memoization & Rendering",
+    "f": "i",
+    "t": [
+      "react"
+    ],
+    "s": "n",
+    "src": "https://react.dev/reference/react/memo ; https://www.linkedin.com/posts/shubham-diyundi_reactjs-reactdeveloper-frontenddeveloper-activity-7499480948355289089-DuDw"
+  },
+  {
+    "id": "RQ-016",
+    "q": "You need to render a large, frequently updating dashboard in React while keeping typing responsive. How could useTransition or useDeferredValue help?",
+    "a": "useTransition can mark a state update as non-urgent so React may keep urgent interactions responsive while preparing the heavier update. useDeferredValue lets a slower part of the UI lag behind a rapidly changing value, such as a search input driving an expensive result list. Neither removes the underlying computation cost, so profile first and combine them with virtualization or better data processing when needed. Keep the input's immediate state separate from the deferred rendering value.",
+    "l": "s",
+    "p": "React",
+    "c": "Concurrent UI & Responsiveness",
+    "f": "i",
+    "t": [
+      "react"
+    ],
+    "s": "n",
+    "src": "https://react.dev/reference/react/hooks"
+  },
+  {
+    "id": "RQ-017",
+    "q": "A React application sends duplicate API requests in development after an Effect is added. How would you determine whether this is a bug or expected development behavior?",
+    "a": "Check whether the app is running under Strict Mode, which intentionally performs an extra setup-and-cleanup cycle for Effects in development to expose unsafe side effects. Make the Effect resilient: clean up subscriptions and timers, abort or ignore obsolete requests, and avoid assuming setup runs exactly once. Do not disable Strict Mode just to hide the symptom; verify production behavior separately and ensure the endpoint itself is safe against repeated requests.",
+    "l": "m",
+    "p": "React",
+    "c": "Strict Mode & Effect Safety",
+    "f": "i",
+    "t": [
+      "react",
+      "js",
+      "api"
+    ],
+    "s": "n",
+    "src": "https://react.dev/reference/react/StrictMode ; https://react.dev/reference/react/useEffect"
+  },
+  {
+    "id": "RQ-018",
+    "q": "What is the output order of synchronous logs, Promise callbacks and setTimeout callbacks in JavaScript, and how would you explain the event loop?",
+    "a": "The current synchronous call stack runs first. Promise reactions such as then callbacks are queued as microtasks and are processed after the stack becomes empty, before the next timer task is taken. setTimeout schedules a task after its delay threshold; it does not guarantee exact execution time. Explain the result by tracing the call stack, microtask queue and task queue, rather than memorizing one output pattern.",
+    "l": "j",
+    "p": "JavaScript",
+    "c": "Event Loop & Async Execution",
+    "f": "ci",
+    "t": [
+      "js"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/shubham-diyundi_reactjs-reactdeveloper-frontenddeveloper-activity-7499480948355289089-DuDw"
+  },
+  {
+    "id": "RQ-019",
+    "q": "You are implementing autocomplete. Explain the difference between debounce and throttle, and choose one for search requests and one for scroll handling.",
+    "a": "Debounce waits until calls stop for a configured interval, so it is usually appropriate for autocomplete where the user should finish typing before a request is sent. Throttle limits how often a function can run during continuous activity, which is useful for scroll or resize handlers. Decide whether leading and trailing calls are required, and cancel pending timers during cleanup. Neither technique replaces request cancellation or stale-response protection.",
+    "l": "j",
+    "p": "JavaScript",
+    "c": "Browser Events & Rate Control",
+    "f": "ci",
+    "t": [
+      "js"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/amitbisht23_react-frontend-javascript-activity-7461045270001266688-BdZm"
+  },
+  {
+    "id": "RQ-020",
+    "q": "A user starts an upload and navigates away before it finishes. How would you cancel the request and prevent stale UI updates in a React application?",
+    "a": "Use AbortController with fetch or an API client that supports abort signals, and abort it during Effect cleanup or when the user explicitly cancels. Keep the upload state tied to a request identity so a late completion cannot update a newer screen or upload. Distinguish cancellation from a network failure in the UI. If the server may already have received the file, design an explicit server-side cancellation or cleanup policy rather than assuming client abort rolls back server work.",
+    "l": "m",
+    "p": "JavaScript",
+    "c": "Fetch Cancellation & UI State",
+    "f": "i",
+    "t": [
+      "js",
+      "react",
+      "api"
+    ],
+    "s": "n",
+    "src": "https://react.dev/reference/react/useEffect"
+  },
+  {
+    "id": "RQ-021",
+    "q": "A Laravel + React application uses cookie-based authentication. What must be configured to protect state-changing API requests against CSRF while supporting local development and production domains?",
+    "a": "Choose a consistent same-site cookie and API-domain strategy, then configure the framework's CSRF mechanism and trusted stateful domains for the actual deployment topology. The browser must send credentials where required, and CORS must allow the exact frontend origin with credentials rather than a wildcard origin. Use HTTPS and secure cookie attributes in production, and do not treat CORS as a replacement for CSRF protection. Test login, session expiry and cross-subdomain behavior in a browser.",
+    "l": "m",
+    "p": "Laravel + React",
+    "c": "Full-Stack Authentication Integration",
+    "f": "i",
+    "t": [
+      "laravel",
+      "react",
+      "api",
+      "security"
+    ],
+    "s": "n",
+    "src": "Research synthesis: https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-laravel-activity-7506780951541272576-5lLY ; Laravel Sanctum documentation"
+  },
+  {
+    "id": "RQ-022",
+    "q": "A React frontend optimistically updates an order status after calling a Laravel API, but the server rejects the request. How should the UI recover and remain consistent?",
+    "a": "Keep a snapshot of the previous state or use a query-cache mutation mechanism that supports rollback. On failure, restore the previous value, show a useful error and preserve enough context for retry. Prefer the server response as the canonical state after success, and handle conflicts where the order changed elsewhere. Make the backend transition atomic and validate allowed state changes; optimistic UI must not become the source of truth.",
+    "l": "m",
+    "p": "Laravel + React",
+    "c": "Optimistic Updates & API Contracts",
+    "f": "i",
+    "t": [
+      "laravel",
+      "react",
+      "api",
+      "testing"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-laravel-activity-7506780951541272576-5lLY"
+  },
+  {
+    "id": "RQ-023",
+    "q": "A MySQL query returns the correct rows but becomes slow as the table grows. How would you decide whether a composite index is needed and in what column order?",
+    "a": "Start with the real query and EXPLAIN output, then inspect predicates, joins, sort order and cardinality. A composite index should reflect the access pattern; column order matters because MySQL can efficiently use the leftmost prefix, and high-selectivity columns are not an automatic universal first choice. Check whether the index covers the query and whether it adds unacceptable write and storage cost. Validate with representative data and compare execution time and rows examined.",
+    "l": "m",
+    "p": "SQL & MySQL",
+    "c": "Index Design & Query Plans",
+    "f": "i",
+    "t": [
+      "sql",
+      "performance"
+    ],
+    "s": "n",
+    "src": "https://dev.mysql.com/doc/refman/8.4/en/mysql-indexes.html"
+  },
+  {
+    "id": "RQ-024",
+    "q": "Two requests update the same inventory row at nearly the same time. How would you prevent overselling in a Laravel + MySQL application?",
+    "a": "Put the invariant in the database transaction, not only in a prior application-level read. Use a conditional atomic update such as decrementing stock only when quantity is sufficient, or lock the row with SELECT ... FOR UPDATE inside a transaction. Enforce additional uniqueness or reservation constraints where the domain requires them, and handle deadlocks with bounded retries. Test concurrent requests, because sequential unit tests will not expose the race.",
+    "l": "s",
+    "p": "SQL & MySQL",
+    "c": "Transactions & Race Conditions",
+    "f": "i",
+    "t": [
+      "sql",
+      "laravel"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-laravel-activity-7506780951541272576-5lLY"
+  },
+  {
+    "id": "RQ-025",
+    "q": "Your production Docker image contains Composer, Node build tools and development dependencies. How would you reduce its size and attack surface?",
+    "a": "Use multi-stage builds: install PHP dependencies and compile frontend assets in dedicated build stages, then copy only the production vendor directory and built assets into a minimal runtime image. Exclude .git, node_modules, tests, local caches and secrets with a carefully reviewed .dockerignore. Pin base image versions, run as a non-root user and keep runtime packages limited to what the application needs. Measure image size and build time before and after rather than quoting someone else's benchmark.",
+    "l": "m",
+    "p": "Docker & DevOps",
+    "c": "Multi-Stage Builds & Supply-Chain Hygiene",
+    "f": "i",
+    "t": [
+      "docker",
+      "cicd",
+      "security"
+    ],
+    "s": "n",
+    "src": "Docker documentation: https://docs.docker.com/build/building/multi-stage/"
+  },
+  {
+    "id": "RQ-026",
+    "q": "How would you handle application secrets in a Dockerized Laravel deployment, and why is adding .env to the image dangerous?",
+    "a": "Do not bake environment files, API keys or private certificates into the image because image layers and registries can retain them even after a later deletion. Inject secrets at runtime through the deployment platform's secret store or mounted secret files, with least-privilege access and rotation. Keep build-time arguments separate from runtime secrets, and ensure logs and crash reports do not expose values. Scan images and repository history, and rotate any credential that may already have been committed.",
+    "l": "m",
+    "p": "Docker & DevOps",
+    "c": "Container Secrets & Runtime Configuration",
+    "f": "i",
+    "t": [
+      "docker",
+      "security",
+      "cicd"
+    ],
+    "s": "n",
+    "src": "Docker documentation: https://docs.docker.com/build/building/secrets/"
+  },
+  {
+    "id": "RQ-027",
+    "q": "In CodeIgniter 4, how would you organize authentication and authorization so route protection is consistent and business rules are not duplicated in controllers?",
+    "a": "Use filters to apply authentication checks at route or route-group boundaries, and keep authorization decisions in a policy/service layer that can be reused by controllers and other entry points. Validate input with the framework's validation facilities and avoid relying on hidden navigation links as access control. Test both allowed and denied paths, including direct requests to protected routes. Keep filter configuration explicit so route coverage is reviewable.",
+    "l": "m",
+    "p": "CodeIgniter",
+    "c": "CodeIgniter 4 Filters & Authorization",
+    "f": "i",
+    "t": [
+      "codeigniter",
+      "security"
+    ],
+    "s": "n",
+    "src": "CodeIgniter 4 User Guide: https://codeigniter.com/user_guide/incoming/filters.html"
+  },
+  {
+    "id": "RQ-028",
+    "q": "You need to evolve a CodeIgniter 4 database schema across multiple environments. How would you use migrations and seeders safely?",
+    "a": "Represent schema changes as ordered migration files so development, staging and production can apply the same versioned changes. Use seeders for repeatable reference or test data, not as an uncontrolled substitute for production data migrations. Make migrations compatible with the deployment sequence, back up critical data and test both fresh installation and upgrade from the previous schema. For large tables, plan online or batched data changes separately from ordinary schema migrations.",
+    "l": "m",
+    "p": "CodeIgniter",
+    "c": "CodeIgniter 4 Migrations & Data Lifecycle",
+    "f": "i",
+    "t": [
+      "codeigniter",
+      "sql",
+      "cicd"
+    ],
+    "s": "n",
+    "src": "CodeIgniter 4 User Guide: https://codeigniter.com/user_guide/dbmgmt/migration.html"
+  },
+  {
+    "id": "RQ-029",
+    "q": "In Laminas ServiceManager, what problem do factories solve, and why should a factory not contain application business logic?",
+    "a": "A factory describes how a service and its dependencies are constructed, allowing the container to manage object creation and dependency injection. It should assemble dependencies from the container and configuration, not perform a business workflow or hide database writes during service resolution. Keeping factories small makes services easier to test and makes dependency graphs explicit. Put business rules in application services or domain objects that can be invoked deliberately.",
+    "l": "m",
+    "p": "Laminas",
+    "c": "Laminas ServiceManager & Dependency Injection",
+    "f": "i",
+    "t": [
+      "laminas",
+      "patterns"
+    ],
+    "s": "n",
+    "src": "Laminas ServiceManager documentation: https://docs.laminas.dev/laminas-servicemanager/"
+  },
+  {
+    "id": "RQ-030",
+    "q": "How does middleware composition work in a Laminas Mezzio application, and where would you put authentication, request validation and exception handling?",
+    "a": "A middleware pipeline passes a request through an ordered sequence of components, each of which can return a response or delegate to the next middleware. Exception handling should wrap the pipeline so downstream failures are converted consistently; authentication should run before protected handlers, while validation should be close to the boundary that understands the request contract. Keep middleware focused on cross-cutting concerns and leave domain decisions to application services. Test ordering because a misplaced middleware can bypass security or error handling.",
+    "l": "s",
+    "p": "Laminas",
+    "c": "Mezzio Middleware Pipeline",
+    "f": "i",
+    "t": [
+      "laminas",
+      "api",
+      "security",
+      "architecture"
+    ],
+    "s": "n",
+    "src": "Laminas Mezzio documentation: https://docs.mezzio.dev/mezzio/"
+  },
+  {
+    "id": "RQ-031",
+    "q": "A REST API is called by multiple clients and one client retries after a network timeout. How would you design idempotent create operations without rejecting legitimate new requests?",
+    "a": "Require a client-generated idempotency key scoped to the authenticated principal and operation, and store the key with a request hash and the original result under a unique constraint. If the same key and same payload arrive again, return the stored outcome; if the payload differs, reject the reuse. Define key retention and behavior for requests still processing, and make the business transaction and idempotency record atomic where possible. This prevents duplicate effects without treating every identical payload as the same user intent.",
+    "l": "s",
+    "p": "APIs",
+    "c": "Idempotent API Design",
+    "f": "i",
+    "t": [
+      "api",
+      "sql",
+      "security"
+    ],
+    "s": "n",
+    "src": "https://www.linkedin.com/posts/aparna-s-17311a269_laravel-php-laraveldeveloper-activity-7508186125908406272-N7We"
+  },
+  {
+    "id": "RQ-032",
+    "q": "A production API has a sudden increase in 401 and 403 responses after a deployment. What evidence would you collect before changing authentication code?",
+    "a": "Break the errors down by route, client, token/session type, deployment version and time window. Check token expiry, signing keys, cookie domain and SameSite settings, clock drift, permission changes and any middleware ordering changes. Compare a known-good request with a failing one while redacting credentials, and inspect structured logs with correlation IDs. Roll back or disable the narrowest suspect change if customer impact is high, then add regression tests for the actual failure mode.",
+    "l": "s",
+    "p": "APIs",
+    "c": "Authentication Incident Diagnosis",
+    "f": "i",
+    "t": [
+      "api",
+      "security",
+      "observability"
+    ],
+    "s": "n",
+    "src": "Research synthesis: https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-laravel-activity-7506780951541272576-5lLY"
+  }
+]
