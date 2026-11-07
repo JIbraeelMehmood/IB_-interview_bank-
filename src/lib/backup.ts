@@ -126,8 +126,6 @@ export async function importBackup(text: string): Promise<ImportResult> {
   }
 
   const isV1 = !data.translations && !s.settings
-
-  const ownQuestions = s.ownQuestions || s.my || []
   const ratings = s.ratings || []
   const reviews = s.reviews || []
   const answers = s.answers || []
