@@ -139,7 +139,12 @@ export default function App() {
       toast('Some changes could not sync yet. Please try signing out again in a moment.')
       return
     }
-    try { await accountRequest('/api/auth/logout', {}) } catch { /* local sign-out still proceeds */ }
+    try {
+      await accountRequest('/api/auth/logout', {})
+    } catch {
+      toast('Could not end your server session. Please try again before signing out.')
+      return
+    }
     localStorage.removeItem('ibx-user-cache')
     // Move to an isolated guest workspace so the next visitor cannot see this account's local data.
     await enterGuest()
