@@ -28,9 +28,10 @@ import Help from './features/Help'
 import { initGateway } from './lib/freeGateway'
 import { checkTtsServer } from './lib/ttsClient'
 import { refreshQuestionStats } from './lib/community'
+import { db } from './lib/db'
 
 export default function App() {
-  const { loaded, init } = useSettings()
+  const { loaded, init, settings, toggleTheme } = useSettings()
   const [ready, setReady] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
@@ -127,8 +128,17 @@ export default function App() {
     setAuthChecked(true)
   }
   async function signOut() {
-    // Best-effort upload before ending the session; pending rows remain local if offline.
-    if (online) await flush()
+    // Never switch to a guest workspace while private changes are still queued.
+    // This prevents an offline sign-out from discarding unsynced account data.
+    if (!online) {
+      toast('Reconnect to the internet before signing out so your progress can sync safely.')
+      return
+    }
+    await flush()
+    if (await db.outbox.count()) {
+      toast('Some changes could not sync yet. Please try signing out again in a moment.')
+      return
+    }
     try { await accountRequest('/api/auth/logout', {}) } catch { /* local sign-out still proceeds */ }
     localStorage.removeItem('ibx-user-cache')
     // Move to an isolated guest workspace so the next visitor cannot see this account's local data.
@@ -145,12 +155,13 @@ export default function App() {
       <header className="top">
         <div className="wrap">
           <Link to="/library" className="logo" style={{ textDecoration: 'none' }}>
-            <span className="box" aria-hidden="true">📦</span><span>Interview Box</span>
+            <span className="box" aria-hidden="true">IB</span><span>Interview Box</span>
           </Link>
           <span className="ai-state">
             {!online ? <><i className="dot" /> Offline</> : aiOn ? <><i className="dot on" /> AI ready</> :
               <><i className="dot" /><Link to="/help" title={aiWhy()}>AI off</Link></>}
           </span>
+          <button className="iconbtn" type="button" onClick={toggleTheme} aria-label="Change color theme" title={`Theme: ${settings.theme} (click to change)`}>{settings.theme === "dark" ? "☀" : settings.theme === "light" ? "◐" : "☾"}</button>
           <Link className="iconbtn" to="/ai-providers" aria-label="AI Providers" title="Connect AI providers">🔗</Link>
           {user ? (
             <button className="iconbtn" type="button" onClick={() => void signOut()} aria-label="Sign out" title={user.email}>↪</button>
