@@ -61,9 +61,9 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
             gap: 10,
             padding: '10px 16px',
             borderRadius: 8,
-            border: '1.5px solid var(--border, #ddd)',
-            background: '#fff',
-            color: '#222',
+            border: '1.5px solid var(--line)',
+            background: 'var(--card)',
+            color: 'var(--ink)',
             fontWeight: 600,
             fontSize: 15,
             cursor: 'pointer',
@@ -75,7 +75,7 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--border, #ddd)' }} />
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--line)' }} />
           <span className="muted" style={{ fontSize: 12 }}>or use email</span>
           <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--border, #ddd)' }} />
         </div>
