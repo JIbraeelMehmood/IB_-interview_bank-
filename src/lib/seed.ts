@@ -84,11 +84,9 @@ function expYearsFor(raw: RawBankQuestion): ExpYears {
   const hay = `${raw.q} ${raw.p} ${raw.c}`.toLowerCase()
 
   if (raw.l === 'j') {
-    // Band 1 — true fresher/intern fundamentals: definitions, "what is X?" basics
-    const isDefinition =
-      /\bwhat is\b|\bwhat are\b|\bdefine\b|\bexplain what\b/.test(raw.q.toLowerCase()) ||
-      /\bfundamental|basic|beginner|junior|entry.level|intern|freshers?\b/.test(hay)
-    return isDefinition ? 1 : 2
+    // The 1-year filter includes basic concepts and straightforward junior
+    // implementation tasks, not definitions only.
+    return 1
   }
 
   if (raw.l === 'm') {
