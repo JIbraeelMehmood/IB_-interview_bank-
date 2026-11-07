@@ -9,33 +9,39 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   try {
     const code = String(req.method === 'GET' ? req.query?.code || '' : req.body?.code || '').trim()
-    if (!code || code.length > 120) {
+    const codes = req.method === 'GET'
+      ? [...new Set(String(req.query?.codes || '').split(',').map((value) => value.trim()).filter(Boolean))].slice(0, 100)
+      : []
+    if (req.method === 'GET' ? (!code && !codes.length) : (!code || code.length > 120)) {
       return res.status(400).json({ error: 'A valid question code is required.' })
+    }
+    if (codes.some((value) => value.length > 120)) {
+      return res.status(400).json({ error: 'One or more question codes are invalid.' })
     }
 
     const db = await getDb()
     const reviews = db.collection('question_quality_votes')
 
-    const aggregateStats = async () => {
+    const aggregateStats = async (questionCode: string) => {
       const [total, categoryOk, experienceOk, categoryRows, tagRows, expRows] = await Promise.all([
-        reviews.countDocuments({ code }),
-        reviews.countDocuments({ code, categoryCorrect: true }),
-        reviews.countDocuments({ code, experienceCorrect: true }),
+        reviews.countDocuments({ code: questionCode }),
+        reviews.countDocuments({ code: questionCode, categoryCorrect: true }),
+        reviews.countDocuments({ code: questionCode, experienceCorrect: true }),
         reviews.aggregate([
-          { $match: { code, suggestedCategory: { $type: 'string', $ne: '' } } },
+          { $match: { code: questionCode, suggestedCategory: { $type: 'string', $ne: '' } } },
           { $group: { _id: '$suggestedCategory', count: { $sum: 1 } } },
           { $sort: { count: -1, _id: 1 } },
           { $limit: 10 },
         ]).toArray(),
         reviews.aggregate([
-          { $match: { code, suggestedTags: { $type: 'array' } } },
+          { $match: { code: questionCode, suggestedTags: { $type: 'array' } } },
           { $unwind: '$suggestedTags' },
           { $group: { _id: '$suggestedTags', count: { $sum: 1 } } },
           { $sort: { count: -1, _id: 1 } },
           { $limit: 20 },
         ]).toArray(),
         reviews.aggregate([
-          { $match: { code, suggestedExpYears: { $type: 'array' } } },
+          { $match: { code: questionCode, suggestedExpYears: { $type: 'array' } } },
           { $unwind: '$suggestedExpYears' },
           { $group: { _id: '$suggestedExpYears', count: { $sum: 1 } } },
           { $sort: { count: -1, _id: 1 } },
@@ -54,7 +60,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     }
 
     if (req.method === 'GET') {
-      return res.status(200).json({ stats: await aggregateStats() })
+      if (codes.length) {
+        const entries = await Promise.all(codes.map(async (questionCode) => [questionCode, await aggregateStats(questionCode)] as const))
+        return res.status(200).json({ statsByCode: Object.fromEntries(entries) })
+      }
+      return res.status(200).json({ stats: await aggregateStats(code) })
     }
 
     const user = await currentUser(req)
@@ -108,7 +118,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       { upsert: true },
     )
 
-    return res.status(200).json({ ok: true, stats: await aggregateStats() })
+    return res.status(200).json({ ok: true, stats: await aggregateStats(code) })
   } catch (error) {
     console.error('quality vote failed', error)
     return res.status(500).json({ error: 'Could not save question review.' })
