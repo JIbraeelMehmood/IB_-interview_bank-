@@ -37,12 +37,17 @@ describe('the extracted bank', () => {
   it('includes manually reviewed research additions with exact technology tags', async () => {
     const additions = read('research-questions.json') as any[]
     expect(additions.length).toBe(25)
+    const ids = additions.map((q: any) => q.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    const allTitles = [...(read('bank.json') as any[]), ...additions].map((q: any) => q.q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim())
+    expect(new Set(allTitles).size).toBe(allTitles.length)
     const meta = read('meta.json') as any
     const allowed = new Set(meta.techs.map((t: any) => t.slug))
     for (const raw of additions) {
       const q = await db.questions.get(raw.id)
       expect(q).toBeTruthy()
-      expect(q!.reviewStatus).toBe('human-reviewed')
+      expect(q!.reviewStatus).toBe('source-backed-draft')
+      expect(q!.sourceRefs?.every((url) => /^https:\/\//.test(url))).toBe(true)
       expect(q!.primaryTech).toBe(raw.primaryTech)
       expect(q!.t).toEqual([raw.primaryTech, ...(raw.relatedTechs || [])])
       expect(q!.t.every((tag) => allowed.has(tag))).toBe(true)
