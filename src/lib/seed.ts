@@ -57,23 +57,15 @@ function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
     if (own.has(tech.slug)) continue
     for (const kw of tech.keywords) {
       if (!kw) continue
-      // Match whole terms/phrases so "react" does not tag "reactive",
-      // while a trailing * still supports intentional word-prefix keywords.
+      // Match whole terms/phrases so "react" does not tag "reactive".
+      // A trailing * intentionally means a word-prefix match.
       const prefix = kw.endsWith('*')
-      const term = (prefix ? kw.slice(0, -1) : kw).replace(/[.*+?^${}()|[\]\\]/g, '\\      // v7 used simple substring matching with a trailing * meaning "word prefix".
-      if (kw.endsWith('*')) {
-        if (hay.includes(kw.slice(0, -1))) {
-          own.add(tech.slug)
-          break
-        }
-      } else if (hay.includes(kw)) {
-        own.add(tech.slug)
-        break
-      }')
-      const pattern = prefix
-        ? new RegExp(`(?:^|[^a-z0-9])${term}[a-z0-9]*(?=$|[^a-z0-9])`)
-        : new RegExp(`(?:^|[^a-z0-9])${term}(?=$|[^a-z0-9])`)
-      if (pattern.test(hay)) {
+      const term = kw.replace(/\\*$/, '').replace(/[^a-z0-9]+/g, ' ').trim()
+      const normalizedHay = hay.replace(/[^a-z0-9]+/g, ' ').trim()
+      const matched = prefix
+        ? normalizedHay.split(' ').some((word) => word.startsWith(term))
+        : (` ${normalizedHay} `).includes(` ${term} `)
+      if (matched) {
         own.add(tech.slug)
         break
       }
