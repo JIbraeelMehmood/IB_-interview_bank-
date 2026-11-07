@@ -7,7 +7,7 @@ import { getOrTranslate, getTranslation, spokenText, LANG_LABEL } from '../lib/t
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
 import { queue } from '../lib/sync'
-import { voteQuestion, hasVoted, getQuestionStats, reviewQuestionQuality } from '../lib/community'
+import { voteQuestion, hasVoted, getQuestionStats, reviewQuestionQuality, getQuestionQualityStats } from '../lib/community'
 import { LANGS, LANG_NAME, LEVEL_NAME, EXP_SHORT, EXP_LABEL, type Lang, type Question, type Translation, type ExpYears } from '../lib/types'
 import { Md, Sheet, toast } from './ui'
 import { explain, explainKey, getRefAnswer } from '../lib/features'
@@ -34,6 +34,7 @@ export function QCard({
   const [open, setOpen] = useState<'' | 'explain' | 'ai' | 'ref' | 'vote' | 'quality'>('')
   const [myVote, setMyVote] = useState<ExpYears | 0>(0)
   const [askCount, setAskCount] = useState(0)
+  const [qualityStats, setQualityStats] = useState<{ total: number; categoryOk: number; experienceOk: number } | null>(null)
   const [explainOut, setExplainOut] = useState<ExplainState>({
     focus: 'both',
     style: 'simple',
@@ -54,6 +55,8 @@ export function QCard({
       if (live) setMyVote(vote ? vote.expYears : 0)
       const stats = await getQuestionStats(q.code)
       if (live) setAskCount(stats?.askCount || 0)
+      const quality = await getQuestionQualityStats(q.code)
+      if (live) setQualityStats(quality)
     })()
     return () => { live = false }
   }, [q.code])
@@ -300,8 +303,15 @@ export function QCard({
             onClick={() => setOpen('quality')}
             title="Review whether this question matches its category and experience level"
           >
-            ✓ Category / level?
+            ✓ Review classification {qualityStats?.total ? `· ${qualityStats.total}` : ''}
           </button>
+          {qualityStats && qualityStats.total > 0 && (
+            <div className="tiny muted" aria-label="Community classification review results">
+              Community: Category {Math.round((qualityStats.categoryOk / qualityStats.total) * 100)}% correct
+              {' · '}Experience {Math.round((qualityStats.experienceOk / qualityStats.total) * 100)}% correct
+              {' · '}{qualityStats.total} review{qualityStats.total === 1 ? '' : 's'}
+            </div>
+          )}
           {ankiAvailable() && (
             <button
               className="btn sm"
@@ -416,6 +426,7 @@ export function QCard({
               categoryCorrect,
               experienceCorrect,
             )
+            setQualityStats(stats)
             toast(`Review saved. ${stats.total} community review(s) recorded.`)
             setOpen('')
           }}
