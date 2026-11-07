@@ -206,12 +206,20 @@ export async function techCounts(f: Filters): Promise<{ slug: string; label: str
   const base: Filters = { ...f, techs: [], techMode: 'or' }
   const [rows, meta] = await Promise.all([loadLibrary(base), bankMeta()])
   const counts = new Map<string, number>()
-  for (const q of rows) for (const t of q.t) counts.set(t, (counts.get(t) || 0) + 1)
-
-  if (f.techMode === 'and' && f.techs.length > 1) {
-    for (const slug of f.techs) {
-      const narrowed = await loadLibrary({ ...f, techs: [slug] })
-      counts.set(slug, narrowed.length)
+  // Chip counts use the same dynamic relationship logic as the results. This
+  // keeps counts useful when a technology is selected indirectly through a
+  // related stack tag, while still respecting the other active filters.
+  for (const tech of meta.techs) {
+    const matching = applyFilters(
+      rows,
+      { ...f, techs: [tech.slug], techMode: 'or' },
+      new Map(),
+    )
+    if (matching.length) counts.set(tech.slug, matching.length)
+  }
+  for (const q of rows) {
+    for (const t of q.t) {
+      if (f.customTechs.includes(t)) counts.set(t, (counts.get(t) || 0) + 1)
     }
   }
 
