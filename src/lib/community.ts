@@ -43,6 +43,12 @@ export async function voteQuestion(
 
 /** Remove the user's vote for a question. */
 export async function unvoteQuestion(code: string): Promise<void> {
+  if (!hasCachedAccount()) {
+    promptForSignIn()
+    throw new Error('Please sign in to remove your interview vote.')
+  }
+  // Delete locally first so the UI responds immediately. The queued operation
+  // is account-scoped and will be retried when this device is online.
   await db.communityVotes.delete(code)
   await queue('communityVoteDelete', { code, updatedAt: Date.now() })
 }
