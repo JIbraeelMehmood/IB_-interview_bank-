@@ -30,7 +30,7 @@ const PAGE = 30
 
 /** Experience bands: what each year means in plain English. */
 const EXP_TITLE: Record<number, string> = {
-  1: 'Fresher / Intern',
+  1: 'Entry / Junior (around 1 year)',
   2: 'Junior',
   3: 'Mid-level',
   4: 'Mid+ / 4 yrs',
@@ -381,8 +381,7 @@ export default function Library() {
         </div>
       )}
 
-      {/* Technologies: tap several. AND (the default) means "has all of these",
-          so Laravel + React + Most important gives questions that are all three. */}
+      {/* Technologies: default OR includes each selected technology and their intersections. */}
       {!!techs?.length && (
         <>
           <div className="scroll-x">
