@@ -419,13 +419,16 @@ export function QCard({
         <QualityReviewSheet
           q={q}
           onClose={() => setOpen('')}
-          onSubmit={async (categoryCorrect, experienceCorrect) => {
+          onSubmit={async (categoryCorrect, experienceCorrect, suggestedCategory, suggestedTags, suggestedExpYears) => {
             const stats = await reviewQuestionQuality(
               q.code,
               q.p,
               q.expYears || 1,
               categoryCorrect,
               experienceCorrect,
+              suggestedCategory,
+              suggestedTags.split(',').map((tag) => tag.trim()).filter(Boolean),
+              suggestedExpYears.split(',').map((value) => Number(value.trim())).filter((value) => Number.isInteger(value) && value >= 1 && value <= 6),
             )
             setQualityStats(stats)
             toast(`Review saved. ${stats.total} community review(s) recorded.`)
@@ -465,10 +468,13 @@ function QualityReviewSheet({
 }: {
   q: Question
   onClose: () => void
-  onSubmit: (categoryCorrect: boolean, experienceCorrect: boolean) => Promise<void>
+  onSubmit: (categoryCorrect: boolean, experienceCorrect: boolean, suggestedCategory: string, suggestedTags: string, suggestedExpYears: string) => Promise<void>
 }) {
   const [categoryCorrect, setCategoryCorrect] = useState<boolean | null>(null)
   const [experienceCorrect, setExperienceCorrect] = useState<boolean | null>(null)
+  const [suggestedCategory, setSuggestedCategory] = useState('')
+  const [suggestedTags, setSuggestedTags] = useState(q.t.join(', '))
+  const [suggestedExpYears, setSuggestedExpYears] = useState(q.expYears ? String(q.expYears) : '')
   const [busy, setBusy] = useState(false)
   return (
     <Sheet title="Is this question classified correctly?" onClose={onClose}>
@@ -488,19 +494,36 @@ function QualityReviewSheet({
             <button className={`btn sm ${experienceCorrect === false ? 'primary' : ''}`} onClick={() => setExperienceCorrect(false)}>Incorrect</button>
           </div>
         </div>
+        <div className="card stack-sm">
+          <b className="small">Suggest the correct classification (optional)</b>
+          <label className="fld">
+            Correct category
+            <input value={suggestedCategory} onChange={(e) => setSuggestedCategory(e.target.value)} placeholder="e.g. Backend Development" maxLength={120} />
+          </label>
+          <label className="fld">
+            Correct technology tags
+            <input value={suggestedTags} onChange={(e) => setSuggestedTags(e.target.value)} placeholder="Laravel, PHP, MySQL, Docker, AWS" maxLength={500} />
+            <span className="tiny muted">Separate tags with commas.</span>
+          </label>
+          <label className="fld">
+            Correct experience levels
+            <input value={suggestedExpYears} onChange={(e) => setSuggestedExpYears(e.target.value)} placeholder="1, 2, 3" maxLength={40} />
+            <span className="tiny muted">Enter one or more experience bands (1–6), separated by commas.</span>
+          </label>
+        </div>
         <button
           className="btn primary"
           disabled={categoryCorrect === null || experienceCorrect === null || busy}
           onClick={async () => {
             setBusy(true)
-            try { await onSubmit(categoryCorrect!, experienceCorrect!) }
+            try { await onSubmit(categoryCorrect!, experienceCorrect!, suggestedCategory, suggestedTags, suggestedExpYears) }
             catch (e) { toast((e as Error).message) }
             finally { setBusy(false) }
           }}
         >
           {busy ? 'Submitting…' : 'Submit review'}
         </button>
-        <p className="tiny muted">One review per signed-in account per question. Reviews help identify questions that need category or experience corrections.</p>
+        <p className="tiny muted">One review per signed-in account per question. Suggestions are stored and counted to help improve question categories, technology tags and experience targeting.</p>
       </div>
     </Sheet>
   )
