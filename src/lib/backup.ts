@@ -7,13 +7,16 @@
  */
 
 import { db, deviceId, TR_LIMIT } from './db'
-import type { Lang, Translation } from './types'
+import type { AudioAsset, CommunityVote, ExplainEntry, Lang, Translation } from './types'
 import { DEFAULT_SETTINGS, useSettings } from './settings'
 
 export interface Backup {
   app: 'interview-box'
-  /** Format version: 1 = v7, 2 = this build. */
-  v: 1 | 2
+  /** Format version: 1 = v7, 2 = translations, 3 = complete local user data. */
+  v: 1 | 2 | 3
+  /** Optional v3 data; absent in older backups. */
+  audio?: AudioAsset[]
+  communityVotes?: CommunityVote[]
   at: number
   state: Record<string, any>
   /** Present from v2. */
@@ -24,7 +27,7 @@ export interface Backup {
 /** Build a full backup, including translations. */
 export async function makeBackup(includeTranslations = true): Promise<Backup> {
   const settings = useSettings.getState().settings
-  const [questions, ratings, reviews, answers, stories, mocks, jds, imports, explains] =
+  const [questions, ratings, reviews, answers, stories, mocks, jds, imports, explains, audio, communityVotes] =
     await Promise.all([
       db.questions.toArray(),
       db.ratings.toArray(),
@@ -35,6 +38,8 @@ export async function makeBackup(includeTranslations = true): Promise<Backup> {
       db.jds.toArray(),
       db.imports.toArray(),
       db.explains.toArray(),
+      db.audio.toArray(),
+      db.communityVotes.toArray(),
     ])
 
   // Only user-added questions, not the 1,950 built-in ones.
@@ -50,12 +55,14 @@ export async function makeBackup(includeTranslations = true): Promise<Backup> {
     jds,
     imports,
     explains,
+    audio,
+    communityVotes,
     device: deviceId(),
   }
 
   const backup: Backup = {
     app: 'interview-box',
-    v: 2,
+    v: 3,
     at: Date.now(),
     state,
     counts: {
@@ -111,6 +118,9 @@ export async function importBackup(text: string): Promise<ImportResult> {
   const mocks = s.mocks || s.hist || []
   const jds = s.jds || (s.jd ? [s.jd] : [])
   const imports = s.imports || []
+  const explainRows: ExplainEntry[] = Array.isArray(s.explains) ? s.explains : []
+  const audioRows: AudioAsset[] = Array.isArray(s.audio) ? s.audio : []
+  const communityVoteRows: CommunityVote[] = Array.isArray(s.communityVotes) ? s.communityVotes : []
 
   // v7 ratings were a plain `{id: 1|2|3}` map.
   const ratingRows: any[] = Array.isArray(ratings)
@@ -169,6 +179,8 @@ export async function importBackup(text: string): Promise<ImportResult> {
         db.imports,
         db.translations,
         db.explains,
+        db.audio,
+        db.communityVotes,
         db.settings,
       ],
       async () => {
@@ -180,6 +192,9 @@ export async function importBackup(text: string): Promise<ImportResult> {
         if (mocks.length) await db.mocks.bulkPut(mocks)
         if (jds.length) await db.jds.bulkPut(jds)
         if (imports.length) await db.imports.bulkPut(imports)
+        if (explainRows.length) await db.explains.bulkPut(explainRows)
+        if (audioRows.length) await db.audio.bulkPut(audioRows)
+        if (communityVoteRows.length) await db.communityVotes.bulkPut(communityVoteRows)
         if (Array.isArray(data.translations) && data.translations.length) {
           await db.translations.bulkPut(
             data.translations.map((t: Translation) => ({ ...t, t: t.t || Date.now() })),
@@ -208,6 +223,9 @@ export async function importBackup(text: string): Promise<ImportResult> {
       reviews: reviewRows.length,
       answers: answers.length,
       translations: data.translations?.length || 0,
+      explanations: explainRows.length,
+      audio: audioRows.length,
+      communityVotes: communityVoteRows.length,
     },
   }
 }
