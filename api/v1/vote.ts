@@ -27,6 +27,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     const db = await getDb()
     const votes = db.collection('community_votes')
+    const now = Date.now()
 
     // Upsert: one vote per user per question
     const id = `${user.id}:${code}`
@@ -38,8 +39,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           code,
           expYears,
           company: company || null,
-          at: Date.now(),
-          updatedAt: Date.now(),
+          at: now,
+          updatedAt: now,
         },
       },
       { upsert: true },
