@@ -27,6 +27,8 @@ export type ApiRequest = {
   method?: string
   headers: Record<string, string | string[] | undefined>
   body?: any
+  query?: Record<string, string | string[] | undefined>
+  url?: string
   socket?: { remoteAddress?: string }
 }
 export type ApiResponse = {
@@ -46,6 +48,12 @@ let _indexSetup: Promise<void> | null = null
 async function ensureIndexes(db: Db): Promise<void> {
   if (_indexSetup) return _indexSetup
   _indexSetup = (async () => {
+    // Ensure collections exist before listIndexes (a first-time signup may be
+    // the request that creates them). Concurrent cold starts may race safely.
+    for (const name of ['users', 'sessions']) {
+      try { await db.createCollection(name) }
+      catch (error) { if ((error as { code?: number }).code !== 48) throw error }
+    }
     const users = db.collection<User>('users')
     const sessions = db.collection<Session>('sessions')
     // Atlas may already contain indexes created with older options. Calling
