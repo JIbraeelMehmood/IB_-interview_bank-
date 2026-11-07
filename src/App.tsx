@@ -59,6 +59,8 @@ export default function App() {
 
   async function enterGuest() {
     setUser(null)
+    // Keep guest-local data isolated from a previous signed-in account.
+    await activateAccount('guest')
     await init()
     try { await ensureSeeded() } catch { /* Library displays seed errors */ }
     setReady(true)
