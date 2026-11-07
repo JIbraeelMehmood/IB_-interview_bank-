@@ -176,8 +176,10 @@ function expYearsFor(raw: RawBankQuestion): ExpYears {
 
 function toQuestion(raw: RawBankQuestion, meta: BankMeta): Question {
   const plainA = stripHtml(raw.a)
+  const code = raw.id || raw.code
+  if (!code) throw new Error('Question bank record is missing both id and code')
   return {
-    code: raw.id || raw.code || `IMPORTED-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    code,
     q: raw.q,
     a: raw.a,
     l: raw.l,
