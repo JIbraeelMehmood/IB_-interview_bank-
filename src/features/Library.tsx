@@ -20,6 +20,7 @@ import { Chips, Chip, Empty, Loading, toast } from '../components/ui'
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
 import { generateQuestions } from '../lib/features'
+import { bankMeta } from '../lib/seed'
 import { aiReady, aiWhy, aiConfigured } from '../lib/ai'
 import { beginGoogleSignIn } from '../lib/auth'
 import { canInstall, promptInstall } from '../lib/install'
@@ -102,12 +103,14 @@ export default function Library() {
     try {
       const expLabel = f.expYears ? ` for ${f.expYears} year${f.expYears > 1 ? 's' : ''} experience (${EXP_TITLE[f.expYears]})` : ''
       const topic = (f.part || f.techs.join(' + ') || 'software engineering and technical interview fundamentals') + expLabel
+      const taxonomy = await bankMeta()
       const made = await generateQuestions({
         topic,
         existing: rows.map((r) => r.q),
         lang: settings.lang,
         expYears: f.expYears || undefined,
         technologies: f.techs,
+        technologyCatalog: taxonomy.techs,
         mostImportant: f.flag === 'i',
       })
       const now = Date.now()
