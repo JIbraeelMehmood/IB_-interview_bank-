@@ -80,7 +80,7 @@ export async function generateQuestions(opts: {
   signal?: AbortSignal
 }): Promise<{ q: string; a: string; techs: string[]; integration: boolean }[]> {
   const count = opts.count || 8
-  const technologies = [...new Set((opts.technologies?.length ? opts.technologies : opts.topic.split(/\\s*\\+\\s*/)).map((t) => t.toLowerCase().trim()).filter(Boolean))]
+  const technologies = [...new Set((opts.technologies?.length ? opts.technologies : opts.topic.split(/\s*\+\s*/)).map((t) => t.toLowerCase().trim()).filter(Boolean))]
   const expContext = opts.expYears
     ? ({
         1: 'around 1 year: fundamentals, basic syntax, simple CRUD, common implementation tasks and beginner debugging; no senior architecture questions',
