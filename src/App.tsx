@@ -80,9 +80,24 @@ export default function App() {
       if (!alive) return
       const msg = String(error?.message || '')
       // A missing or expired session is normal: public browsing uses guest mode.
-      if (/Request failed \((401|403)\)/.test(msg)) localStorage.removeItem('ibx-user-cache')
-      // Auth API outages must not prevent access to the public question bank.
-      await enterGuest()
+      if (/Request failed \((401|403)\)/.test(msg)) {
+        localStorage.removeItem('ibx-user-cache')
+        await enterGuest()
+        return
+      }
+      // If the auth API is temporarily unavailable, retain a previously
+      // signed-in offline workspace. New visitors still enter as guests.
+      try {
+        const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+        if (cached?.id && cached.email) {
+          await activateAccount(cached.id)
+          await enterApp(cached)
+        } else {
+          await enterGuest()
+        }
+      } catch {
+        await enterGuest()
+      }
     }).finally(() => { if (alive) setAuthChecked(true) })
     return () => { alive = false }
   }, [])
