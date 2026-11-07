@@ -36,7 +36,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [sessionExpiredAccount, setSessionExpiredAccount] = useState<string | null>(null)
-  const [user, setUser) = useState<AccountUser | null>(null)
+  const [user, setUser] = useState<AccountUser | null>(null)
   const [due, setDue] = useState(0)
   const [online, setOnline] = useState(navigator.onLine)
   const location = useLocation()
@@ -233,7 +233,7 @@ export default function App() {
               <h2 style={{ fontSize: '1.1rem' }}>{sessionExpiredAccount ? 'Recover your saved progress' : 'Sign in to continue'}</h2>
               {!sessionExpiredAccount && <button className="btn sm ghost" onClick={() => setAuthOpen(false)} aria-label="Close sign in">✕</button>}
             </div>
-            <Auth expectedAccountId={sessionExpiredAccount || undefined} onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={sessionExpiredAccount ? undefined : () => setAuthOpen(false)} />
+            <Auth expectedAccountId={sessionExpiredAccount || undefined} onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={sessionExpiredAccount ? () => {} : () => setAuthOpen(false)} />
           </div>
         </div>
       )}
