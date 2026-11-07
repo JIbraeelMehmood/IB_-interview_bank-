@@ -61,8 +61,47 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     if (req.method === 'GET') {
       if (codes.length) {
-        const entries = await Promise.all(codes.map(async (questionCode) => [questionCode, await aggregateStats(questionCode)] as const))
-        return res.status(200).json({ statsByCode: Object.fromEntries(entries) })
+        const [totals, categories, tags, experiences] = await reviews.aggregate([
+          { $match: { code: { $in: codes } } },
+          { $facet: {
+            totals: [
+              { $group: { _id: '$code', total: { $sum: 1 }, categoryOk: { $sum: { $cond: ['$categoryCorrect', 1, 0] } }, experienceOk: { $sum: { $cond: ['$experienceCorrect', 1, 0] } } } },
+            ],
+            categories: [
+              { $match: { suggestedCategory: { $type: 'string', $ne: '' } } },
+              { $group: { _id: { code: '$code', value: '$suggestedCategory' }, count: { $sum: 1 } } },
+              { $sort: { count: -1 } },
+            ],
+            tags: [
+              { $unwind: '$suggestedTags' },
+              { $group: { _id: { code: '$code', value: '$suggestedTags' }, count: { $sum: 1 } } },
+              { $sort: { count: -1 } },
+            ],
+            experiences: [
+              { $unwind: '$suggestedExpYears' },
+              { $group: { _id: { code: '$code', value: '$suggestedExpYears' }, count: { $sum: 1 } } },
+              { $sort: { count: -1 } },
+            ],
+          } },
+        ]).toArray().then((rows: any[]) => rows[0] || [{}, {}, {}, {}])
+        const statsByCode: Record<string, any> = {}
+        for (const row of totals) {
+          statsByCode[row._id] = { total: row.total, categoryOk: row.categoryOk, experienceOk: row.experienceOk, suggestedCategories: [], suggestedTags: [], suggestedExpYears: [] }
+        }
+        const ensure = (key: string) => statsByCode[key] ||= { total: 0, categoryOk: 0, experienceOk: 0, suggestedCategories: [], suggestedTags: [], suggestedExpYears: [] }
+        for (const row of categories) {
+          const target = ensure(row._id.code).suggestedCategories
+          if (target.length < 10) target.push({ value: row._id.value, count: row.count })
+        }
+        for (const row of tags) {
+          const target = ensure(row._id.code).suggestedTags
+          if (target.length < 20) target.push({ value: row._id.value, count: row.count })
+        }
+        for (const row of experiences) {
+          const target = ensure(row._id.code).suggestedExpYears
+          if (target.length < 6) target.push({ value: Number(row._id.value), count: row.count })
+        }
+        return res.status(200).json({ statsByCode })
       }
       return res.status(200).json({ stats: await aggregateStats(code) })
     }
