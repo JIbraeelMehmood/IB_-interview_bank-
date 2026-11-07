@@ -31,3 +31,19 @@ export async function activateAccount(userId: string) {
 export async function clearLocalAccountMarker() {
   // Keep the marker so a returning user retains their own offline cache.
 }
+
+
+/** Ask the app shell to open its sign-in dialog from a protected action. */
+export function promptForSignIn() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('ibx:auth-required'))
+}
+
+/** UI convenience only; protected API routes must still validate the session cookie. */
+export function hasCachedAccount(): boolean {
+  try {
+    const user = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+    return Boolean(user?.id && user.email)
+  } catch {
+    return false
+  }
+}
