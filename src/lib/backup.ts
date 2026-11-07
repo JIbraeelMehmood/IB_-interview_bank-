@@ -246,6 +246,7 @@ export async function resetProgress(): Promise<void> {
       db.translations,
       db.audio,
       db.outbox,
+      db.questions,
     ],
     async () => {
       await db.ratings.clear()
