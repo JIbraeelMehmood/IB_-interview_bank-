@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { accountRequest, activateAccount, type AccountUser } from '../lib/account'
 
-export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: AccountUser) => Promise<void>; onClose?: () => void }) {
+export default function Auth({ onSignedIn, onClose, expectedAccountId }: { onSignedIn: (user: AccountUser) => Promise<void>; onClose?: () => void; expectedAccountId?: string }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -20,6 +20,10 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
         mode === 'signup' ? '/api/auth/signup' : '/api/auth/login',
         mode === 'signup' ? { name, email, password } : { email, password },
       )
+      if (expectedAccountId && data.user.id !== expectedAccountId) {
+        try { await accountRequest('/api/auth/logout', {}) } catch { /* The account workspace remains protected. */ }
+        throw new Error('Please sign in with the same account to recover your pending progress.')
+      }
       await activateAccount(data.user.id)
       await onSignedIn(data.user)
     } catch (e) {
@@ -42,14 +46,16 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
           <div style={{ fontSize: 34 }}>📦</div>
           <h1>Interview Box</h1>
           <p className="muted">
-            {mode === 'signup'
-              ? 'Create your account to save your progress.'
-              : 'Sign in to save your progress and use community features.'}
+            {expectedAccountId
+              ? 'Your session expired. Sign in to the same account to safely sync your pending progress.'
+              : mode === 'signup'
+                ? 'Create your account to save your progress.'
+                : 'Sign in to save your progress and use community features.'}
           </p>
         </div>
 
         {/* ── Google Sign-In ── */}
-        <button
+        {!expectedAccountId && <button
           type="button"
           onClick={googleSignIn}
           disabled={busy}
@@ -72,7 +78,7 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
         >
           <GoogleIcon />
           Continue with Google
-        </button>
+        </button>}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
           <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--line)' }} />
@@ -131,7 +137,7 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
           </button>
         </form>
 
-        <p className="center muted" style={{ marginTop: 18 }}>
+        {!expectedAccountId && <p className="center muted" style={{ marginTop: 18 }}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
           <button
             className="btn ghost"
@@ -140,9 +146,9 @@ export default function Auth({ onSignedIn, onClose }: { onSignedIn: (user: Accou
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>
-        </p>
+        </p>}
         <p className="muted center" style={{ fontSize: 12 }}>
-          You can browse and practise as a guest. Sign in only when you need account-based features.
+          {expectedAccountId ? 'Your local progress will stay on this device until you sign in to the original account.' : 'You can browse and practise as a guest. Sign in only when you need account-based features.'}
         </p>
       </section>
     </main>
