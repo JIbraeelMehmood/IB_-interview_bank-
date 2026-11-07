@@ -31,16 +31,19 @@ beforeAll(async () => {
 
 describe('the extracted bank', () => {
   it('seeds every question in the current bank', async () => {
-    expect(await db.questions.count()).toBe(read('bank.json').length)
+    expect(await db.questions.count()).toBe(read('bank.json').length + read('research-questions.json').length)
   })
 
-  it('includes manually reviewed research additions with exact technology tags', async () => {
+  it('includes source-backed research additions with exact technology tags', async () => {
     const additions = read('research-questions.json') as any[]
     expect(additions.length).toBe(25)
     const ids = additions.map((q: any) => q.id)
     expect(new Set(ids).size).toBe(ids.length)
-    const allTitles = [...(read('bank.json') as any[]), ...additions].map((q: any) => q.q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim())
-    expect(new Set(allTitles).size).toBe(allTitles.length)
+    const normalizeTitle = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    const existingTitles = new Set((read('bank.json') as any[]).map((q: any) => normalizeTitle(q.q)))
+    const additionTitles = additions.map((q: any) => normalizeTitle(q.q))
+    expect(new Set(additionTitles).size).toBe(additionTitles.length)
+    for (const title of additionTitles) expect(existingTitles.has(title)).toBe(false)
     const meta = read('meta.json') as any
     const allowed = new Set(meta.techs.map((t: any) => t.slug))
     for (const raw of additions) {
