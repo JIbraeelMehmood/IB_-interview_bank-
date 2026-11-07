@@ -20,6 +20,7 @@ import { Chips, Chip, Empty, Loading, toast } from '../components/ui'
 import { useSettings } from '../lib/settings'
 import { usePlayer } from '../lib/player'
 import { generateQuestions } from '../lib/features'
+import { bankMeta } from '../lib/seed'
 import { aiReady, aiWhy, aiConfigured } from '../lib/ai'
 import { beginGoogleSignIn } from '../lib/auth'
 import { canInstall, promptInstall } from '../lib/install'
@@ -72,7 +73,7 @@ export default function Library() {
     void run(f)
   }, [f, run])
 
-  const techs = useLiveQuery(async () => (await techCounts(f)).slice(0, 40), [f], [])
+  const techs = useLiveQuery(async () => techCounts(f), [f], [])
   const parts = useLiveQuery(async () => partCounts(f), [f], [])
   const expCounts = useLiveQuery(async () => expYearsCounts(f), [f], [])
   const unrated = useLiveQuery(() => db.ratings.count(), [], 0)
@@ -229,7 +230,7 @@ export default function Library() {
       <div className="row">
         <input
           type="search"
-          placeholder="Search 2,481 questions…"
+          placeholder="Search questions…"
           value={f.search}
           onChange={(e) => patch({ search: e.target.value })}
           className="grow"
@@ -393,7 +394,7 @@ export default function Library() {
                 on={f.techs.includes(t.slug)}
                 onClick={() => setF((cur) => toggleTech(cur, t.slug))}
               >
-                {t.slug}
+                {t.label}
                 <span className="n">{t.n}</span>
               </Chip>
             ))}
