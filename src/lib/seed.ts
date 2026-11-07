@@ -100,7 +100,8 @@ function matchesTechKeyword(haystack: string, keyword: string): boolean {
  */
 function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
   const own = new Set((q.t || []).map((tag) => canonicalTechSlug(tag, meta)))
-  const hay = `${q.q} ${q.c || ''}`
+  const questionText = q.q || ''
+  const chapterText = q.c || ''
 
   for (const tech of meta.techs) {
     if (own.has(tech.slug)) continue
@@ -120,8 +121,9 @@ function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
         docker: ['kubernetes', 'k8s', 'helm'],
         api: ['integration', 'integrations'],
       }
-      if (ambiguous[tech.slug]?.includes(normalizedKeyword)) continue
-      if (matchesTechKeyword(hay, keyword)) {
+      const isAmbiguous = ambiguous[tech.slug]?.includes(normalizedKeyword) || false
+      if (isAmbiguous && !matchesTechKeyword(chapterText, keyword)) continue
+      if (matchesTechKeyword(questionText, keyword) || matchesTechKeyword(chapterText, keyword)) {
         own.add(tech.slug)
         break
       }
