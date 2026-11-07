@@ -133,8 +133,14 @@ describe('filtering and search', () => {
     const all = [mk('A', ['laravel', 'react']), mk('B', ['laravel']), mk('C', ['laravel', 'react', 'sql'], 'i')]
     const map = new Map<string, number>()
     const and = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'], techMode: 'and' }, map)
-    // Order follows the default importance sort, so compare as a set.
+    // Match all requires both explicit tags; related-topic expansion is OR-only.
     expect(and.map((r) => r.code).sort()).toEqual(['A', 'C'])
+    const relatedOnly = applyFilters(
+      [mk('L', ['laravel']), mk('R', ['react']), mk('LR', ['laravel', 'react'])],
+      { ...DEFAULT_FILTERS, techs: ['laravel', 'react'], techMode: 'and' },
+      map,
+    )
+    expect(relatedOnly.map((r) => r.code).sort()).toEqual(['LR'])
     const or = applyFilters(all, { ...DEFAULT_FILTERS, techs: ['laravel', 'react'], techMode: 'or' }, map)
     expect(or).toHaveLength(3)
   })
