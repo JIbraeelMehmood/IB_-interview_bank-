@@ -147,3 +147,20 @@ export async function reviewQuestionQuality(
   if (!res.ok) throw new Error(data.error || 'Could not save your review. Please sign in and try again.')
   return data.stats
 }
+
+
+/** Public aggregate quality-review counts; no account data is exposed. */
+export async function getQuestionQualityStats(
+  code: string,
+): Promise<{ total: number; categoryOk: number; experienceOk: number } | null> {
+  try {
+    const res = await fetch(`/api/v1/quality-vote?code=${encodeURIComponent(code)}`, {
+      credentials: 'same-origin',
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.stats || null
+  } catch {
+    return null
+  }
+}
