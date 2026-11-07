@@ -1,0 +1,734 @@
+[
+  {
+    "id": "RS-LAR-001",
+    "q": "A queued job charges a customer, but the worker crashes before marking the job complete. The retry runs and may charge the customer again. How would you make this Laravel payment flow idempotent?",
+    "a": "<p>Do not rely on the queue's retry behavior to provide exactly-once execution. Give the payment operation a stable idempotency key tied to the business operation, persist its state under a unique constraint, and pass the same key to the payment provider when supported. Use a database transaction to claim or transition the operation, make the job safe to run more than once, and reconcile uncertain provider responses before retrying. Test duplicate delivery and crashes between the provider call and the local status update.</p>",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Research additions — Laravel production scenarios",
+    "f": "i",
+    "t": [
+      "laravel",
+      "queues",
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "laravel",
+    "relatedTechs": [
+      "queues",
+      "sql"
+    ],
+    "questionType": "production-scenario",
+    "relatedTopics": [
+      "idempotency",
+      "payments",
+      "retries",
+      "data-consistency"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
+      "https://www.linkedin.com/posts/khanzada-anees_senior-laravel-developer-interview-questions-activity-7422241847898513408-lBr8"
+    ]
+  },
+  {
+    "id": "RS-LAR-002",
+    "q": "You need to change a heavily used column in a Laravel application with tens of millions of rows, and downtime is not acceptable. How would you plan the migration?",
+    "a": "<p>Use an expand-and-contract rollout. First add a backward-compatible nullable column or new structure, deploy code that can read both representations and dual-write if necessary, then backfill in bounded chunks with checkpoints and throttling. Verify counts and consistency, switch reads, and only remove the old column in a later deployment after all application instances have moved. Check database-specific locking behavior and rehearse the migration against production-like data; a Laravel migration file alone does not make a large schema change online.</p>",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Research additions — Laravel production scenarios",
+    "f": "i",
+    "t": [
+      "laravel",
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "laravel",
+    "relatedTechs": [
+      "sql"
+    ],
+    "questionType": "architecture-scenario",
+    "relatedTopics": [
+      "zero-downtime",
+      "migrations",
+      "backward-compatibility",
+      "large-datasets"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
+      "https://laravel.com/framework/docs/13.x/releases"
+    ]
+  },
+  {
+    "id": "RS-LAR-003",
+    "q": "A third-party payment provider sends the same webhook several times, sometimes out of order. How would you process those events safely in Laravel?",
+    "a": "<p>Verify the provider's signature against the raw request body before trusting the payload. Persist each provider event ID under a unique constraint so duplicate deliveries become no-ops, acknowledge quickly, and dispatch processing to a queue. Make state transitions idempotent and validate event ordering against the provider's object version or current resource state rather than assuming arrival order. Keep a replayable event log and alert on signature failures or events that cannot be reconciled.</p>",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Research additions — Laravel production scenarios",
+    "f": "i",
+    "t": [
+      "laravel",
+      "api",
+      "security",
+      "queues"
+    ],
+    "s": "n",
+    "primaryTech": "laravel",
+    "relatedTechs": [
+      "api",
+      "security",
+      "queues"
+    ],
+    "questionType": "integration-scenario",
+    "relatedTopics": [
+      "webhooks",
+      "signature-validation",
+      "replay-protection",
+      "idempotency"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V",
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy"
+    ]
+  },
+  {
+    "id": "RS-LAR-004",
+    "q": "A Laravel endpoint is fast locally but slow in production, and the database CPU is high. What evidence would you collect before changing code?",
+    "a": "<p>Start with request traces and timings, not guesses. Identify the slow route and its query count, inspect slow-query logs and representative SQL with EXPLAIN, check for N+1 queries, missing or ineffective indexes, oversized result sets, lock waits, and connection saturation. Compare production data volume and query plans with staging. Apply one measured change at a time—such as eager loading, pagination, a better index, or a bounded cache—and compare latency and database load before and after.</p>",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Research additions — Laravel production scenarios",
+    "f": "i",
+    "t": [
+      "laravel",
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "laravel",
+    "relatedTechs": [
+      "sql"
+    ],
+    "questionType": "debugging-scenario",
+    "relatedTopics": [
+      "performance",
+      "query-plans",
+      "n-plus-one",
+      "profiling"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/saad-ahmed-484549284_laravel-php-mysql-activity-7424479875518033921-RW96",
+      "https://www.linkedin.com/posts/mubasharashfaqdev10_laravel-php-mysql-activity-7450758922988249088-tvxW"
+    ]
+  },
+  {
+    "id": "RS-LAR-005",
+    "q": "In a multi-tenant Laravel application, a developer adds a global Eloquent scope to hide records from other tenants. What additional authorization checks and tests would you require?",
+    "a": "<p>A global scope is a useful query guard, not a complete authorization boundary. Enforce tenant context from the authenticated identity, authorize each action with policies or gates, and ensure writes cannot accept a tenant ID supplied by an untrusted client. Review background jobs, exports, relationship queries, raw SQL, admin paths, and queued work where the request context may be absent. Add cross-tenant feature tests for read, update, delete, nested resources, and job execution.</p>",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Research additions — Laravel production scenarios",
+    "f": "i",
+    "t": [
+      "laravel",
+      "security",
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "laravel",
+    "relatedTechs": [
+      "security",
+      "sql"
+    ],
+    "questionType": "security-scenario",
+    "relatedTopics": [
+      "multi-tenancy",
+      "authorization",
+      "data-isolation",
+      "testing"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://laravel.com/framework/docs/container",
+      "https://www.linkedin.com/posts/anjalisoni-fullstack_laravel-php-backenddevelopment-activity-7495064734753497088-prIw"
+    ]
+  },
+  {
+    "id": "RS-LAR-006",
+    "q": "A Laravel queue worker repeatedly processes a job after its timeout, while another worker may already be handling the same job. Which timeout and retry settings would you inspect?",
+    "a": "<p>Compare the job timeout, worker timeout, queue connection's retry_after value, and the process supervisor's stop or restart timeout. The visibility or reservation window must be longer than the maximum job runtime plus a safety margin; otherwise another worker can reserve the job while the first is still running. Make the handler idempotent, set bounded retries and backoff, handle failed jobs, and monitor runtime and retry counts rather than just increasing every timeout.</p>",
+    "l": "s",
+    "p": "Laravel",
+    "c": "Research additions — Laravel production scenarios",
+    "f": "i",
+    "t": [
+      "laravel",
+      "queues"
+    ],
+    "s": "n",
+    "primaryTech": "laravel",
+    "relatedTechs": [
+      "queues"
+    ],
+    "questionType": "debugging-scenario",
+    "relatedTopics": [
+      "timeouts",
+      "retry-policy",
+      "concurrency",
+      "worker-supervision"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://laravel.com/framework/docs/13.x/concurrency",
+      "https://www.linkedin.com/posts/shahbaz-ahmad-21b8791b9_laravel-laraveldeveloper-php-activity-7502246010774056960-GhxB"
+    ]
+  },
+  {
+    "id": "RS-REA-001",
+    "q": "A React search page shows results for an older query after the user has already typed a newer one. How would you prevent this race condition?",
+    "a": "<p>Associate each request with the query that created it and prevent stale responses from committing state. Use AbortController in the Effect cleanup when the fetch API supports cancellation, or use a request sequence identifier and ignore responses from older requests. Keep loading and error state tied to the active query. For server state, a query library can manage cancellation, caching, and request deduplication. Also test rapid input changes and unmounting while a request is pending.</p>",
+    "l": "m",
+    "p": "React",
+    "c": "Research additions — React practical scenarios",
+    "f": "i",
+    "t": [
+      "react",
+      "js"
+    ],
+    "s": "n",
+    "primaryTech": "react",
+    "relatedTechs": [
+      "js"
+    ],
+    "questionType": "debugging-scenario",
+    "relatedTopics": [
+      "async-state",
+      "race-conditions",
+      "cleanup",
+      "api-fetching"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG",
+      "https://react.dev/reference/react/useEffect"
+    ]
+  },
+  {
+    "id": "RS-REA-002",
+    "q": "A React page must display 40,000 rows from an API. How would you keep it responsive and make the data usable?",
+    "a": "<p>First avoid downloading and rendering all rows at once. Prefer server-side filtering, sorting, and pagination when the dataset is large; use cursor pagination if the data changes frequently. If users need a long continuous list, virtualize the visible window so only a small number of rows are mounted. Keep row components stable, avoid expensive work during render, and measure with React DevTools and browser performance tools before adding memoization. Consider keyboard navigation and screen-reader behavior when virtualizing.</p>",
+    "l": "m",
+    "p": "React",
+    "c": "Research additions — React practical scenarios",
+    "f": "i",
+    "t": [
+      "react"
+    ],
+    "s": "n",
+    "primaryTech": "react",
+    "relatedTechs": [],
+    "questionType": "performance-scenario",
+    "relatedTopics": [
+      "virtualization",
+      "pagination",
+      "accessibility",
+      "profiling"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG",
+      "https://www.linkedin.com/posts/shubham-frontend-engineer_reactjs-frontenddeveloper-javascript-activity-7462110047100297217-9gSq"
+    ]
+  },
+  {
+    "id": "RS-REA-003",
+    "q": "A component uses useEffect to calculate a filtered list from props and state. When would you remove the Effect and derive the list during rendering instead?",
+    "a": "<p>If the value can be calculated synchronously from the current props and state, store the source data and derive the filtered list during render. An Effect that copies derived data into state adds an extra render and can create stale state or synchronization bugs. Use useMemo only if profiling shows the calculation is expensive. Keep Effects for synchronization with external systems such as subscriptions, timers, browser APIs, or network connections, and provide cleanup for those resources.</p>",
+    "l": "m",
+    "p": "React",
+    "c": "Research additions — React practical scenarios",
+    "f": "i",
+    "t": [
+      "react"
+    ],
+    "s": "n",
+    "primaryTech": "react",
+    "relatedTechs": [],
+    "questionType": "fundamentals",
+    "relatedTopics": [
+      "hooks",
+      "derived-state",
+      "rendering",
+      "memoization"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/abhayashankar_reactjs-javascript-webdevelopment-activity-7411829705789628417-7NRN",
+      "https://react.dev/reference/react/useEffect",
+      "https://react.dev/reference/react/useMemo"
+    ]
+  },
+  {
+    "id": "RS-REA-004",
+    "q": "How would you use React 19's useActionState and useOptimistic to build a form that updates immediately but can recover when the server rejects the change?",
+    "a": "<p>Use an Action to submit the mutation and useActionState to expose the action result and pending state to the form. useOptimistic can render the expected state while the request is in flight, but the authoritative state must still come from the server response or refreshed data. Handle validation errors explicitly and roll back or reconcile optimistic state when the action fails. Keep authorization and validation on the server; optimistic UI is a presentation technique, not a security control.</p>",
+    "l": "s",
+    "p": "React",
+    "c": "Research additions — React practical scenarios",
+    "f": "i",
+    "t": [
+      "react"
+    ],
+    "s": "n",
+    "primaryTech": "react",
+    "relatedTechs": [],
+    "questionType": "implementation-scenario",
+    "relatedTopics": [
+      "react-19",
+      "forms",
+      "optimistic-ui",
+      "server-actions"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://react.dev/reference/react/hooks",
+      "https://www.linkedin.com/posts/ashishmisal_react-interview-guide-2026-interview-questions-activity-7492421299865186304-8lvL"
+    ]
+  },
+  {
+    "id": "RS-REA-005",
+    "q": "You create a custom React Hook that subscribes to a browser event. It works locally but fires duplicate handlers in development. How would you investigate and fix it?",
+    "a": "<p>Check that the Hook registers the listener in an Effect and removes the exact same listener with matching options in the cleanup. React Strict Mode intentionally performs an extra setup-and-cleanup cycle in development to expose effects that are not resilient to remounting. Avoid suppressing Strict Mode; make setup and cleanup symmetrical, keep dependencies correct, and test that changing the callback or unmounting does not leave stale or duplicate subscriptions.</p>",
+    "l": "m",
+    "p": "React",
+    "c": "Research additions — React practical scenarios",
+    "f": "i",
+    "t": [
+      "react",
+      "js"
+    ],
+    "s": "n",
+    "primaryTech": "react",
+    "relatedTechs": [
+      "js"
+    ],
+    "questionType": "debugging-scenario",
+    "relatedTopics": [
+      "custom-hooks",
+      "strict-mode",
+      "event-listeners",
+      "cleanup"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://react.dev/reference/react/useEffect",
+      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG"
+    ]
+  },
+  {
+    "id": "RS-REA-006",
+    "q": "Your React application uses TanStack Query for API data and Zustand for UI state. Which state belongs in each system, and how do you keep them consistent after a mutation?",
+    "a": "<p>Keep remote, cacheable server data in the query cache: fetching, stale time, retries, invalidation, and synchronization with the backend. Keep client-only interaction state in Zustand, such as an open panel, local wizard step, or temporary UI preference. After a mutation, update or invalidate the relevant query keys based on the server response; avoid maintaining a second unsynchronized copy of the same server entity in Zustand. Define query keys around resource identity and test cache behavior after create, update, and delete operations.</p>",
+    "l": "s",
+    "p": "React",
+    "c": "Research additions — React practical scenarios",
+    "f": "i",
+    "t": [
+      "react",
+      "api"
+    ],
+    "s": "n",
+    "primaryTech": "react",
+    "relatedTechs": [
+      "api"
+    ],
+    "questionType": "architecture-scenario",
+    "relatedTopics": [
+      "server-state",
+      "client-state",
+      "cache-invalidation",
+      "tanstack-query"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ch-moeez-ahmad_reactjs-javascript-typescript-activity-7473068164281438209-REdx",
+      "https://www.linkedin.com/posts/shubham-frontend-engineer_reactjs-frontenddeveloper-javascript-activity-7462110047100297217-9gSq"
+    ]
+  },
+  {
+    "id": "RS-JS-001",
+    "q": "You need to run five independent API calls, but one may fail while the other results are still useful. Would you use Promise.all or Promise.allSettled, and why?",
+    "a": "<p>Promise.all is appropriate when every result is required: it fulfills when all inputs fulfill and rejects as soon as one rejects. Promise.allSettled waits for every input and reports each outcome, which is useful for dashboards or batch operations where partial success is acceptable. Neither API limits concurrency by itself. For a large input set, use a worker pool or concurrency limiter, add timeouts and cancellation where possible, and decide explicitly how partial failures should be presented.</p>",
+    "l": "j",
+    "p": "JavaScript & TypeScript",
+    "c": "Research additions — JavaScript practical questions",
+    "f": "i",
+    "t": [
+      "js"
+    ],
+    "s": "n",
+    "primaryTech": "js",
+    "relatedTechs": [],
+    "questionType": "fundamentals",
+    "relatedTopics": [
+      "promises",
+      "async-programming",
+      "partial-failure",
+      "concurrency"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ankita-budhia_javascript-javascriptinterview-interviewprep-activity-7496444137328611328-hDrZ",
+      "https://www.linkedin.com/posts/krishna-bisht-7a9609169_javascript-frontendinterview-webdevelopment-activity-7345795951707492352-pkp1"
+    ]
+  },
+  {
+    "id": "RS-JS-002",
+    "q": "Implement a debounce utility that supports cancel() and flush(). What edge cases would you test?",
+    "a": "<p>Keep the latest arguments and receiver, clear the previous timer on each call, and schedule invocation after the quiet period. cancel() should clear the timer and discard the pending call; flush() should immediately invoke the pending call once and clear the timer. Decide whether the function returns the last result and whether leading-edge execution is supported. Test rapid calls, this binding, argument replacement, cancellation, flushing with no pending timer, and fake-timer behavior.</p>",
+    "l": "m",
+    "p": "JavaScript & TypeScript",
+    "c": "Research additions — JavaScript practical questions",
+    "f": "i",
+    "t": [
+      "js"
+    ],
+    "s": "n",
+    "primaryTech": "js",
+    "relatedTechs": [],
+    "questionType": "coding-exercise",
+    "relatedTopics": [
+      "closures",
+      "timers",
+      "testing",
+      "function-design"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ankita-budhia_javascript-javascriptinterview-interviewprep-activity-7496444137328611328-hDrZ",
+      "https://www.linkedin.com/posts/harikrishna-alwala-415622265_reactjs-javascript-frontenddeveloper-activity-7502704162871300096-0hTm"
+    ]
+  },
+  {
+    "id": "RS-JS-003",
+    "q": "What is the difference between the JavaScript task queue and microtask queue? Predict the output when Promise callbacks and setTimeout callbacks are scheduled together.",
+    "a": "<p>Synchronous code runs first on the current call stack. After the stack becomes empty, the event loop drains the microtask queue—such as Promise reactions—before moving to the next task, such as a timer callback. A zero-delay setTimeout does not mean immediate execution; it schedules a later task. Be precise about the host environment and APIs involved, and demonstrate the ordering with a short runnable snippet rather than relying only on a memorized rule.</p>",
+    "l": "m",
+    "p": "JavaScript & TypeScript",
+    "c": "Research additions — JavaScript practical questions",
+    "f": "i",
+    "t": [
+      "js"
+    ],
+    "s": "n",
+    "primaryTech": "js",
+    "relatedTechs": [],
+    "questionType": "output-question",
+    "relatedTopics": [
+      "event-loop",
+      "microtasks",
+      "async-programming"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/harikrishna-alwala-415622265_reactjs-javascript-frontenddeveloper-activity-7502704162871300096-0hTm",
+      "https://www.linkedin.com/posts/mdaamirjawed_had-an-interview-a-few-days-ago-walked-in-activity-7488092910517751808-kr3G"
+    ]
+  },
+  {
+    "id": "RS-PHP-001",
+    "q": "What problem do PHP 8.4 property hooks and asymmetric property visibility solve, and when would you avoid using them in a shared library?",
+    "a": "<p>Property hooks allow validation or computed behavior at property access without maintaining separate getter and setter methods. Asymmetric visibility allows a property to be publicly readable but restricted for writes. They can reduce boilerplate, but a library must consider its minimum supported PHP version, static-analysis and tooling support, serialization behavior, and whether magic behavior makes the API harder to understand. Use them when they clarify the contract, not simply because the syntax is new.</p>",
+    "l": "s",
+    "p": "PHP",
+    "c": "Research additions — modern PHP",
+    "f": "i",
+    "t": [
+      "php"
+    ],
+    "s": "n",
+    "primaryTech": "php",
+    "relatedTechs": [],
+    "questionType": "version-specific-fundamentals",
+    "relatedTopics": [
+      "php-8-4",
+      "language-design",
+      "backward-compatibility"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.php.net/releases/8.4/en.php"
+    ]
+  },
+  {
+    "id": "RS-PHP-002",
+    "q": "Your application must support PHP 8.2 through 8.5. How would you decide whether to use newer syntax such as PHP 8.5's pipe operator or array_first()?",
+    "a": "<p>Set the package's minimum PHP version from the actual deployment matrix, not the developer workstation. If the minimum is below 8.5, do not use 8.5-only syntax in shared runtime code unless you provide a compatible alternative or isolate it behind version-specific code that can still be parsed safely. Run CI against every supported PHP version, check Composer platform constraints, and document when dropping older runtimes is planned. New syntax is not worth silently breaking production deployments.</p>",
+    "l": "s",
+    "p": "PHP",
+    "c": "Research additions — modern PHP",
+    "f": "i",
+    "t": [
+      "php"
+    ],
+    "s": "n",
+    "primaryTech": "php",
+    "relatedTechs": [],
+    "questionType": "architecture-scenario",
+    "relatedTopics": [
+      "php-8-5",
+      "runtime-compatibility",
+      "composer",
+      "ci-matrix"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.php.net/releases/8.5/en.php"
+    ]
+  },
+  {
+    "id": "RS-API-001",
+    "q": "For a browser-based application, when would you store an access token in an HttpOnly cookie instead of localStorage? Explain the XSS and CSRF trade-offs.",
+    "a": "<p>JavaScript cannot read an HttpOnly cookie, which reduces the ability of injected scripts to steal that cookie directly; localStorage tokens are readable by scripts running in the origin. Cookies are sent automatically, so cookie-based authentication needs deliberate CSRF defenses such as SameSite policy, CSRF tokens, and origin checks where appropriate. XSS can still perform actions as the user even if it cannot read the cookie. Choose the design from the threat model, deployment topology, refresh-token strategy, and API requirements—not from a blanket rule.</p>",
+    "l": "s",
+    "p": "APIs, Security & Web",
+    "c": "Research additions — API and browser security",
+    "f": "i",
+    "t": [
+      "security",
+      "web"
+    ],
+    "s": "n",
+    "primaryTech": "security",
+    "relatedTechs": [
+      "web"
+    ],
+    "questionType": "security-scenario",
+    "relatedTopics": [
+      "jwt",
+      "cookies",
+      "xss",
+      "csrf",
+      "threat-modeling"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/shubham-frontend-engineer_reactjs-frontenddeveloper-javascript-activity-7462110047100297217-9gSq",
+      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG"
+    ]
+  },
+  {
+    "id": "RS-API-002",
+    "q": "You are designing an endpoint that creates an order and charges a payment provider. How should an idempotency key work across client retries, database writes, and provider timeouts?",
+    "a": "<p>Scope the key to the authenticated customer and operation, store it with a request hash and processing state under a unique constraint, and reject reuse with a different payload. Persist the order or payment intent before calling the provider, pass a stable provider idempotency key, and record the provider reference and final outcome. If the provider times out, query or reconcile the operation before issuing a new charge. Define retention and concurrency behavior, and test simultaneous requests with the same key.</p>",
+    "l": "s",
+    "p": "APIs, Security & Web",
+    "c": "Research additions — API and browser security",
+    "f": "i",
+    "t": [
+      "api",
+      "security",
+      "ecommerce",
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "api",
+    "relatedTechs": [
+      "security",
+      "ecommerce",
+      "sql"
+    ],
+    "questionType": "system-design-scenario",
+    "relatedTopics": [
+      "idempotency",
+      "payments",
+      "distributed-failure",
+      "concurrency"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
+      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V"
+    ]
+  },
+  {
+    "id": "RS-SQL-001",
+    "q": "A query filters by tenant_id and status, then sorts by created_at. How would you decide the order of columns in a composite index?",
+    "a": "<p>Start with the actual query predicate, sort order, selectivity, and the database's optimizer behavior. A candidate index might place equality predicates before the range or ordering column, but the best order depends on other queries, cardinality, and whether the index can cover the selected columns. Inspect EXPLAIN and real execution metrics, compare write overhead and index size, and validate with production-like data. Do not add every possible index or assume the leftmost-prefix rule answers every workload question.</p>",
+    "l": "m",
+    "p": "Databases",
+    "c": "Research additions — database performance",
+    "f": "i",
+    "t": [
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "sql",
+    "relatedTechs": [],
+    "questionType": "performance-scenario",
+    "relatedTopics": [
+      "composite-index",
+      "query-plans",
+      "selectivity",
+      "write-amplification"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/saad-ahmed-484549284_laravel-php-mysql-activity-7424479875518033921-RW96",
+      "https://www.linkedin.com/posts/mubasharashfaqdev10_laravel-php-mysql-activity-7450758922988249088-tvxW"
+    ]
+  },
+  {
+    "id": "RS-SQL-002",
+    "q": "Two concurrent transactions update the same set of rows in different orders and deadlock. How would you reduce deadlocks without hiding the underlying problem?",
+    "a": "<p>Inspect the database deadlock report to identify the statements, indexes, and lock order. Make transactions short, access shared rows in a consistent order, and ensure predicates use appropriate indexes so fewer rows are locked. Retry only the transaction that was rolled back, with a bounded backoff, and make the operation safe to retry. Avoid wrapping slow network calls inside database transactions. Monitor deadlock frequency after the change rather than treating retries as the only fix.</p>",
+    "l": "s",
+    "p": "Databases",
+    "c": "Research additions — database performance",
+    "f": "i",
+    "t": [
+      "sql"
+    ],
+    "s": "n",
+    "primaryTech": "sql",
+    "relatedTechs": [],
+    "questionType": "debugging-scenario",
+    "relatedTopics": [
+      "transactions",
+      "locking",
+      "deadlocks",
+      "retry-policy"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/saad-ahmed-484549284_laravel-php-mysql-activity-7424479875518033921-RW96"
+    ]
+  },
+  {
+    "id": "RS-DOC-001",
+    "q": "A Dockerized Laravel service runs multiple replicas. Where should database migrations run, and how would you keep old and new application versions compatible during deployment?",
+    "a": "<p>Run migrations as a controlled one-off deployment step or dedicated job, not independently from every application replica at startup. Use backward-compatible expand-and-contract changes so old and new application versions can operate during a rolling deployment. Gate traffic on readiness checks, make the migration step observable and restart-safe, and define rollback behavior—especially because rolling back application code does not automatically reverse a destructive schema change.</p>",
+    "l": "s",
+    "p": "Docker & DevOps",
+    "c": "Research additions — container deployment",
+    "f": "i",
+    "t": [
+      "docker",
+      "cicd",
+      "laravel"
+    ],
+    "s": "n",
+    "primaryTech": "docker",
+    "relatedTechs": [
+      "cicd",
+      "laravel"
+    ],
+    "questionType": "deployment-scenario",
+    "relatedTopics": [
+      "zero-downtime",
+      "migrations",
+      "rolling-deployments",
+      "readiness"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V",
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy"
+    ]
+  },
+  {
+    "id": "RS-OBS-001",
+    "q": "A user reports that an API request succeeded, but the background job triggered by it never completed. How would you trace the operation across the HTTP request, queue, and third-party API?",
+    "a": "<p>Propagate a correlation or trace identifier from the incoming request into the queued job and outbound request metadata where supported. Record structured logs with the operation ID, job ID, attempt number, and provider response category; collect traces and metrics for queue wait time, job duration, retries, and provider latency. Avoid logging secrets or sensitive payloads. Use dashboards and alerts tied to service-level objectives, and make it possible to locate one business operation across all components.</p>",
+    "l": "s",
+    "p": "Docker & DevOps",
+    "c": "Research additions — observability",
+    "f": "i",
+    "t": [
+      "observability",
+      "queues",
+      "api"
+    ],
+    "s": "n",
+    "primaryTech": "observability",
+    "relatedTechs": [
+      "queues",
+      "api"
+    ],
+    "questionType": "debugging-scenario",
+    "relatedTopics": [
+      "distributed-tracing",
+      "correlation-id",
+      "structured-logging",
+      "slo"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V",
+      "https://laravel.com/framework/docs/13.x/concurrency"
+    ]
+  },
+  {
+    "id": "RS-AI-001",
+    "q": "Your retrieval-augmented generation (RAG) assistant gives confident answers from irrelevant documents and may follow malicious instructions inside retrieved text. How would you evaluate and harden it?",
+    "a": "<p>Build a representative evaluation set with expected sources and answer criteria, then measure retrieval relevance separately from answer correctness and groundedness. Test query variations, missing evidence, stale documents, and adversarial instructions embedded in retrieved content. Treat retrieved text as untrusted data, keep system instructions and tool permissions separate, validate tool arguments, and require authorization at the tool boundary. Add citations or source spans so users can inspect evidence, and monitor regressions when embeddings, prompts, or models change.</p>",
+    "l": "s",
+    "p": "AI Engineering & Agents",
+    "c": "Research additions — AI system quality",
+    "f": "i",
+    "t": [
+      "ai",
+      "security"
+    ],
+    "s": "n",
+    "primaryTech": "ai",
+    "relatedTechs": [
+      "security"
+    ],
+    "questionType": "security-architecture-scenario",
+    "relatedTopics": [
+      "rag",
+      "retrieval-evaluation",
+      "prompt-injection",
+      "tool-security"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://www.linkedin.com/posts/ashishmisal_react-interview-guide-2026-interview-questions-activity-7492421299865186304-8lvL"
+    ]
+  },
+  {
+    "id": "RS-TST-001",
+    "q": "A Laravel service integrates with a payment or shipping provider whose sandbox is unreliable. How would you test your integration without making the test suite depend on the provider being online?",
+    "a": "<p>Separate your provider adapter from business logic and use a deterministic fake or HTTP mock for most tests. Cover request serialization, authentication headers, response mapping, timeouts, retries, rate limits, and malformed responses. Add contract tests against recorded or provider-published schemas, plus a small scheduled smoke test against the sandbox when available. Keep a few end-to-end tests for critical flows, but do not make every CI run depend on an external service.</p>",
+    "l": "m",
+    "p": "Testing & Quality",
+    "c": "Research additions — integration testing",
+    "f": "i",
+    "t": [
+      "testing",
+      "api"
+    ],
+    "s": "n",
+    "primaryTech": "testing",
+    "relatedTechs": [
+      "api"
+    ],
+    "questionType": "testing-scenario",
+    "relatedTopics": [
+      "contract-testing",
+      "http-mocking",
+      "external-dependencies",
+      "ci-reliability"
+    ],
+    "reviewStatus": "human-reviewed",
+    "sourceRefs": [
+      "https://laravel.com/framework/docs/13.x/testing",
+      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V"
+    ]
+  }
+]
