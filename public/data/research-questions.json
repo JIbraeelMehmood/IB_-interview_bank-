@@ -25,10 +25,10 @@
       "retries",
       "data-consistency"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
-      "https://www.linkedin.com/posts/khanzada-anees_senior-laravel-developer-interview-questions-activity-7422241847898513408-lBr8"
+      "https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX",
+      "https://laravel.com/framework/docs/queues"
     ]
   },
   {
@@ -55,10 +55,10 @@
       "backward-compatibility",
       "large-datasets"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
       "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
-      "https://laravel.com/framework/docs/13.x/releases"
+      "https://laravel.com/framework/docs/13.x/migrations"
     ]
   },
   {
@@ -89,9 +89,9 @@
       "replay-protection",
       "idempotency"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V",
+      "https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX",
       "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy"
     ]
   },
@@ -119,10 +119,10 @@
       "n-plus-one",
       "profiling"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/saad-ahmed-484549284_laravel-php-mysql-activity-7424479875518033921-RW96",
-      "https://www.linkedin.com/posts/mubasharashfaqdev10_laravel-php-mysql-activity-7450758922988249088-tvxW"
+      "https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX",
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy"
     ]
   },
   {
@@ -151,10 +151,10 @@
       "data-isolation",
       "testing"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://laravel.com/framework/docs/container",
-      "https://www.linkedin.com/posts/anjalisoni-fullstack_laravel-php-backenddevelopment-activity-7495064734753497088-prIw"
+      "https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX",
+      "https://laravel.com/framework/docs/authorization"
     ]
   },
   {
@@ -181,10 +181,10 @@
       "concurrency",
       "worker-supervision"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://laravel.com/framework/docs/13.x/concurrency",
-      "https://www.linkedin.com/posts/shahbaz-ahmad-21b8791b9_laravel-laraveldeveloper-php-activity-7502246010774056960-GhxB"
+      "https://www.linkedin.com/posts/cristea-iulian_putting-work-on-a-queue-does-not-make-it-activity-7508156461575745536-CIZM",
+      "https://laravel.com/framework/docs/queues"
     ]
   },
   {
@@ -211,9 +211,9 @@
       "cleanup",
       "api-fetching"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG",
+      "https://www.linkedin.com/posts/rajkumar-d-74b09a192_reactjs-frontend-reactinterview-activity-7460365447893344257-sJgX",
       "https://react.dev/reference/react/useEffect"
     ]
   },
@@ -238,10 +238,9 @@
       "accessibility",
       "profiling"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG",
-      "https://www.linkedin.com/posts/shubham-frontend-engineer_reactjs-frontenddeveloper-javascript-activity-7462110047100297217-9gSq"
+      "https://www.linkedin.com/posts/rajkumar-d-74b09a192_reactjs-frontend-reactinterview-activity-7460365447893344257-sJgX"
     ]
   },
   {
@@ -265,9 +264,9 @@
       "rendering",
       "memoization"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/abhayashankar_reactjs-javascript-webdevelopment-activity-7411829705789628417-7NRN",
+      "https://www.linkedin.com/posts/sakshi-gawande_20-trending-react-interview-questions-for-activity-7395305829135978496-OROC",
       "https://react.dev/reference/react/useEffect",
       "https://react.dev/reference/react/useMemo"
     ]
@@ -293,10 +292,11 @@
       "optimistic-ui",
       "server-actions"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://react.dev/reference/react/hooks",
-      "https://www.linkedin.com/posts/ashishmisal_react-interview-guide-2026-interview-questions-activity-7492421299865186304-8lvL"
+      "https://www.linkedin.com/posts/sakshi-gawande_20-trending-react-interview-questions-for-activity-7395305829135978496-OROC",
+      "https://react.dev/reference/react/useActionState",
+      "https://react.dev/reference/react/useOptimistic"
     ]
   },
   {
@@ -323,10 +323,10 @@
       "event-listeners",
       "cleanup"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://react.dev/reference/react/useEffect",
-      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG"
+      "https://www.linkedin.com/posts/rajkumar-d-74b09a192_reactjs-frontend-reactinterview-activity-7460365447893344257-sJgX",
+      "https://react.dev/reference/react/useEffect"
     ]
   },
   {
@@ -353,10 +353,10 @@
       "cache-invalidation",
       "tanstack-query"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ch-moeez-ahmad_reactjs-javascript-typescript-activity-7473068164281438209-REdx",
-      "https://www.linkedin.com/posts/shubham-frontend-engineer_reactjs-frontenddeveloper-javascript-activity-7462110047100297217-9gSq"
+      "https://tanstack.com/query/latest/docs/framework/react/overview",
+      "https://zustand.docs.pmnd.rs/getting-started/introduction"
     ]
   },
   {
@@ -380,10 +380,9 @@
       "partial-failure",
       "concurrency"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ankita-budhia_javascript-javascriptinterview-interviewprep-activity-7496444137328611328-hDrZ",
-      "https://www.linkedin.com/posts/krishna-bisht-7a9609169_javascript-frontendinterview-webdevelopment-activity-7345795951707492352-pkp1"
+      "https://www.linkedin.com/posts/rajkumar-d-74b09a192_reactjs-frontend-reactinterview-activity-7460365447893344257-sJgX"
     ]
   },
   {
@@ -407,10 +406,9 @@
       "testing",
       "function-design"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ankita-budhia_javascript-javascriptinterview-interviewprep-activity-7496444137328611328-hDrZ",
-      "https://www.linkedin.com/posts/harikrishna-alwala-415622265_reactjs-javascript-frontenddeveloper-activity-7502704162871300096-0hTm"
+      "https://www.linkedin.com/posts/rajkumar-d-74b09a192_reactjs-frontend-reactinterview-activity-7460365447893344257-sJgX"
     ]
   },
   {
@@ -433,10 +431,9 @@
       "microtasks",
       "async-programming"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/harikrishna-alwala-415622265_reactjs-javascript-frontenddeveloper-activity-7502704162871300096-0hTm",
-      "https://www.linkedin.com/posts/mdaamirjawed_had-an-interview-a-few-days-ago-walked-in-activity-7488092910517751808-kr3G"
+      "https://www.linkedin.com/posts/rajkumar-d-74b09a192_reactjs-frontend-reactinterview-activity-7460365447893344257-sJgX"
     ]
   },
   {
@@ -459,7 +456,7 @@
       "language-design",
       "backward-compatibility"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
       "https://www.php.net/releases/8.4/en.php"
     ]
@@ -485,7 +482,7 @@
       "composer",
       "ci-matrix"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
       "https://www.php.net/releases/8.5/en.php"
     ]
@@ -515,10 +512,10 @@
       "csrf",
       "threat-modeling"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/shubham-frontend-engineer_reactjs-frontenddeveloper-javascript-activity-7462110047100297217-9gSq",
-      "https://www.linkedin.com/posts/satish--chaturvedi_reactjs-javascript-frontenddeveloper-activity-7470762866506260480-QuEG"
+      "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html"
     ]
   },
   {
@@ -549,10 +546,10 @@
       "distributed-failure",
       "concurrency"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
-      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V"
+      "https://www.linkedin.com/posts/m-naveed-6zbt_laravel-interviewquestions-activity-7422645449955667968-sfUX",
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy"
     ]
   },
   {
@@ -576,10 +573,9 @@
       "selectivity",
       "write-amplification"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/saad-ahmed-484549284_laravel-php-mysql-activity-7424479875518033921-RW96",
-      "https://www.linkedin.com/posts/mubasharashfaqdev10_laravel-php-mysql-activity-7450758922988249088-tvxW"
+      "https://dev.mysql.com/doc/refman/8.4/en/multiple-column-indexes.html"
     ]
   },
   {
@@ -603,9 +599,9 @@
       "deadlocks",
       "retry-policy"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/saad-ahmed-484549284_laravel-php-mysql-activity-7424479875518033921-RW96"
+      "https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html"
     ]
   },
   {
@@ -634,10 +630,10 @@
       "rolling-deployments",
       "readiness"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V",
-      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy"
+      "https://www.linkedin.com/posts/prashantchhatri_senior-laravel-developer-interview-questions-activity-7421773494448979968--KSy",
+      "https://laravel.com/framework/docs/queues"
     ]
   },
   {
@@ -666,10 +662,10 @@
       "structured-logging",
       "slo"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V",
-      "https://laravel.com/framework/docs/13.x/concurrency"
+      "https://opentelemetry.io/docs/concepts/signals/",
+      "https://opentelemetry.io/docs/concepts/context-propagation/"
     ]
   },
   {
@@ -696,9 +692,10 @@
       "prompt-injection",
       "tool-security"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://www.linkedin.com/posts/ashishmisal_react-interview-guide-2026-interview-questions-activity-7492421299865186304-8lvL"
+      "https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/RAG_Security_Cheat_Sheet.html"
     ]
   },
   {
@@ -725,10 +722,9 @@
       "external-dependencies",
       "ci-reliability"
     ],
-    "reviewStatus": "human-reviewed",
+    "reviewStatus": "source-backed-draft",
     "sourceRefs": [
-      "https://laravel.com/framework/docs/13.x/testing",
-      "https://www.linkedin.com/posts/ankit-vishwakarma-15b6b1233_fullstackdeveloper-interviewexperience-activity-7506780951541272576-g82V"
+      "https://laravel.com/framework/docs/13.x/testing"
     ]
   }
 ]
