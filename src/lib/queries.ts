@@ -136,7 +136,11 @@ export function applyFilters(
       const ok =
         f.techMode === 'or'
           ? want.some((t) => hasTech(q, t))
-          : want.every((t) => hasTech(q, t))
+          // Match all is intentionally strict: every selected canonical technology
+          // must be an explicit question tag. Related-topic expansion belongs only
+          // to the default Match any mode, otherwise a Laravel-only question can
+          // incorrectly satisfy a Laravel + React intersection.
+          : want.every((t) => (custom.has(t) ? hasTech(q, t) : q.t.includes(t)))
       if (!ok) return false
     }
 
