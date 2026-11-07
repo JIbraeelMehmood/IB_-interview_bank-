@@ -71,7 +71,7 @@ function canonicalTechSlug(value: string, meta: BankMeta): string {
   if (exact) return exact.slug
 
   const keywordMatches = meta.techs.filter((t) =>
-    t.keywords.some((keyword) => normalizeTechText(keyword.replace(/\\*$/, '')) === normalized),
+    t.keywords.some((keyword) => normalizeTechText(keyword.replace(/\*$/, '')) === normalized),
   )
   return keywordMatches.length === 1 ? keywordMatches[0].slug : value.toLowerCase()
 }
@@ -111,7 +111,7 @@ function techsFor(q: RawBankQuestion, meta: BankMeta): string[] {
     }
 
     for (const keyword of tech.keywords) {
-      const normalizedKeyword = normalizeTechText(keyword.replace(/\\*$/, ''))
+      const normalizedKeyword = normalizeTechText(keyword.replace(/\*$/, ''))
       // These terms are too generic to establish SQL, CI/CD, Docker or API
       // relevance on their own; chapter names or specific terms still match.
       const ambiguous: Record<string, string[]> = {
