@@ -17,16 +17,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     if (!user) return res.status(401).json({ error: 'Please sign in to vote.' })
 
     const body = req.body || {}
-    const code = String(body.code || '')
-    const expYears = Number(body.expYears) || 0
-    const company = body.company ? String(body.company).slice(0, 100) : ''
+    const code = String(body.code || '').trim()
+    const expYears = Number(body.expYears)
+    const company = body.company == null ? '' : String(body.company).trim()
 
-    if (!code || !expYears || expYears < 1 || expYears > 6) {
-      return res.status(400).json({ error: 'Question code and experience years (1-6) are required.' })
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/.test(code) ||
+        !Number.isInteger(expYears) || expYears < 1 || expYears > 6 ||
+        company.length > 100) {
+      return res.status(400).json({ error: 'Enter a valid question code, experience band (1-6), and company name (up to 100 characters).' })
     }
 
     const db = await getDb()
     const votes = db.collection('community_votes')
+    const now = Date.now()
 
     // Upsert: one vote per user per question
     const id = `${user.id}:${code}`
@@ -38,8 +41,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           code,
           expYears,
           company: company || null,
-          at: Date.now(),
-          updatedAt: Date.now(),
+          at: now,
+          updatedAt: now,
         },
       },
       { upsert: true },

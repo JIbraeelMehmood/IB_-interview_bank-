@@ -7,13 +7,13 @@
  */
 
 import { db, deviceId, TR_LIMIT } from './db'
-import type { Lang, Translation } from './types'
+import type { AudioAsset, CommunityVote, ExplainEntry, Lang, Translation } from './types'
 import { DEFAULT_SETTINGS, useSettings } from './settings'
 
 export interface Backup {
   app: 'interview-box'
-  /** Format version: 1 = v7, 2 = this build. */
-  v: 1 | 2
+  /** Format version: 1 = v7, 2 = translations, 3 = complete local user data. */
+  v: 1 | 2 | 3
   at: number
   state: Record<string, any>
   /** Present from v2. */
@@ -24,7 +24,7 @@ export interface Backup {
 /** Build a full backup, including translations. */
 export async function makeBackup(includeTranslations = true): Promise<Backup> {
   const settings = useSettings.getState().settings
-  const [questions, ratings, reviews, answers, stories, mocks, jds, imports, explains] =
+  const [questions, ratings, reviews, answers, stories, mocks, jds, imports, explains, audio, communityVotes] =
     await Promise.all([
       db.questions.toArray(),
       db.ratings.toArray(),
@@ -35,6 +35,8 @@ export async function makeBackup(includeTranslations = true): Promise<Backup> {
       db.jds.toArray(),
       db.imports.toArray(),
       db.explains.toArray(),
+      db.audio.toArray(),
+      db.communityVotes.toArray(),
     ])
 
   // Only user-added questions, not the 1,950 built-in ones.
@@ -50,12 +52,14 @@ export async function makeBackup(includeTranslations = true): Promise<Backup> {
     jds,
     imports,
     explains,
+    audio,
+    communityVotes,
     device: deviceId(),
   }
 
   const backup: Backup = {
     app: 'interview-box',
-    v: 2,
+    v: 3,
     at: Date.now(),
     state,
     counts: {
@@ -90,6 +94,9 @@ export function download(filename: string, content: string, mime = 'application/
 
 /** Read a backup file or pasted text. Handles both formats. */
 export async function importBackup(text: string): Promise<ImportResult> {
+  if (typeof text !== 'string' || text.length > 25 * 1024 * 1024) {
+    return { ok: false, format: 0, message: 'Backup file is too large. The maximum supported size is 25 MB.' }
+  }
   let data: any
   try {
     data = JSON.parse(text)
@@ -99,11 +106,26 @@ export async function importBackup(text: string): Promise<ImportResult> {
   if (data?.app !== 'interview-box') {
     return { ok: false, format: 0, message: 'That is not an Interview Box backup.' }
   }
+  if (!data.state || typeof data.state !== 'object' || Array.isArray(data.state)) {
+    return { ok: false, format: 0, message: 'The backup is missing its data section.' }
+  }
 
-  const s = data.state || {}
-  const isV1 = !data.translations && !s.settings
-
+  const s = data.state
   const ownQuestions = s.ownQuestions || s.my || []
+  if (!Array.isArray(ownQuestions) || ownQuestions.length > 100_000 ||
+      ownQuestions.some((row: unknown) => !row || typeof row !== 'object' || Array.isArray(row))) {
+    return { ok: false, format: 0, message: 'The backup contains an invalid question list.' }
+  }
+  for (const field of ['answers', 'stories', 'mocks', 'jds', 'imports', 'explains', 'audio', 'communityVotes']) {
+    if (s[field] !== undefined && (!Array.isArray(s[field]) || s[field].length > 100_000)) {
+      return { ok: false, format: 0, message: `The backup contains an invalid ${field} list.` }
+    }
+  }
+  if (data.translations !== undefined && !Array.isArray(data.translations)) {
+    return { ok: false, format: 0, message: 'The backup contains an invalid translations list.' }
+  }
+
+  const isV1 = !data.translations && !s.settings
   const ratings = s.ratings || []
   const reviews = s.reviews || []
   const answers = s.answers || []
@@ -111,6 +133,9 @@ export async function importBackup(text: string): Promise<ImportResult> {
   const mocks = s.mocks || s.hist || []
   const jds = s.jds || (s.jd ? [s.jd] : [])
   const imports = s.imports || []
+  const explainRows: ExplainEntry[] = Array.isArray(s.explains) ? s.explains : []
+  const audioRows: AudioAsset[] = Array.isArray(s.audio) ? s.audio : []
+  const communityVoteRows: CommunityVote[] = Array.isArray(s.communityVotes) ? s.communityVotes : []
 
   // v7 ratings were a plain `{id: 1|2|3}` map.
   const ratingRows: any[] = Array.isArray(ratings)
@@ -169,6 +194,8 @@ export async function importBackup(text: string): Promise<ImportResult> {
         db.imports,
         db.translations,
         db.explains,
+        db.audio,
+        db.communityVotes,
         db.settings,
       ],
       async () => {
@@ -180,6 +207,9 @@ export async function importBackup(text: string): Promise<ImportResult> {
         if (mocks.length) await db.mocks.bulkPut(mocks)
         if (jds.length) await db.jds.bulkPut(jds)
         if (imports.length) await db.imports.bulkPut(imports)
+        if (explainRows.length) await db.explains.bulkPut(explainRows)
+        if (audioRows.length) await db.audio.bulkPut(audioRows)
+        if (communityVoteRows.length) await db.communityVotes.bulkPut(communityVoteRows)
         if (Array.isArray(data.translations) && data.translations.length) {
           await db.translations.bulkPut(
             data.translations.map((t: Translation) => ({ ...t, t: t.t || Date.now() })),
@@ -208,15 +238,34 @@ export async function importBackup(text: string): Promise<ImportResult> {
       reviews: reviewRows.length,
       answers: answers.length,
       translations: data.translations?.length || 0,
+      explanations: explainRows.length,
+      audio: audioRows.length,
+      communityVotes: communityVoteRows.length,
     },
   }
 }
 
 /** Wipe user data but keep the built-in bank. */
 export async function resetProgress(): Promise<void> {
+  // Reset the server copy first for signed-in accounts. If the session has
+  // expired or the network is unavailable, leave local data untouched rather
+  // than allowing the next sync to restore the supposedly deleted progress.
+  const accountId = localStorage.getItem('ibx-active-account')
+  if (accountId && accountId !== 'guest') {
+    const response = await fetch('/api/v1/reset-progress', {
+      method: 'POST',
+      credentials: 'same-origin',
+    })
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(result.error || 'Could not reset your synced progress. Please try again.')
+    }
+  }
+
   await db.transaction(
     'rw',
     [
+      db.questions,
       db.ratings,
       db.reviews,
       db.answers,

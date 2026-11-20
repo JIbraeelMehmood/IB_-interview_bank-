@@ -2,11 +2,6 @@ import { currentUser, type ApiRequest, type ApiResponse } from '../../server/aut
 import { getDb } from '../../server/mongodb.js'
 
 const ALLOWED = new Set(['ratings', 'reviews', 'answers', 'stories', 'questions', 'translations', 'settings'])
-// Note: 'communityVote' is intentionally NOT in ALLOWED. Community votes are submitted
-// via POST /api/v1/vote and are NOT synced through this endpoint.
-// The `if (table === 'communityVote')` block below is DEAD CODE — it is never reached
-// because the ALLOWED guard above skips it first. It should be removed in a future cleanup.
-// Do not add 'communityVote' to ALLOWED here; use the dedicated /api/v1/vote endpoint.
 const keyOf = (row: any) => String(row?.code ?? row?.id ?? row?.key ?? '')
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -22,26 +17,28 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     for (const item of items) {
       const table = String(item?.type || '')
       const row = item?.payload
+      if (!row || typeof row !== 'object' || Array.isArray(row)) continue
       const key = keyOf(row)
-      if (!ALLOWED.has(table) || !row || typeof row !== 'object' || Array.isArray(row) || !key) continue
-      const serialized = JSON.stringify(row)
-      if (serialized.length > 256_000) continue
+      if (!key || key.length > 120) continue
 
-      // Community votes go to a separate collection with upsert logic
-      if (table === 'communityVote') {
-        const votes = db.collection('community_votes')
-        const voteId = `${user.id}:${key}`
-        const expYears = Number(row.expYears) || 0
-        const company = row.company ? String(row.company).slice(0, 100) : null
-        if (expYears < 1 || expYears > 6) continue
-        await votes.updateOne(
-          { _id: voteId },
-          { $set: { userId: user.id, code: key, expYears, company, at: Number(row.at) || Date.now(), updatedAt: Date.now() } },
-          { upsert: true },
-        )
+      // Vote removal is a first-class sync operation so it works offline too.
+      // Scope deletion to the authenticated user; never accept a userId from the client.
+      if (table === 'communityVoteDelete') {
+        const deletedAt = Number(row.updatedAt) || Date.now()
+        await db.collection('community_votes').deleteOne({
+          _id: `${user.id}:${key}`,
+          userId: user.id,
+          // A delayed offline deletion must not erase a newer vote for the
+          // same question that was submitted after the deletion was queued.
+          updatedAt: { $lte: deletedAt },
+        })
         if (Number.isInteger(item.id)) acked.push(item.id)
         continue
       }
+
+      if (!ALLOWED.has(table)) continue
+      const serialized = JSON.stringify(row)
+      if (serialized.length > 256_000) continue
 
       const id = `${user.id}:${table}:${key}`
       const updatedAt = Number(row.updatedAt) || Date.now()

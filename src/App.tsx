@@ -28,12 +28,14 @@ import Help from './features/Help'
 import { initGateway } from './lib/freeGateway'
 import { checkTtsServer } from './lib/ttsClient'
 import { refreshQuestionStats } from './lib/community'
+import { db } from './lib/db'
 
 export default function App() {
-  const { loaded, init } = useSettings()
+  const { loaded, init, settings, toggleTheme } = useSettings()
   const [ready, setReady] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
+  const [sessionExpiredAccount, setSessionExpiredAccount] = useState<string | null>(null)
   const [user, setUser] = useState<AccountUser | null>(null)
   const [due, setDue] = useState(0)
   const [online, setOnline] = useState(navigator.onLine)
@@ -73,6 +75,22 @@ export default function App() {
     let alive = true
     void accountRequest('/api/auth/me').then(async data => {
       if (!alive) return
+      const activeAccount = localStorage.getItem('ibx-active-account')
+      const pendingChanges = await db.outbox.count()
+      // Never wipe an account's unsynced offline work just because a different
+      // session was returned (for example, after a Google account switch).
+      if (activeAccount && activeAccount !== 'guest' && activeAccount !== data.user.id && pendingChanges > 0) {
+        try { await accountRequest('/api/auth/logout', {}) } catch { /* Keep the old workspace protected below. */ }
+        const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+        setUser(cached?.id === activeAccount ? cached : null)
+        await init()
+        try { await ensureSeeded() } catch { /* Existing local data remains available. */ }
+        setReady(true)
+        setSessionExpiredAccount(activeAccount)
+        setAuthOpen(true)
+        toast('Sign in to the same account to sync your pending progress before switching accounts.')
+        return
+      }
       await activateAccount(data.user.id)
       localStorage.setItem('ibx-user-cache', JSON.stringify(data.user))
       await enterApp(data.user)
@@ -81,6 +99,21 @@ export default function App() {
       const msg = String(error?.message || '')
       // A missing or expired session is normal: public browsing uses guest mode.
       if (/Request failed \((401|403)\)/.test(msg)) {
+        const activeAccount = localStorage.getItem('ibx-active-account')
+        const pendingChanges = await db.outbox.count()
+        if (activeAccount && activeAccount !== 'guest' && pendingChanges > 0) {
+          // The server session expired while local changes were still pending.
+          // Keep this workspace intact and require re-authentication to the same account.
+          const cached = JSON.parse(localStorage.getItem('ibx-user-cache') || 'null') as AccountUser | null
+          setUser(cached?.id === activeAccount ? cached : null)
+          await init()
+          try { await ensureSeeded() } catch { /* Preserve existing offline rows. */ }
+          setReady(true)
+          setSessionExpiredAccount(activeAccount)
+          setAuthOpen(true)
+          toast('Your session expired. Sign in to the same account to sync your saved progress.')
+          return
+        }
         localStorage.removeItem('ibx-user-cache')
         await enterGuest()
         return
@@ -124,14 +157,32 @@ export default function App() {
 
   async function signedIn(account: AccountUser) {
     await enterApp(account)
+    setSessionExpiredAccount(null)
     setAuthChecked(true)
   }
   async function signOut() {
-    // Best-effort upload before ending the session; pending rows remain local if offline.
-    if (online) await flush()
-    try { await accountRequest('/api/auth/logout', {}) } catch { /* local sign-out still proceeds */ }
+    // Never switch to a guest workspace while private changes are still queued.
+    // This prevents an offline sign-out from discarding unsynced account data.
+    if (!online) {
+      toast('Reconnect to the internet before signing out so your progress can sync safely.')
+      return
+    }
+    await flush()
+    if (await db.outbox.count()) {
+      toast('Some changes could not sync yet. Please try signing out again in a moment.')
+      return
+    }
+    try {
+      await accountRequest('/api/auth/logout', {})
+    } catch {
+      toast('Could not end your server session. Please try again before signing out.')
+      return
+    }
     localStorage.removeItem('ibx-user-cache')
-    setUser(null); setReady(true); setDue(0); setAuthOpen(false)
+    // Move to an isolated guest workspace so the next visitor cannot see this account's local data.
+    await enterGuest()
+    setDue(0)
+    setAuthOpen(false)
   }
 
   if (!authChecked || !ready || !loaded) return <p className="center muted" style={{ padding: 40 }}>Loading Interview Box…</p>
@@ -142,14 +193,15 @@ export default function App() {
       <header className="top">
         <div className="wrap">
           <Link to="/library" className="logo" style={{ textDecoration: 'none' }}>
-            <span className="box" aria-hidden="true">📦</span><span>Interview Box</span>
+            <span className="box" aria-hidden="true">IB</span><span>Interview Box</span>
           </Link>
           <span className="ai-state">
             {!online ? <><i className="dot" /> Offline</> : aiOn ? <><i className="dot on" /> AI ready</> :
               <><i className="dot" /><Link to="/help" title={aiWhy()}>AI off</Link></>}
           </span>
+          <button className="iconbtn" type="button" onClick={toggleTheme} aria-label="Change color theme" title={`Theme: ${settings.theme} (click to change)`}>{settings.theme === "dark" ? "☀" : settings.theme === "light" ? "◐" : "☾"}</button>
           <Link className="iconbtn" to="/ai-providers" aria-label="AI Providers" title="Connect AI providers">🔗</Link>
-          {user ? (
+          {user && !sessionExpiredAccount ? (
             <button className="iconbtn" type="button" onClick={() => void signOut()} aria-label="Sign out" title={user.email}>↪</button>
           ) : (
             <button className="btn sm" type="button" onClick={() => setAuthOpen(true)}>Sign in</button>
@@ -175,13 +227,13 @@ export default function App() {
       {player.queue.length > 0 && <PlayerBar />}
       <BottomNav dueCount={due} /><ToastHost /><UpdatePrompt />
       {authOpen && (
-        <div className="sheet-bg" onClick={(e) => { if (e.target === e.currentTarget) setAuthOpen(false) }}>
+        <div className="sheet-bg" onClick={(e) => { if (!sessionExpiredAccount && e.target === e.currentTarget) setAuthOpen(false) }}>
           <div className="sheet" role="dialog" aria-modal="true" aria-label="Sign in or create account">
             <div className="spread" style={{ marginBottom: 10 }}>
-              <h2 style={{ fontSize: '1.1rem' }}>Sign in to continue</h2>
-              <button className="btn sm ghost" onClick={() => setAuthOpen(false)} aria-label="Close sign in">✕</button>
+              <h2 style={{ fontSize: '1.1rem' }}>{sessionExpiredAccount ? 'Recover your saved progress' : 'Sign in to continue'}</h2>
+              {!sessionExpiredAccount && <button className="btn sm ghost" onClick={() => setAuthOpen(false)} aria-label="Close sign in">✕</button>}
             </div>
-            <Auth onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={() => setAuthOpen(false)} />
+            <Auth expectedAccountId={sessionExpiredAccount || undefined} onSignedIn={async (account) => { await signedIn(account); setAuthOpen(false) }} onClose={sessionExpiredAccount ? () => {} : () => setAuthOpen(false)} />
           </div>
         </div>
       )}
